@@ -1,0 +1,46 @@
+ext.junitJupiterVersion  = '5.0.0-M4'
+
+
+apply plugin: 'java'
+apply plugin: 'jacoco'
+
+sourceCompatibility = 1.8
+version = '1.0-SNAPSHOT'
+
+compileTestJava {
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+    options.compilerArgs += '-parameters'
+}
+
+repositories {
+    if (project.hasProperty("local_repository") || System.getProperty("local_repository") != null) {
+        mavenLocal()
+    } else {
+        mavenCentral()
+    }
+}
+
+dependencies {
+    compile group: 'com.sparkjava', name: 'spark-core', version: '2.9.2'
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.2'
+
+
+    testCompile group: 'org.mockito', name: 'mockito-core', version: '3.0.0'
+    testImplementation 'org.awaitility:awaitility:4.0.1'
+    
+    testCompileOnly(
+            'junit:junit:4.12'
+    )
+    testImplementation(
+            'org.junit.jupiter:junit-jupiter-api:5.1.0'
+    )
+    testCompile("org.junit.jupiter:junit-jupiter-params:5.3.2")
+    testRuntimeOnly(
+            'org.junit.jupiter:junit-jupiter-engine:5.1.0',
+            'org.junit.vintage:junit-vintage-engine:5.1.0'
+    )
+}
+
+
+
