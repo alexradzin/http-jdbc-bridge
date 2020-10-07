@@ -21,6 +21,7 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import static com.nosqldriver.jdbc.http.Util.decode;
 import static spark.Spark.delete;
 import static spark.Spark.get;
 import static spark.Spark.post;
@@ -131,7 +132,8 @@ public class ConnectionController extends BaseController {
 
         get("/connection/:connection/valid/:timeout", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> connection.isValid(intParam(req, ":timeout"))));
 
-        get("/connection/:connection/client/info/:name", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> connection.getClientInfo(req.params(":name"))));
+        get("/connection/:connection/client/info/:name", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> connection.getClientInfo(decode(req.params(":name")))));
+        get("/connection/:connection/client/info/", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> connection.getClientInfo("")));
         get("/connection/:connection/client/info", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), Connection::getClientInfo));
         post("/connection/:connection/client/info", JSON, (req, res) -> accept(() -> getConnection(attributes, req), connection -> connection.setClientInfo(objectMapper.readValue(req.body(), Properties.class))));
 

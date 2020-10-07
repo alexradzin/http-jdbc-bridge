@@ -8,7 +8,6 @@ import com.nosqldriver.util.function.ThrowingBiFunction;
 import com.nosqldriver.util.function.ThrowingFunction;
 import spark.Request;
 
-import java.net.URLDecoder;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;

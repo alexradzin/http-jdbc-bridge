@@ -1,21 +1,20 @@
 package com.nosqldriver.jdbc.http;
 
-import spark.Request;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Arrays;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class Util {
     public static String encode(String s) {
-        try {
-            return URLEncoder.encode(s, "UTF8");
-        } catch (UnsupportedEncodingException e) {
-            throw new IllegalStateException(e);
-        }
+        return URLEncoder.encode(s, UTF_8);
+    }
+
+    public static String decode(String s) {
+        return URLEncoder.encode(s, UTF_8);
     }
 
     public static String pathParameter(Class<?> clazz) {

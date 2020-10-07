@@ -25,18 +25,6 @@ abstract class BaseController {
         this.objectMapper = objectMapper;
     }
 
-//    protected <T> String retrieve(ThrowingSupplier<Connection, Exception> connectionSupplier, ThrowingFunction<Connection, T, Exception> entityFactory, ThrowingFunction<String, T, Exception> proxyFactory, String prefix, String url) throws Exception {
-//        return retrieve2(connectionSupplier, entityFactory, (url1, entity) -> proxyFactory.apply(url1), prefix, url);
-//    }
-//
-//    protected <T> String retrieve2(ThrowingSupplier<Connection, Exception> connectionSupplier, ThrowingFunction<Connection, T, Exception> entityFactory, ThrowingBiFunction<String, T, T, Exception> proxyFactory, String prefix, String url) throws Exception {
-//        Connection connection = connectionSupplier.get();
-//        T entity = entityFactory.apply(connection);
-//        int entityId = System.identityHashCode(entity);
-//        attributes.put(prefix + "@" + entityId, connection);
-//        return objectMapper.writeValueAsString(proxyFactory.apply(format("%s/%d", url, entityId), entity));
-//    }
-
     protected <P, T> String retrieve(ThrowingSupplier<P, Exception> parentSupplier, ThrowingFunction<P, T, Exception> entityFactory, ThrowingFunction<String, T, Exception> proxyFactory, String prefix, String url) throws Exception {
         return retrieve2(parentSupplier, entityFactory, (url1, entity) -> proxyFactory.apply(url1), prefix, url);
     }
@@ -62,11 +50,13 @@ abstract class BaseController {
     }
 
     protected <P, T> String retrieve(ThrowingSupplier<P, Exception> parentSupplier, ThrowingFunction<P, T, Exception> entityFactory, ThrowingFunction<T, T, Exception> transportableEntityFactory) throws Exception {
-        return objectMapper.writeValueAsString(transportableEntityFactory.apply(entityFactory.apply(parentSupplier.get())));
+        T entity = entityFactory.apply(parentSupplier.get());
+        return entity == null ? "" : objectMapper.writeValueAsString(transportableEntityFactory.apply(entity));
     }
 
     protected <P, T> String retrieve(ThrowingSupplier<P, Exception> parentSupplier, ThrowingFunction<P, T, Exception> entityFactory) throws Exception {
-        return objectMapper.writeValueAsString(entityFactory.apply(parentSupplier.get()));
+        T entity = entityFactory.apply(parentSupplier.get());
+        return entity == null ? "" : objectMapper.writeValueAsString(entity);
     }
 
     protected <P> Object accept(ThrowingSupplier<P, Exception> parentSupplier, ThrowingConsumer<P, Exception> entityFactory) throws Exception {
@@ -96,7 +86,6 @@ abstract class BaseController {
         return stringArrayValue(req.params(name), name);
     }
 
-    ///////////////////
     protected int intArg(Request req, String name) {
         return intValue(req.queryParams(name), name);
     }
@@ -112,8 +101,6 @@ abstract class BaseController {
     protected String[] stringArrayArg(Request req, String name) {
         return stringArrayValue(req.queryParams(name), name);
     }
-
-    //////////////////
 
     protected int intValue(String str, String name) {
         return Integer.parseInt(str);
@@ -142,6 +129,4 @@ abstract class BaseController {
         }
         return str.split(",");
     }
-
-
 }
