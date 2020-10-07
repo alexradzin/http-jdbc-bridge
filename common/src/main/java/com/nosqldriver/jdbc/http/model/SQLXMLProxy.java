@@ -1,6 +1,7 @@
 package com.nosqldriver.jdbc.http.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.xml.transform.Result;
@@ -13,6 +14,8 @@ import java.sql.SQLException;
 import java.sql.SQLXML;
 
 public class SQLXMLProxy extends EntityProxy implements SQLXML {
+    private String string;
+
     @JsonCreator
     public SQLXMLProxy(@JsonProperty("entityUrl") String entityUrl) {
         super(entityUrl);
@@ -24,6 +27,7 @@ public class SQLXMLProxy extends EntityProxy implements SQLXML {
     }
 
     @Override
+    @JsonIgnore
     public InputStream getBinaryStream() throws SQLException {
         return null;
     }
@@ -34,6 +38,7 @@ public class SQLXMLProxy extends EntityProxy implements SQLXML {
     }
 
     @Override
+    @JsonIgnore
     public Reader getCharacterStream() throws SQLException {
         return null;
     }
@@ -45,12 +50,12 @@ public class SQLXMLProxy extends EntityProxy implements SQLXML {
 
     @Override
     public String getString() throws SQLException {
-        return null;
+        return string;
     }
 
     @Override
     public void setString(String value) throws SQLException {
-
+        this.string = value;
     }
 
     @Override

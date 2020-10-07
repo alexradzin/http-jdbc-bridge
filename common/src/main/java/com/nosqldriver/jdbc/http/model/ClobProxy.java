@@ -1,6 +1,7 @@
 package com.nosqldriver.jdbc.http.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.InputStream;
@@ -37,11 +38,13 @@ public class ClobProxy extends EntityProxy implements NClob {
     }
 
     @Override
+    @JsonIgnore
     public Reader getCharacterStream() throws SQLException {
         return connector.get(format("%s/character/stream", entityUrl), ReaderProxy.class);
     }
 
     @Override
+    @JsonIgnore
     public InputStream getAsciiStream() throws SQLException {
         return connector.get(format("%s/ascii/stream", entityUrl), InputStreamProxy.class);
     }

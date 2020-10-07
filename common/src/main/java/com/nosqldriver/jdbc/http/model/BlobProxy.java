@@ -1,6 +1,7 @@
 package com.nosqldriver.jdbc.http.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.InputStream;
@@ -34,6 +35,7 @@ public class BlobProxy extends EntityProxy implements Blob {
     }
 
     @Override
+    @JsonIgnore
     public InputStream getBinaryStream() throws SQLException {
         return connector.get(format("%s/binary/stream", entityUrl), InputStream.class);
     }

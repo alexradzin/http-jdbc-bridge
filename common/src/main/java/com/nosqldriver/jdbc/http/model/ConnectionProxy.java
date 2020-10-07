@@ -47,7 +47,7 @@ public class ConnectionProxy extends WrapperProxy implements Connection {
 
     @Override
     public CallableStatement prepareCall(String sql) throws SQLException {
-        return connector.post(format("%s/prepared-call", entityUrl), sql, CallableStatementProxy.class);
+        return connector.post(format("%s/callable-statement", entityUrl), sql, CallableStatementProxy.class);
     }
 
     @Override
@@ -150,7 +150,7 @@ public class ConnectionProxy extends WrapperProxy implements Connection {
 
     @Override
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
-        return connector.post(format("%s/prepared-call?type=%d&concurrency=%d", entityUrl, resultSetType, resultSetConcurrency), sql, CallableStatementProxy.class);
+        return connector.post(format("%s/callable-statement?type=%d&concurrency=%d", entityUrl, resultSetType, resultSetConcurrency), sql, CallableStatementProxy.class);
     }
 
     @Override
@@ -208,7 +208,7 @@ public class ConnectionProxy extends WrapperProxy implements Connection {
 
     @Override
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
-        return connector.post(format("%s/prepared-call?type=%d&concurrency=%d&holdability=%d", entityUrl, resultSetType, resultSetConcurrency, resultSetHoldability), sql, CallableStatementProxy.class);
+        return connector.post(format("%s/callable-statement?type=%d&concurrency=%d&holdability=%d", entityUrl, resultSetType, resultSetConcurrency, resultSetHoldability), sql, CallableStatementProxy.class);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.nosqldriver.jdbc.http.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.sql.Array;
@@ -36,6 +37,7 @@ public class ArrayProxy extends EntityProxy implements Array {
     }
 
     @Override
+    @JsonIgnore
     public Object getArray() throws SQLException {
         return connector.get(format("%s/array", entityUrl), Object.class);
     }
@@ -56,6 +58,7 @@ public class ArrayProxy extends EntityProxy implements Array {
     }
 
     @Override
+    @JsonIgnore
     public ResultSet getResultSet() throws SQLException {
         return connector.get(format("%s/resultset", entityUrl), ResultSetProxy.class);
     }

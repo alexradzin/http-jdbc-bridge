@@ -1,6 +1,7 @@
 package com.nosqldriver.jdbc.http.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.InputStream;
@@ -744,6 +745,7 @@ public class CallableStatementProxy extends WrapperProxy implements CallableStat
     }
 
     @Override
+    @JsonIgnore
     public ResultSetMetaData getMetaData() throws SQLException {
         return null;
     }
@@ -774,6 +776,7 @@ public class CallableStatementProxy extends WrapperProxy implements CallableStat
     }
 
     @Override
+    @JsonIgnore
     public ParameterMetaData getParameterMetaData() throws SQLException {
         return null;
     }
@@ -889,6 +892,7 @@ public class CallableStatementProxy extends WrapperProxy implements CallableStat
     }
 
     @Override
+    @JsonIgnore
     public int getMaxFieldSize() throws SQLException {
         return 0;
     }
@@ -899,6 +903,7 @@ public class CallableStatementProxy extends WrapperProxy implements CallableStat
     }
 
     @Override
+    @JsonIgnore
     public int getMaxRows() throws SQLException {
         return 0;
     }
@@ -914,6 +919,7 @@ public class CallableStatementProxy extends WrapperProxy implements CallableStat
     }
 
     @Override
+    @JsonIgnore
     public int getQueryTimeout() throws SQLException {
         return 0;
     }
@@ -929,6 +935,7 @@ public class CallableStatementProxy extends WrapperProxy implements CallableStat
     }
 
     @Override
+    @JsonIgnore
     public SQLWarning getWarnings() throws SQLException {
         return null;
     }
@@ -949,16 +956,19 @@ public class CallableStatementProxy extends WrapperProxy implements CallableStat
     }
 
     @Override
+    @JsonIgnore
     public ResultSet getResultSet() throws SQLException {
         return null;
     }
 
     @Override
+    @JsonIgnore
     public int getUpdateCount() throws SQLException {
         return 0;
     }
 
     @Override
+    @JsonIgnore
     public boolean getMoreResults() throws SQLException {
         return false;
     }
@@ -969,6 +979,7 @@ public class CallableStatementProxy extends WrapperProxy implements CallableStat
     }
 
     @Override
+    @JsonIgnore
     public int getFetchDirection() throws SQLException {
         return 0;
     }
@@ -979,16 +990,19 @@ public class CallableStatementProxy extends WrapperProxy implements CallableStat
     }
 
     @Override
+    @JsonIgnore
     public int getFetchSize() throws SQLException {
         return 0;
     }
 
     @Override
+    @JsonIgnore
     public int getResultSetConcurrency() throws SQLException {
         return 0;
     }
 
     @Override
+    @JsonIgnore
     public int getResultSetType() throws SQLException {
         return 0;
     }
@@ -1009,6 +1023,7 @@ public class CallableStatementProxy extends WrapperProxy implements CallableStat
     }
 
     @Override
+    @JsonIgnore
     public Connection getConnection() throws SQLException {
         return null;
     }
@@ -1019,6 +1034,7 @@ public class CallableStatementProxy extends WrapperProxy implements CallableStat
     }
 
     @Override
+    @JsonIgnore
     public ResultSet getGeneratedKeys() throws SQLException {
         return null;
     }
@@ -1054,11 +1070,13 @@ public class CallableStatementProxy extends WrapperProxy implements CallableStat
     }
 
     @Override
+    @JsonIgnore
     public int getResultSetHoldability() throws SQLException {
         return 0;
     }
 
     @Override
+    @JsonIgnore
     public boolean isClosed() throws SQLException {
         return false;
     }
@@ -1069,6 +1087,7 @@ public class CallableStatementProxy extends WrapperProxy implements CallableStat
     }
 
     @Override
+    @JsonIgnore
     public boolean isPoolable() throws SQLException {
         return false;
     }
@@ -1079,7 +1098,20 @@ public class CallableStatementProxy extends WrapperProxy implements CallableStat
     }
 
     @Override
+    @JsonIgnore
     public boolean isCloseOnCompletion() throws SQLException {
         return false;
+    }
+
+    @Override
+    @JsonIgnore
+    public long getLargeUpdateCount() throws SQLException {
+        return 0;
+    }
+
+    @Override
+    @JsonIgnore
+    public long getLargeMaxRows() throws SQLException {
+        return 0;
     }
 }
