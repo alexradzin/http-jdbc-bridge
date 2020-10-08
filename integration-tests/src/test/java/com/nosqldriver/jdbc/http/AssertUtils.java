@@ -1,5 +1,8 @@
 package com.nosqldriver.jdbc.http;
 
+import com.nosqldriver.util.function.ThrowingConsumer;
+import com.nosqldriver.util.function.ThrowingFunction;
+
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -10,6 +13,7 @@ import java.util.HashSet;
 import static java.lang.String.format;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class AssertUtils {
@@ -71,4 +75,54 @@ public class AssertUtils {
     public static boolean isFloating(Object obj) {
         return obj != null && floatingTypes.contains(obj.getClass());
     }
+
+    public static <T> void assertCall(ThrowingFunction<T, ?, SQLException> f, T nativeObj, T httpObj, String message) {
+        Object nativeRes = null;
+        Object httpRes = null;
+        SQLException nativeEx = null;
+        SQLException httpEx = null;
+
+        try {
+            nativeRes = f.apply(nativeObj);
+        } catch (SQLException e) {
+            nativeEx = e;
+        }
+        try {
+            httpRes = f.apply(httpObj);
+        } catch (SQLException e) {
+            httpEx = e;
+        }
+        if (nativeEx == null) {
+            if (nativeRes == null) {
+                assertNull(httpRes, message);
+            } else {
+                assertNotNull(httpRes, message);
+            }
+        } else {
+            assertNotNull(httpEx, message);
+            assertEquals(nativeEx.getMessage(), httpEx.getMessage(), message);
+        }
+    }
+
+    public static <T> void assertCall(ThrowingConsumer<T, SQLException> f, T nativeObj, T httpObj, String message) {
+        SQLException nativeEx = null;
+        SQLException httpEx = null;
+
+        try {
+            f.accept(nativeObj);
+        } catch (SQLException e) {
+            nativeEx = e;
+        }
+        try {
+            f.accept(httpObj);
+        } catch (SQLException e) {
+            httpEx = e;
+        }
+        if (nativeEx == null) {
+            assertNull(httpEx, message);
+        } else {
+            assertNotNull(httpEx, message);
+        }
+    }
+
 }

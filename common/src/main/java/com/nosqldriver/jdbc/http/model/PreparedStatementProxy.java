@@ -11,6 +11,7 @@ import java.net.URL;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.Clob;
+import java.sql.Connection;
 import java.sql.Date;
 import java.sql.NClob;
 import java.sql.ParameterMetaData;
@@ -309,4 +310,11 @@ public class PreparedStatementProxy extends StatementProxy implements PreparedSt
     public void setNClob(int parameterIndex, Reader reader) throws SQLException {
         set(parameterIndex, NClob.class, reader);
     }
+
+    @Override
+    public PreparedStatementProxy withConnection(Connection connection) {
+        super.withConnection(connection);
+        return this;
+    }
+
 }

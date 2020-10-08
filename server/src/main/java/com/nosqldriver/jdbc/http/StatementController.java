@@ -19,12 +19,12 @@ import static spark.Spark.patch;
 import static spark.Spark.post;
 
 public class StatementController extends BaseController {
-    protected StatementController(Map<String, Object> attributes, ObjectMapper objectMapper) {
-        this(attributes, objectMapper, "/connection/:connection/statement/:statement");
-    }
-
+    private final String prefix;
     protected StatementController(Map<String, Object> attributes, ObjectMapper objectMapper, String baseUrl) {
         super(attributes, objectMapper);
+        String[] urlParts = baseUrl.split("/");
+        prefix = urlParts[urlParts.length - 2];
+
         post(format("%s/query", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), statement -> statement.executeQuery(objectMapper.readValue(req.body(), String.class)), ResultSetProxy::new, "resultset", req.url()));
         post(format("%s/execute", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), statement -> exec(req, statement::execute, statement::execute, statement::execute, statement::execute)));
         post(format("%s/update", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), statement -> exec(req, statement::executeUpdate, statement::executeUpdate, statement::executeUpdate, statement::executeUpdate)));
@@ -39,8 +39,8 @@ public class StatementController extends BaseController {
         post(format("%s/maxrows", baseUrl), JSON, (req, res) -> accept(() -> getStatement(attributes, req), statement -> statement.setMaxRows(Integer.parseInt(req.body()))));
         get(format("%s/maxrows", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), Statement::getMaxRows));
 
-        post(format("%s/maxrows", baseUrl), JSON, (req, res) -> accept(() -> getStatement(attributes, req), statement -> statement.setLargeMaxRows(Long.parseLong(req.body()))));
-        get(format("%s/maxrows", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), Statement::getLargeMaxRows));
+        post(format("%s/large/maxrows", baseUrl), JSON, (req, res) -> accept(() -> getStatement(attributes, req), statement -> statement.setLargeMaxRows(Long.parseLong(req.body()))));
+        get(format("%s/large/maxrows", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), Statement::getLargeMaxRows));
 
         post(format("%s/escapeprocessing", baseUrl), JSON, (req, res) -> accept(() -> getStatement(attributes, req), statement -> statement.setEscapeProcessing(Boolean.parseBoolean(req.body()))));
 
@@ -73,7 +73,7 @@ public class StatementController extends BaseController {
 
         patch(format("%s/batch", baseUrl), JSON, (req, res) -> accept(() -> getStatement(attributes, req), statement -> statement.addBatch(objectMapper.readValue(req.body(), String.class))));
         post(format("%s/batch", baseUrl), JSON, (req, res) -> accept(() -> getStatement(attributes, req), Statement::executeBatch));
-        post(format("%s/batch", baseUrl), JSON, (req, res) -> accept(() -> getStatement(attributes, req), Statement::executeLargeBatch));
+        post(format("%s/large/batch", baseUrl), JSON, (req, res) -> accept(() -> getStatement(attributes, req), Statement::executeLargeBatch));
         delete(format("%s/batch", baseUrl), JSON, (req, res) -> accept(() -> getStatement(attributes, req), Statement::clearBatch));
 
         get(format("%s/generatedkeys", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), Statement::getGeneratedKeys, ResultSetProxy::new, "resultset", req.url()));
@@ -95,7 +95,7 @@ public class StatementController extends BaseController {
     }
 
     private Statement getStatement(Map<String, Object> attributes, Request req) {
-        return getEntity(attributes, req, "statement", ":statement");
+        return getEntity(attributes, req, prefix, ":statement");
     }
 
     private <T> T exec(

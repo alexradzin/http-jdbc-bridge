@@ -33,7 +33,7 @@ abstract class BaseController {
         P parent = parentSupplier.get();
         T entity = entityFactory.apply(parent);
         if (entity == null) {
-            return null;
+            return "";
         }
         int entityId = System.identityHashCode(entity);
         attributes.put(prefix + "@" + entityId, entity);

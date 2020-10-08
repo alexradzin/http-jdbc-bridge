@@ -134,36 +134,7 @@ public class ConnectionControllerTest {
         for (Map.Entry<String, ThrowingFunction<Connection, ?, SQLException>> function : functions) {
             String name = function.getKey();
             ThrowingFunction<Connection, ?, SQLException> f = function.getValue();
-            assertCall(f, nativeConn, httpConn, name);
+            AssertUtils.assertCall(f, nativeConn, httpConn, name);
         }
     }
-
-    private void assertCall(ThrowingFunction<Connection, ?, SQLException> f, Connection nativeConn, Connection httpConn, String message) {
-        Object nativeRes = null;
-        Object httpRes = null;
-        SQLException nativeEx = null;
-        SQLException httpEx = null;
-
-        try {
-            nativeRes = f.apply(nativeConn);
-        } catch (SQLException e) {
-            nativeEx = e;
-        }
-        try {
-            httpRes = f.apply(httpConn);
-        } catch (SQLException e) {
-            httpEx = e;
-        }
-        if (nativeEx == null) {
-            if (nativeRes == null) {
-                assertNull(httpRes, message);
-            } else {
-                assertNotNull(httpRes, message);
-            }
-        } else {
-            assertNotNull(httpEx, message);
-            assertEquals(nativeEx.getMessage(), httpEx.getMessage(), message);
-        }
-    }
-
 }

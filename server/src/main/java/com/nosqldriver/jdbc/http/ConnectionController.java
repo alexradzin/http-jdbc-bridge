@@ -145,7 +145,8 @@ public class ConnectionController extends BaseController {
         post("/connection/:connection/abort", JSON, (req, res) -> accept(() -> getConnection(attributes, req), connection -> connection.abort(executor)));
 
         new DatabaseMetaDataController(attributes, objectMapper);
-        new StatementController(attributes, objectMapper);
+        new StatementController(attributes, objectMapper, "/connection/:connection/statement/:statement");
+        new StatementController(attributes, objectMapper, "/connection/:connection/prepared-statement/:statement");
     }
 
     private Connection getConnection(Map<String, Object> attributes, Request req) {
