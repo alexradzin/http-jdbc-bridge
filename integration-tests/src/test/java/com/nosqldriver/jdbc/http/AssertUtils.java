@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Map;
 
 import static java.lang.String.format;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -29,7 +30,7 @@ public class AssertUtils {
         ResultSetMetaData md = expected.getMetaData();
         int n = md.getColumnCount();
 
-        for (; expected.next() && actual.next();) {
+        while (expected.next() && actual.next()) {
             for (int i = 1; i <= n; i++) {
                 assertValues(expected.getObject(i), actual.getObject(i), format("%s:column#%d:%s", message, i, md.getColumnName(i)));
             }
@@ -55,6 +56,15 @@ public class AssertUtils {
             assertEquals(expected.getCatalogName(i), actual.getCatalogName(i), format(fmt, message, "CatalogName", i));
             assertEquals(expected.getSchemaName(i), actual.getSchemaName(i), format(fmt, message, "SchemaName", i));
             assertEquals(expected.getTableName(i), actual.getTableName(i), format(fmt, message, "TableName", i));
+            assertEquals(expected.isAutoIncrement(i), actual.isAutoIncrement(i), format(fmt, message, "AutoIncrement", i));
+            assertEquals(expected.isCaseSensitive(i), actual.isCaseSensitive(i), format(fmt, message, "CaseSensitive", i));
+            assertEquals(expected.isCurrency(i), actual.isCurrency(i), format(fmt, message, "Currency", i));
+            assertEquals(expected.isDefinitelyWritable(i), actual.isDefinitelyWritable(i), format(fmt, message, "DefinitelyWritable", i));
+            assertEquals(expected.isNullable(i), actual.isNullable(i), format(fmt, message, "Nullable", i));
+            assertEquals(expected.isReadOnly(i), actual.isReadOnly(i), format(fmt, message, "ReadOnly", i));
+            assertEquals(expected.isSearchable(i), actual.isSearchable(i), format(fmt, message, "Searchable", i));
+            assertEquals(expected.isSigned(i), actual.isSigned(i), format(fmt, message, "Signed", i));
+            assertEquals(expected.isWritable(i), actual.isWritable(i), format(fmt, message, "Writable", i));
         }
     }
 
@@ -125,4 +135,14 @@ public class AssertUtils {
         }
     }
 
+    public static <T> void assertGettersAndSetters(Collection<Map.Entry<String, Map.Entry<ThrowingFunction<T, ?, SQLException>, ThrowingConsumer<T, SQLException>>>> functions, T nativeObj, T httpObj) {
+        for (Map.Entry<String, Map.Entry<ThrowingFunction<T, ?, SQLException>, ThrowingConsumer<T, SQLException>>> function : functions) {
+            String name = function.getKey();
+            ThrowingFunction<T, ?, SQLException> getter = function.getValue().getKey();
+            ThrowingConsumer<T, SQLException> setter = function.getValue().getValue();
+            assertCall(getter, nativeObj, httpObj, name); // first call getter
+            assertCall(setter, nativeObj, httpObj, name); // now call corresponding setter
+            assertCall(getter, nativeObj, httpObj, name); // call getter again to be sure that setter worked
+        }
+    }
 }

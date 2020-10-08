@@ -32,13 +32,4 @@ public class TransportableSQLWarning extends SQLWarning {
         return super.getSQLState();
     }
 
-    public static void main(String[] args) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
-        Throwable t1 = new TransportableSQLWarning("mmm", null, new Throwable().getStackTrace(), null, "state", 123);
-        String json = mapper.writeValueAsString(t1);
-        System.out.println(json);
-        Throwable t2 = mapper.readValue(json, TransportableSQLWarning.class);
-        String json2 = mapper.writeValueAsString(t2);
-        System.out.println(json2);
-    }
 }

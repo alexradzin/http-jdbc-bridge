@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.nosqldriver.jdbc.http.AssertUtils.assertGettersAndSetters;
 import static java.lang.String.format;
 import static java.sql.ResultSet.FETCH_FORWARD;
 import static java.sql.ResultSet.FETCH_UNKNOWN;
@@ -101,17 +102,13 @@ public class StatementControllerTest {
                 new SimpleEntry<>("QueryTimeout", new SimpleEntry<>(Statement::getQueryTimeout, s -> s.setQueryTimeout(0))),
                 new SimpleEntry<>("QueryTimeout", new SimpleEntry<>(Statement::getQueryTimeout, s -> s.setQueryTimeout(10))),
                 new SimpleEntry<>("QueryTimeout", new SimpleEntry<>(Statement::getQueryTimeout, s -> s.setQueryTimeout(-1))),
-                new SimpleEntry<>("QueryTimeout", new SimpleEntry<>(Statement::getQueryTimeout, s -> s.setQueryTimeout(1000)))
+                new SimpleEntry<>("QueryTimeout", new SimpleEntry<>(Statement::getQueryTimeout, s -> s.setQueryTimeout(1000))),
+
+                new SimpleEntry<>("Close", new SimpleEntry<>(Statement::isClosed, Statement::close))
+
         );
 
-        for (Map.Entry<String, Map.Entry<ThrowingFunction<Statement, ?, SQLException>, ThrowingConsumer<Statement, SQLException>>> function : functions) {
-            String name = function.getKey();
-            ThrowingFunction<Statement, ?, SQLException> getter = function.getValue().getKey();
-            ThrowingConsumer<Statement, SQLException> setter = function.getValue().getValue();
-            AssertUtils.assertCall(getter, nativeStatement, httpStatement, name); // first call getter
-            AssertUtils.assertCall(setter, nativeStatement, httpStatement, name); // now call corresponding setter
-            AssertUtils.assertCall(getter, nativeStatement, httpStatement, name); // call getter again to be sure that setter worked
-        }
+        assertGettersAndSetters(functions, nativeStatement, httpStatement);
     }
 
 

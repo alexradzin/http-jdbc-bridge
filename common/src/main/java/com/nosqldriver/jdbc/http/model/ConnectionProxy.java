@@ -283,7 +283,7 @@ public class ConnectionProxy extends WrapperProxy implements Connection {
 
     @Override
     public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
-        return connector.get(format("%s/struct/%s", entityUrl, Util.encode(typeName)), StructProxy.class);
+        return connector.post(format("%s/struct/%s", entityUrl, Util.encode(typeName)), attributes, StructProxy.class);
     }
 
     @Override
