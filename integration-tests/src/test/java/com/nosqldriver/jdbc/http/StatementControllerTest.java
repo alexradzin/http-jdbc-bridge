@@ -1,24 +1,18 @@
 package com.nosqldriver.jdbc.http;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nosqldriver.util.function.ThrowingConsumer;
 import com.nosqldriver.util.function.ThrowingFunction;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
-import spark.Spark;
 
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -30,22 +24,7 @@ import static java.sql.ResultSet.FETCH_UNKNOWN;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_PLACEHOLDER;
 
-public class StatementControllerTest {
-    private static final String httpUrl = "http://localhost:8080";
-
-    @BeforeAll
-    static void beforeAll() {
-        Spark.port(8080);
-        new DriverController(new HashMap<>(), new ObjectMapper());
-        Spark.awaitInitialization();
-    }
-
-    @AfterAll
-    static void afterAll() {
-        Spark.stop();
-        Spark.awaitStop();
-    }
-
+public class StatementControllerTest extends ControllerTestBase {
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void getters(String nativeUrl) throws SQLException {

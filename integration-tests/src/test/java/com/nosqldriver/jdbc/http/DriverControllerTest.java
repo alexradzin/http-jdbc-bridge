@@ -1,17 +1,12 @@
 package com.nosqldriver.jdbc.http;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import spark.Spark;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.HashMap;
 
 import static java.lang.String.format;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -19,22 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_PLACEHOLDER;
 
-public class DriverControllerTest {
-    private static final String httpUrl = "http://localhost:8080";
-
-    @BeforeAll
-    static void beforeAll() {
-        spark.Spark.port(8080);
-        new DriverController(new HashMap<>(), new ObjectMapper());
-        spark.Spark.awaitInitialization();
-    }
-
-    @AfterAll
-    static void afterAll() {
-        Spark.stop();
-        Spark.awaitStop();
-    }
-
+public class DriverControllerTest extends ControllerTestBase {
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void createAndCloseConnection(String nativeUrl) throws SQLException {

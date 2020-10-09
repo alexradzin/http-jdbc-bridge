@@ -27,23 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_PLACEHOLDER;
 
-public class DatabaseMetaDataControllerTest {
-    private static final String httpUrl = "http://localhost:8080";
-
-    @BeforeAll
-    static void beforeAll() {
-        spark.Spark.port(8080);
-        new DriverController(new HashMap<>(), new ObjectMapper());
-        spark.Spark.awaitInitialization();
-    }
-
-    @AfterAll
-    static void afterAll() {
-        Spark.stop();
-        Spark.awaitStop();
-    }
-
-
+public class DatabaseMetaDataControllerTest extends ControllerTestBase {
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void primitiveGetters(String nativeUrl) throws SQLException {
