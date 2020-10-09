@@ -1,13 +1,9 @@
 package com.nosqldriver.jdbc.http;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nosqldriver.util.function.ThrowingFunction;
 import com.nosqldriver.util.function.ThrowingQuadraFunction;
 import com.nosqldriver.util.function.ThrowingTriFunction;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
-import spark.Spark;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -18,7 +14,6 @@ import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map.Entry;
 
 import static java.lang.String.format;

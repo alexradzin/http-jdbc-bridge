@@ -2,12 +2,9 @@ package com.nosqldriver.jdbc.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nosqldriver.jdbc.http.model.ResultSetProxy;
-import com.nosqldriver.util.function.ThrowingFunction;
 import spark.Request;
 
 import java.sql.DatabaseMetaData;
-import java.sql.RowIdLifetime;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Stream;
 

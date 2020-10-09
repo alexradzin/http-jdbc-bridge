@@ -2,10 +2,6 @@ package com.nosqldriver.jdbc.http;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nosqldriver.jdbc.http.model.TransportableDatabaseMetaData;
-import com.nosqldriver.jdbc.http.model.TransportableException;
-import com.nosqldriver.jdbc.http.model2.DatabaseMetaDataProxy;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;

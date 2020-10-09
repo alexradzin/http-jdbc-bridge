@@ -3,7 +3,6 @@ package com.nosqldriver.jdbc.http;
 import com.nosqldriver.jdbc.http.model.ConnectionInfo;
 import com.nosqldriver.jdbc.http.model.ConnectionProxy;
 
-import java.net.URL;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;

@@ -3,7 +3,6 @@ package com.nosqldriver.jdbc.http.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import javax.swing.border.EtchedBorder;
 import java.sql.SQLException;
 import java.sql.Struct;
 import java.util.Map;

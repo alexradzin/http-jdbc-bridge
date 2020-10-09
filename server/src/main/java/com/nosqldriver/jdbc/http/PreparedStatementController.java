@@ -15,7 +15,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -34,7 +33,7 @@ public class PreparedStatementController extends StatementController {
         get(format("%s/:resultset/metadata", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), PreparedStatement::getMetaData, ResultSetMetaDataProxy::new, "metadata", req.url()));
 
         patch(baseUrl, JSON, (req, res) -> accept(() -> getStatement(attributes, req), rs -> {
-            ParameterValue parameterValue = objectMapper.readValue(req.body(), ParameterValue.class);
+            ParameterValue<?, ?> parameterValue = objectMapper.readValue(req.body(), ParameterValue.class);
             int index = parameterValue.getIndex();
             String typeName = parameterValue.getTypeName();
             setByIndex.get(typeName).accept(rs, index, parameterValue.getValue());
