@@ -2,6 +2,8 @@ package com.nosqldriver.jdbc.http;
 
 import com.nosqldriver.util.function.ThrowingConsumer;
 import com.nosqldriver.util.function.ThrowingFunction;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
 
 import java.io.IOException;
@@ -151,10 +153,10 @@ public class StatementControllerTest extends ControllerTestBase {
     private void select(String nativeUrl, String[] before, String query, String[] after) throws SQLException, IOException {
         Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
         Connection nativeConn = DriverManager.getConnection(nativeUrl);
-        for (String sql : before) {
-            nativeConn.createStatement().execute(sql);
-        }
         try {
+            for (String sql : before) {
+                nativeConn.createStatement().execute(sql);
+            }
             assertResultSet(executeQuery(nativeConn, query), executeQuery(httpConn, query), query);
         } finally {
             for (String sql : after) {
@@ -169,9 +171,5 @@ public class StatementControllerTest extends ControllerTestBase {
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
-    }
-
-    private String db(String url) {
-        return url.split(":")[1];
     }
 }

@@ -1,12 +1,8 @@
 package com.nosqldriver.jdbc.http;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nosqldriver.util.function.ThrowingConsumer;
 import com.nosqldriver.util.function.ThrowingFunction;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
-import spark.Spark;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -16,7 +12,6 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -25,10 +20,10 @@ import java.util.concurrent.Executors;
 import static com.nosqldriver.jdbc.http.AssertUtils.assertCall;
 import static com.nosqldriver.jdbc.http.AssertUtils.assertGettersAndSetters;
 import static java.lang.String.format;
+import static java.sql.ResultSet.CLOSE_CURSORS_AT_COMMIT;
 import static java.sql.ResultSet.CONCUR_READ_ONLY;
 import static java.sql.ResultSet.CONCUR_UPDATABLE;
 import static java.sql.ResultSet.HOLD_CURSORS_OVER_COMMIT;
-import static java.sql.ResultSet.CLOSE_CURSORS_AT_COMMIT;
 import static java.sql.ResultSet.TYPE_FORWARD_ONLY;
 import static java.sql.ResultSet.TYPE_SCROLL_INSENSITIVE;
 import static java.sql.ResultSet.TYPE_SCROLL_SENSITIVE;
@@ -104,7 +99,7 @@ public class ConnectionControllerTest extends ControllerTestBase {
         Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
         Connection nativeConn = DriverManager.getConnection(nativeUrl);
 
-        String query = "select 1";
+        String query = getCheckConnectivityQuery(db(nativeUrl));
         Collection<SimpleEntry<String, ThrowingFunction<Connection, ?,  SQLException>>> functions = Arrays.asList(
                 new SimpleEntry<>("createStatement", Connection::createStatement),
                 new SimpleEntry<>("createStatement", c -> c.createStatement(TYPE_FORWARD_ONLY, CONCUR_READ_ONLY)),

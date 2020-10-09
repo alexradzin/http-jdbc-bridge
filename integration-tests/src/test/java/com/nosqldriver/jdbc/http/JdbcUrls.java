@@ -8,13 +8,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-//import org.junit.jupiter.params.provider.ValueArgumentsProvider;
-
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @ValueSource(strings = {
-        "jdbc:h2:mem:test",
+        "jdbc:h2:mem:test", "jdbc:hsqldb:mem",
 })
 public @interface JdbcUrls {
 }

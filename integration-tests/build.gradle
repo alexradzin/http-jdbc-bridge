@@ -28,6 +28,9 @@ dependencies {
     testCompile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.2'
 
     testImplementation group: 'com.h2database', name: 'h2', version: '1.4.200'
+    testImplementation group: 'org.hsqldb', name: 'hsqldb', version: '2.5.1'
+    testImplementation group: 'org.apache.derby', name: 'derby', version: '10.15.2.0'
+
     //testImplementation group: 'org.postgresql', name: 'postgresql', version: '42.2.16'
 
 
