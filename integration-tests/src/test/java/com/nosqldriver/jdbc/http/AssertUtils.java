@@ -1,13 +1,17 @@
 package com.nosqldriver.jdbc.http;
 
+import com.nosqldriver.util.function.ThrowingBiFunction;
 import com.nosqldriver.util.function.ThrowingConsumer;
 import com.nosqldriver.util.function.ThrowingFunction;
 
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
@@ -19,7 +23,43 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class AssertUtils {
     private static final Collection<Class<?>> integerTypes = new HashSet<>(Arrays.asList(Byte.class, Short.class, Integer.class, Long.class));
-    private static final Collection<Class<?>> floatingTypes = new HashSet<>(Arrays.asList(Float.class, Double.class));
+    private static final Collection<Class<?>> floatingTypes = new HashSet<>(Arrays.asList(Float.class, Double.class, BigDecimal.class));
+    private static final Map<Integer, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>> getters = new HashMap<>();
+    static {
+        getters.put(Types.BIT, ResultSet::getObject);
+        getters.put(Types.TINYINT, ResultSet::getByte);
+        getters.put(Types.SMALLINT, ResultSet::getShort);
+        getters.put(Types.INTEGER, ResultSet::getInt);
+        getters.put(Types.BIGINT, ResultSet::getLong);
+        getters.put(Types.FLOAT, ResultSet::getFloat);
+        getters.put(Types.REAL, ResultSet::getDouble);
+        getters.put(Types.DOUBLE, ResultSet::getDouble);
+        getters.put(Types.NUMERIC, ResultSet::getDouble);
+        getters.put(Types.DECIMAL, ResultSet::getBigDecimal);
+        getters.put(Types.CHAR, (rs, i) -> {String s = rs.getString(i); return s == null ? null : s.length() > 0 ? s.substring(0, 1) : "";});
+        getters.put(Types.VARCHAR, ResultSet::getString);
+        getters.put(Types.LONGVARCHAR, ResultSet::getString);
+        getters.put(Types.DATE, ResultSet::getDate);
+        getters.put(Types.TIME, ResultSet::getTime);
+        getters.put(Types.TIME_WITH_TIMEZONE, ResultSet::getTime);
+        getters.put(Types.TIMESTAMP, ResultSet::getTimestamp);
+        getters.put(Types.TIMESTAMP_WITH_TIMEZONE, ResultSet::getTimestamp);
+        //getters.put(Types.BINARY, ResultSet::getObject);
+        //getters.put(Types.VARBINARY, ResultSet::getInt);
+        //getters.put(Types.LONGVARBINARY, ResultSet::getInt);
+        getters.put(Types.NULL, ResultSet::getObject);
+        //getters.put(Types.OTHER, ResultSet::getObject);
+        //getters.put(Types.JAVA_OBJECT, ResultSet::getObject);
+        //getters.put(Types.DISTINCT, ResultSet::getInt);
+        //getters.put(Types.STRUCT, ResultSet::getInt);
+        getters.put(Types.ARRAY, ResultSet::getArray);
+        getters.put(Types.BLOB, ResultSet::getBlob);
+        getters.put(Types.CLOB, ResultSet::getClob);
+        getters.put(Types.REF, ResultSet::getRef);
+        //getters.put(Types.DATALINK, ResultSet::getObject);
+        getters.put(Types.BOOLEAN, ResultSet::getBoolean);
+        getters.put(Types.ROWID, ResultSet::getRowId);
+    }
 
     public static void assertResultSet(ResultSet expected, ResultSet actual, String message) throws SQLException {
         if (expected == null) {
@@ -32,7 +72,8 @@ public class AssertUtils {
 
         while (expected.next() && actual.next()) {
             for (int i = 1; i <= n; i++) {
-                assertValues(expected.getObject(i), actual.getObject(i), format("%s:column#%d:%s", message, i, md.getColumnName(i)));
+                ThrowingBiFunction<ResultSet, Integer, ?, SQLException> getter = getters.getOrDefault(md.getColumnType(i), ResultSet::getObject);
+                assertValues(getter.apply(expected, i), getter.apply(actual, i), format("%s:column#%d:%s", message, i, md.getColumnName(i)));
             }
         }
 
@@ -72,7 +113,7 @@ public class AssertUtils {
         if (isInteger(expected) && isInteger(actual)) {
             assertEquals(((Number)expected).longValue(), ((Number)actual).longValue(), message);
         } else if (isFloating(expected) && isFloating(actual)) {
-            assertEquals(((Number)expected).doubleValue(), ((Number)actual).doubleValue(), message);
+            assertEquals(((Number)expected).doubleValue(), ((Number)actual).doubleValue(), 0.001, message);
         } else {
             assertEquals(expected, actual, message);
         }

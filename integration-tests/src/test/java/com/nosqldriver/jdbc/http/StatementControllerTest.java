@@ -8,8 +8,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import spark.Spark;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.AbstractMap.SimpleEntry;
@@ -17,8 +20,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static com.nosqldriver.jdbc.http.AssertUtils.assertGettersAndSetters;
+import static com.nosqldriver.jdbc.http.AssertUtils.assertResultSet;
 import static java.lang.String.format;
 import static java.sql.ResultSet.FETCH_FORWARD;
 import static java.sql.ResultSet.FETCH_UNKNOWN;
@@ -136,8 +141,58 @@ public class StatementControllerTest {
         }
     }
 
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void selectEmptyTableWithAllTypes(String nativeUrl) throws SQLException, IOException {
+        select(nativeUrl,
+                new String[] {sqlScript(db(nativeUrl), "create.table.all-types.sql")},
+                "select * from test_all_types",
+                new String[] {"drop table test_all_types"});
+    }
+
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void selectTableWithAllTypes(String nativeUrl) throws SQLException, IOException {
+        String db = db(nativeUrl);
+        select(nativeUrl,
+                Stream.of("create.table.all-types.sql", "insert.all-types.sql").map(f -> sqlScript(db, f)).toArray(String[]::new),
+                "select * from test_all_types",
+                new String[] {"drop table test_all_types"});
+    }
+
 
     protected Statement createStatement(Connection conn) throws SQLException {
         return conn.createStatement();
+    }
+
+    protected ResultSet executeQuery(Connection conn, String query) throws SQLException {
+        return conn.createStatement().executeQuery(query);
+    }
+
+    private void select(String nativeUrl, String[] before, String query, String[] after) throws SQLException, IOException {
+        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
+        Connection nativeConn = DriverManager.getConnection(nativeUrl);
+        for (String sql : before) {
+            nativeConn.createStatement().execute(sql);
+        }
+        try {
+            assertResultSet(executeQuery(nativeConn, query), executeQuery(httpConn, query), query);
+        } finally {
+            for (String sql : after) {
+                nativeConn.createStatement().execute(sql);
+            }
+        }
+    }
+
+    private String sqlScript(String db, String file) {
+        try {
+            return new String(getClass().getResourceAsStream(format("/sql/%s/%s", db, file)).readAllBytes());
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private String db(String url) {
+        return url.split(":")[1];
     }
 }

@@ -31,6 +31,7 @@ import static java.lang.String.format;
 
 public class ResultSetProxy extends WrapperProxy implements ResultSet {
     private Statement statement;
+    private ResultSetMetaData md;
 
     @JsonCreator
     public ResultSetProxy(@JsonProperty("entityUrl") String entityUrl) {
@@ -232,7 +233,10 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @Override
     @JsonIgnore
     public ResultSetMetaData getMetaData() throws SQLException {
-        return connector.get(format("%s/metadata", entityUrl), ResultSetMetaDataProxy.class);
+        if (md == null) {
+            md = connector.get(format("%s/metadata", entityUrl), ResultSetMetaDataProxy.class);
+        }
+        return md;
     }
 
     @Override
@@ -991,13 +995,13 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
-        return (T)connector.get(format("%s/object/index/%d", entityUrl, columnIndex), Object.class);
+        return connector.get(format("%s/object/index/%d/%s", entityUrl, columnIndex, type), type);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
-        return (T)connector.get(format("%s/object/label/%s", entityUrl, columnLabel), Object.class);
+        return connector.get(format("%s/object/label/%s/%s", entityUrl, columnLabel, type), type);
     }
 
     public ResultSetProxy withStatement(Statement statement) {

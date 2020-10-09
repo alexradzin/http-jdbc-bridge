@@ -147,7 +147,7 @@ public class ConnectionController extends BaseController {
 
         new DatabaseMetaDataController(attributes, objectMapper);
         new StatementController(attributes, objectMapper, "/connection/:connection/statement/:statement");
-        new StatementController(attributes, objectMapper, "/connection/:connection/prepared-statement/:statement");
+        new PreparedStatementController(attributes, objectMapper);
     }
 
     private Connection getConnection(Map<String, Object> attributes, Request req) {

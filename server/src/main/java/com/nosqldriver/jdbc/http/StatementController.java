@@ -91,7 +91,7 @@ public class StatementController extends BaseController {
 //        get(format("%s/simple/identifier", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), statement -> statement.isSimpleIdentifier(URLDecoder.decode(req.params("always"), "UTF8"))));
 //        post(format("%s/enquote/nchar/literal", baseUrl), JSON, (req, res) -> accept(() -> getStatement(attributes, req), statement -> statement.enquoteNCharLiteral(req.body())));
 
-        new ResultSetController(attributes, objectMapper, "/connection/:connection/statement/:statement/resultset/:resultset");
+        new ResultSetController(attributes, objectMapper, baseUrl + "/resultset/:resultset");
     }
 
     private Statement getStatement(Map<String, Object> attributes, Request req) {

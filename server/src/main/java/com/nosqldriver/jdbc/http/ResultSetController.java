@@ -117,6 +117,7 @@ public class ResultSetController extends BaseController {
         getterByIndex.put("boolean", ResultSet::getBoolean);
         getterByIndex.put("float", ResultSet::getFloat);
         getterByIndex.put("double", ResultSet::getDouble);
+        getterByIndex.put("bigdecimal", ResultSet::getBigDecimal);
         getterByIndex.put("date", ResultSet::getDate);
         getterByIndex.put("time", ResultSet::getTime);
         getterByIndex.put("timestamp", ResultSet::getTimestamp);

@@ -1,0 +1,1 @@
+drop table test_all_types
