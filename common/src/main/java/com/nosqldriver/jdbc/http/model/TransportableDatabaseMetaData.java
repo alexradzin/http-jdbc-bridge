@@ -297,7 +297,7 @@ public class TransportableDatabaseMetaData extends WrapperProxy implements Datab
         //this.rowIdLifetime = md.getRowIdLifetime();
         this.supportsStoredFunctionsUsingCallSyntax = md.supportsStoredFunctionsUsingCallSyntax();
         this.autoCommitFailureClosesAllResultSets = md.autoCommitFailureClosesAllResultSets();
-        this.generatedKeyAlwaysReturned = md.supportsGetGeneratedKeys();
+        this.generatedKeyAlwaysReturned = md.generatedKeyAlwaysReturned();
         this.maxLogicalLobSize = md.getMaxLogicalLobSize();
         this.supportsRefCursors = md.supportsRefCursors();
         this.supportsSharding = md.supportsSharding();

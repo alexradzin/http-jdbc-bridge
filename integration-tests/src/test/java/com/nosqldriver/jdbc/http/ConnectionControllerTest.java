@@ -29,7 +29,6 @@ import static java.sql.ResultSet.TYPE_SCROLL_INSENSITIVE;
 import static java.sql.ResultSet.TYPE_SCROLL_SENSITIVE;
 import static java.sql.Statement.NO_GENERATED_KEYS;
 import static java.sql.Statement.RETURN_GENERATED_KEYS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_PLACEHOLDER;
 
 public class ConnectionControllerTest extends ControllerTestBase {
@@ -58,7 +57,7 @@ public class ConnectionControllerTest extends ControllerTestBase {
         for (Entry<String, ThrowingFunction<Connection, ?, SQLException>> getter : getters) {
             String name = getter.getKey();
             ThrowingFunction<Connection, ?, SQLException> f = getter.getValue();
-            assertEquals(f.apply(nativeConn), f.apply(httpConn), name);
+            assertCall(f, nativeConn, httpConn, name);
         }
     }
 

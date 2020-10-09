@@ -186,7 +186,7 @@ public class StatementProxy extends WrapperProxy implements Statement {
     @Override
     @JsonIgnore
     public ResultSet getGeneratedKeys() throws SQLException {
-        return connector.get(format("%s/generatedkeys", entityUrl), ResultSetProxy.class).withStatement(this);
+        return Optional.ofNullable(connector.get(format("%s/generatedkeys", entityUrl), ResultSetProxy.class)).map(rs -> rs.withStatement(this)).orElse(null);
     }
 
     @Override

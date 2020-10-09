@@ -24,8 +24,8 @@ public class DatabaseMetaDataController extends BaseController {
         get(format("%s/type/info", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), DatabaseMetaData::getTypeInfo, ResultSetProxy::new, "info", req.url()));
         get(format("%s/schemas", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getSchemas(stringArg(req, "catalog"), stringArg(req, "schema")), ResultSetProxy::new, "schemas", req.url()));
         get(format("%s/functions", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getFunctions(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "function")), ResultSetProxy::new, "functions", req.url()));
-        get(format("%s/function/columns", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getFunctionColumns(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "function"), stringArg(req, "column")), ResultSetProxy::new, "function-columns", req.url()));
-        get(format("%s/pseudo/columns", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getPseudoColumns(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table"), stringArg(req, "column")), ResultSetProxy::new, "pseudo-columns", req.url()));
+        get(format("%s/function/columns", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getFunctionColumns(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "function"), stringArg(req, "column")), ResultSetProxy::new, "columns", req.url()));
+        get(format("%s/pseudo/columns", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getPseudoColumns(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table"), stringArg(req, "column")), ResultSetProxy::new, "columns", req.url()));
 
         get(format("%s/supports/transaction/isolation/level/:level", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.supportsTransactionIsolationLevel(intParam(req, ":level"))));
         get(format("%s/supports/resultset/type/:type", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.supportsResultSetType(intParam(req, ":type"))));
@@ -74,6 +74,7 @@ public class DatabaseMetaDataController extends BaseController {
         get(format("%s/attributes", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getAttributes(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "typename"), stringArg(req, "attribute")), ResultSetProxy::new, "attributes", req.url()));
 
         get(format("%s/rowidlifetime", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), DatabaseMetaData::getRowIdLifetime));
+        get(format("%s/generatedkeyalwaysreturned", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), DatabaseMetaData::generatedKeyAlwaysReturned));
         //get(format("%s/supports/sharding", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), DatabaseMetaData::supportsSharding));
 
         String subUrl = "/connection/:connection/metadata/:metadata/%s";
@@ -85,10 +86,6 @@ public class DatabaseMetaDataController extends BaseController {
                 "procedure/columns/:columns", "function/columns/:columns", "pseudo/columns/:columns",
                 "column/privileges/:privileges", "crossreference/:crossreference", "best/row/identifier/:identifier")
                 .forEach(entity -> new ResultSetController(attributes, objectMapper, format(subUrl, entity)));
-
-//        new ResultSetController(attributes, objectMapper, "/connection/:connection/metadata/:metadata/schemas/:schemas");
-//        new ResultSetController(attributes, objectMapper, "/connection/:connection/metadata/:metadata/table/types/:types");
-//        new ResultSetController(attributes, objectMapper, "/connection/:connection/metadata/:metadata/type/info/:info");
     }
 
     private DatabaseMetaData getMetadata(Map<String, Object> attributes, Request req) {

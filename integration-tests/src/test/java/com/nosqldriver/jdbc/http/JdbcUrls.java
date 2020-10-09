@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @ValueSource(strings = {
-        "jdbc:h2:mem:test", "jdbc:hsqldb:mem",
+        "jdbc:h2:mem:test", "jdbc:hsqldb:mem", "jdbc:derby:memory:test;create=true",
 })
 public @interface JdbcUrls {
 }

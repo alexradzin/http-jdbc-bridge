@@ -884,12 +884,13 @@ public class DatabaseMetaDataProxy implements DatabaseMetaData {
 
     @Override
     public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
-        return null;
+        String fullUrl = connector.buildUrl(format("%s/pseudo/columns", baseUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"table", tableNamePattern}, new String[] {"column", columnNamePattern});
+        return connector.get(fullUrl, ResultSetProxy.class);
     }
 
     @Override
     public boolean generatedKeyAlwaysReturned() throws SQLException {
-        return false;
+        return connector.get(format("%s/generatedkeyalwaysreturned", baseUrl), Boolean.class);
     }
 
     @Override

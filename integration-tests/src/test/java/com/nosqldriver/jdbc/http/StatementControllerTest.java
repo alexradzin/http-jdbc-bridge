@@ -32,8 +32,9 @@ public class StatementControllerTest extends ControllerTestBase {
     void getters(String nativeUrl) throws SQLException {
         Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
         Connection nativeConn = DriverManager.getConnection(nativeUrl);
-        Statement httpStatement = createStatement(httpConn);
-        Statement nativeStatement = createStatement(nativeConn);
+        String db = db(nativeUrl);
+        Statement httpStatement = createStatement(httpConn, db);
+        Statement nativeStatement = createStatement(nativeConn, db);
 
         assertSame(nativeConn, nativeStatement.getConnection());
         assertSame(httpConn, httpStatement.getConnection());
@@ -63,8 +64,9 @@ public class StatementControllerTest extends ControllerTestBase {
     void gettersAndSetters(String nativeUrl) throws SQLException {
         Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
         Connection nativeConn = DriverManager.getConnection(nativeUrl);
-        Statement httpStatement = createStatement(httpConn);
-        Statement nativeStatement = createStatement(nativeConn);
+        String db = db(nativeUrl);
+        Statement httpStatement = createStatement(httpConn, db);
+        Statement nativeStatement = createStatement(nativeConn, db);
 
         Collection<Map.Entry<String, Map.Entry<ThrowingFunction<Statement, ?, SQLException>, ThrowingConsumer<Statement, SQLException>>>> functions = Arrays.asList(
                 new SimpleEntry<>("FetchDirection", new SimpleEntry<>(Statement::getFetchDirection, s -> s.setFetchDirection(0))),
@@ -104,8 +106,9 @@ public class StatementControllerTest extends ControllerTestBase {
     void voidFunctions(String nativeUrl) throws SQLException {
         Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
         Connection nativeConn = DriverManager.getConnection(nativeUrl);
-        Statement httpStatement = createStatement(httpConn);
-        Statement nativeStatement = createStatement(nativeConn);
+        String db = db(nativeUrl);
+        Statement httpStatement = createStatement(httpConn, db);
+        Statement nativeStatement = createStatement(nativeConn, db);
 
         Collection<SimpleEntry<String, ThrowingConsumer<Statement, SQLException>>> getters = Arrays.asList(
                 new SimpleEntry<>("clearBatch", Statement::clearBatch),
@@ -142,7 +145,7 @@ public class StatementControllerTest extends ControllerTestBase {
     }
 
 
-    protected Statement createStatement(Connection conn) throws SQLException {
+    protected Statement createStatement(Connection conn, String db) throws SQLException {
         return conn.createStatement();
     }
 

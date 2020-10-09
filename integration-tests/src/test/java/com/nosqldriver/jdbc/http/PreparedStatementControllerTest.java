@@ -7,8 +7,8 @@ import java.sql.Statement;
 
 public class PreparedStatementControllerTest extends StatementControllerTest {
     @Override
-    protected Statement createStatement(Connection conn) throws SQLException {
-        return conn.prepareStatement("select 1");
+    protected Statement createStatement(Connection conn, String db) throws SQLException {
+        return conn.prepareStatement(getCheckConnectivityQuery(db));
     }
 
     @Override
