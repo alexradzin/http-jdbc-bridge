@@ -1,6 +1,6 @@
 package com.nosqldriver.jdbc.http;
 
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -11,8 +11,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ValueSource(strings = {
-        "jdbc:h2:mem:test", "jdbc:hsqldb:mem", "jdbc:derby:memory:test;create=true",
-})
+@ArgumentsSource(JdbcUrlsProvider.class)
 public @interface JdbcUrls {
 }
