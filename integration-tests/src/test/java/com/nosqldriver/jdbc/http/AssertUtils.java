@@ -61,7 +61,7 @@ public class AssertUtils {
         getters.put(Types.ROWID, ResultSet::getRowId);
     }
 
-    public static void assertResultSet(ResultSet expected, ResultSet actual, String message) throws SQLException {
+    public static void assertResultSet(ResultSet expected, ResultSet actual, String message, int limit) throws SQLException {
         if (expected == null) {
             assertNull(actual);
             return;
@@ -70,15 +70,24 @@ public class AssertUtils {
         ResultSetMetaData md = expected.getMetaData();
         int n = md.getColumnCount();
 
+        int row = 0;
+        boolean checkExtraRows = true;
         while (expected.next() && actual.next()) {
             for (int i = 1; i <= n; i++) {
                 ThrowingBiFunction<ResultSet, Integer, ?, SQLException> getter = getters.getOrDefault(md.getColumnType(i), ResultSet::getObject);
                 assertValues(getter.apply(expected, i), getter.apply(actual, i), format("%s:column#%d:%s", message, i, md.getColumnName(i)));
+             }
+            row++;
+            if (row > limit) {
+                checkExtraRows = false;
+                break;
             }
         }
 
-        assertFalse(expected.next(), format("%s:expected result set has extra rows", message));
-        assertFalse(actual.next(), format("%s:actual result set has extra rows", message));
+        if (checkExtraRows) {
+            assertFalse(expected.next(), format("%s:expected result set has extra rows", message));
+            assertFalse(actual.next(), format("%s:actual result set has extra rows", message));
+        }
     }
 
     public static void assertResultSetMetaData(ResultSetMetaData expected, ResultSetMetaData actual, String message) throws SQLException {

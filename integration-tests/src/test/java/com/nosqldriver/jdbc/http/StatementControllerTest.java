@@ -159,7 +159,7 @@ public class StatementControllerTest extends ControllerTestBase {
                 nativeConn.createStatement().execute(sql);
             }
             try (ResultSet nativeRs = executeQuery(nativeConn, query); ResultSet httpRs = executeQuery(httpConn, query)) {
-                assertResultSet(nativeRs, httpRs, query);
+                assertResultSet(nativeRs, httpRs, query, Integer.MAX_VALUE);
             }
         } finally {
             for (String sql : after) {

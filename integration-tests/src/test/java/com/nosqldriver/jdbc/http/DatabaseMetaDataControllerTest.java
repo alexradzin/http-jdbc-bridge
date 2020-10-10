@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map.Entry;
 
+import static com.nosqldriver.jdbc.http.AssertUtils.assertCall;
 import static java.lang.String.format;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -168,7 +169,8 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
         for (Entry<String, ThrowingFunction<DatabaseMetaData, ?, SQLException>> getter : getters) {
             String name = getter.getKey();
             ThrowingFunction<DatabaseMetaData, ?, SQLException> f = getter.getValue();
-            assertEquals(f.apply(nativeMd), f.apply(httpMd), name);
+            //assertEquals(f.apply(nativeMd), f.apply(httpMd), name);
+            assertCall(f, nativeMd, httpMd, name);
         }
 
         assertSame(httpConn, httpMd.getConnection());
@@ -195,8 +197,7 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
         for (Entry<String, ThrowingFunction<DatabaseMetaData, ResultSet, SQLException>> getter : getters) {
             String name = getter.getKey();
             ThrowingFunction<DatabaseMetaData, ResultSet, SQLException> f = getter.getValue();
-            //AssertUtils.assertResultSet(f.apply(nativeMd), f.apply(httpMd), name);
-            assertResultSets(nativeMd, httpMd, f, name);
+            assertResultSets(nativeMd, httpMd, f, name, Integer.MAX_VALUE);
         }
     }
 
@@ -217,8 +218,7 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
         for (Entry<String, ThrowingTriFunction<DatabaseMetaData, String, String, ResultSet, SQLException>> getter : getters) {
             String name = getter.getKey();
             ThrowingTriFunction<DatabaseMetaData, String, String, ResultSet, SQLException> f = getter.getValue();
-            //AssertUtils.assertResultSet(f.apply(nativeMd, null, null), f.apply(httpMd, null, null), name);
-            assertResultSets(nativeMd, httpMd, md -> f.apply(md, null, null), name);
+            assertResultSets(nativeMd, httpMd, md -> f.apply(md, null, null), name, Integer.MAX_VALUE);
         }
     }
 
@@ -246,7 +246,7 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
         for (Entry<String, ThrowingQuadraFunction<DatabaseMetaData, String, String, String, ResultSet, SQLException>> getter : getters) {
             String name = getter.getKey();
             ThrowingQuadraFunction<DatabaseMetaData, String, String, String, ResultSet, SQLException> f = getter.getValue();
-            assertResultSets(nativeMd, httpMd, md -> f.apply(md, null, null, null), name);
+            assertResultSets(nativeMd, httpMd, md -> f.apply(md, null, null, null), name, Integer.MAX_VALUE);
         }
     }
 
@@ -288,12 +288,12 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
         for (Entry<String, ThrowingFunction<DatabaseMetaData, ResultSet, SQLException>> getter : getters) {
             String name = getter.getKey();
             ThrowingFunction<DatabaseMetaData, ResultSet, SQLException> f = getter.getValue();
-            assertResultSets(nativeMd, httpMd, f, name);
+            assertResultSets(nativeMd, httpMd, f, name, 100);
         }
     }
 
 
-    private <T> void assertResultSets(T obj1, T obj2, ThrowingFunction<T, ResultSet, SQLException> f, String message) throws SQLException {
+    private <T> void assertResultSets(T obj1, T obj2, ThrowingFunction<T, ResultSet, SQLException> f, String message, int limit) throws SQLException {
         ResultSet nativeRes = null;
         ResultSet httpRes = null;
         Exception nativeEx = null;
@@ -309,7 +309,7 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
             httpEx = e;
         }
         if (nativeEx == null) {
-            AssertUtils.assertResultSet(nativeRes, httpRes, message);
+            AssertUtils.assertResultSet(nativeRes, httpRes, message, limit);
         } else {
             assertNotNull(httpEx);
             assertEquals(nativeEx.getMessage(), httpEx.getMessage());
