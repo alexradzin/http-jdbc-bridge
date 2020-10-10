@@ -54,8 +54,8 @@ dependencies {
 test {
     testLogging {
         events 'PASSED', 'FAILED', 'SKIPPED'
+        exceptionFormat "full"
     }
-    exceptionFormat "full"
     useJUnitPlatform()
 }
 
