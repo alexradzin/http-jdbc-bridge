@@ -16,7 +16,7 @@ public class JdbcUrlsProvider implements ArgumentsProvider {
                 "jdbc:h2:mem:test",
                 "jdbc:hsqldb:mem",
                 "jdbc:derby:memory:test;create=true",
-                "jdbc:mysql://127.0.0.1:3306/public?user=root"
+                "jdbc:mysql://127.0.0.1:3306/test?user=root"
         })).map(Arguments::of);
     }
 }
