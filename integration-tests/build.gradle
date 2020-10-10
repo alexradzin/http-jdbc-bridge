@@ -51,4 +51,10 @@ dependencies {
 }
 
 
+test {
+    testLogging {
+        events 'PASSED', 'FAILED', 'SKIPPED'
+    }
+    useJUnitPlatform()
+}
 
