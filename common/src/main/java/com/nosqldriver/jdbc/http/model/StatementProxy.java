@@ -306,22 +306,22 @@ public class StatementProxy extends WrapperProxy implements Statement {
         return connector.post(format("%s/large/update?names=%s", entityUrl, columnNamesStr), sql, Long.class);
     }
 
-    //@Override
+    @Override
     public String enquoteLiteral(String val) throws SQLException {
         return connector.post(format("%s/enquote/literal", entityUrl), val, String.class);
     }
 
-    //@Override
+    @Override
     public String enquoteIdentifier(String identifier, boolean alwaysQuote) throws SQLException {
         return connector.post(format("%s/enquote/identifier/%s", entityUrl, alwaysQuote), identifier, String.class);
     }
 
-    //@Override
+    @Override
     public boolean isSimpleIdentifier(String identifier) throws SQLException {
         return connector.get(format("%s/simple/identifier/%s", entityUrl, encode(identifier)), Boolean.class);
     }
 
-    //@Override
+    @Override
     public String enquoteNCharLiteral(String val) throws SQLException {
         return connector.post(format("%s/enquote/nchar/literal", entityUrl), val, String.class);
     }

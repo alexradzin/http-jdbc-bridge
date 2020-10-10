@@ -4,12 +4,12 @@ ext.junitJupiterVersion  = '5.0.0-M4'
 apply plugin: 'java'
 apply plugin: 'jacoco'
 
-sourceCompatibility = 1.8
+sourceCompatibility = 1.9
 version = '1.0-SNAPSHOT'
 
 compileTestJava {
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
+    sourceCompatibility = 1.9
+    targetCompatibility = 1.9
     options.compilerArgs += '-parameters'
 }
 

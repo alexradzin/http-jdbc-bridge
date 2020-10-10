@@ -1220,10 +1220,9 @@ public class TransportableDatabaseMetaData extends WrapperProxy implements Datab
         return supportsRefCursors;
     }
 
-    //@Override
+    @Override
     public boolean supportsSharding() throws SQLException {
         return supportsSharding;
-        //return connector.get(format("%s/supports/sharding", super.entityUrl), Boolean.class);
     }
 
     public TransportableDatabaseMetaData withConnection(Connection connection) {
