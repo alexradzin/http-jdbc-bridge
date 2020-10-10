@@ -55,6 +55,7 @@ test {
     testLogging {
         events 'PASSED', 'FAILED', 'SKIPPED'
     }
+    exceptionFormat "full"
     useJUnitPlatform()
 }
 
