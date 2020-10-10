@@ -3,6 +3,7 @@ package com.nosqldriver.jdbc.http;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Arrays;
 
@@ -10,11 +11,19 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class Util {
     public static String encode(String s) {
-        return URLEncoder.encode(s, UTF_8);
+        try {
+            return URLEncoder.encode(s, UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     public static String decode(String s) {
-        return URLEncoder.encode(s, UTF_8);
+        try {
+            return URLEncoder.encode(s, UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     public static String pathParameter(Class<?> clazz) {
