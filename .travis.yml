@@ -1,9 +1,15 @@
 language: java
 jdk:
   - oraclejdk9
+services:
+  - mysql
+  - postgresql
+before_install:
+  - mysql -e 'CREATE DATABASE test;'
 install:
 before_script:
   - chmod +x gradlew
+  - psql -c 'create database travis_ci_test;' -U postgres
 script:
   - ./gradlew clean build
   - ./gradlew jacocoTestReport
