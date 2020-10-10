@@ -18,6 +18,7 @@ public class ColumnMetaData {
     private final boolean caseSensitive;
     private final boolean searchable;
     private final boolean currency;
+    @JsonProperty // needed here because getter does not follow naming convention for int type: isNullable
     private final int nullable;
     private final boolean signed;
     private final int displaySize;

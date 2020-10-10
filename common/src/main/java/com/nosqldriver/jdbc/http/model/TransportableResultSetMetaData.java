@@ -6,17 +6,23 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.String.format;
 
 public class TransportableResultSetMetaData extends WrapperProxy implements ResultSetMetaData {
-    private final List<ColumnMetaData> columns;
+    @JsonProperty("columns") private final List<ColumnMetaData> columns;
 
     @JsonCreator
     public TransportableResultSetMetaData(@JsonProperty("entityUrl") String entityUrl, @JsonProperty("columns") List<ColumnMetaData> columns) {
         super(entityUrl);
         this.columns = columns;
+    }
+
+    public TransportableResultSetMetaData(String entityUrl, ResultSetMetaData md) throws SQLException {
+        super(entityUrl);
+        this.columns = getColumns(md);
     }
 
     @Override
@@ -131,5 +137,18 @@ public class TransportableResultSetMetaData extends WrapperProxy implements Resu
         }
 
         return columns.get(columnIndex - 1);
+    }
+
+    private List<ColumnMetaData> getColumns(ResultSetMetaData md) throws SQLException {
+        int n = md.getColumnCount();
+        List<ColumnMetaData> columns = new ArrayList<>(n);
+        for (int i = 1; i <= n; i++) {
+            columns.add(new ColumnMetaData(md.getColumnLabel(i), md.getColumnName(i), md.getCatalogName(i), md.getSchemaName(i),
+                    md.getTableName(i), md.getColumnType(i), md.getColumnTypeName(i), md.getColumnClassName(i),
+                    md.isAutoIncrement(i), md.isCaseSensitive(i), md.isSearchable(i), md.isCurrency(i), md.isNullable(i),
+                    md.isSigned(i), md.getColumnDisplaySize(i), md.getPrecision(i), md.getScale(i),
+                    md.isReadOnly(i), md.isWritable(i), md.isDefinitelyWritable(i)));
+        }
+        return columns;
     }
 }

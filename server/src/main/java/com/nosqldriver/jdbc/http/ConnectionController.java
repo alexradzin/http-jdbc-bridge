@@ -99,7 +99,7 @@ public class ConnectionController extends BaseController {
         delete("/connection/:connection", JSON, (req, res) -> accept(() -> getConnection(attributes, req), Connection::close));
         get("/connection/:connection/closed", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), Connection::isClosed));
 
-        get("/connection/:connection/metadata", JSON, (req, res) -> retrieve2(() -> getConnection(attributes, req), Connection::getMetaData, (url, md) -> new TransportableDatabaseMetaData(url, md), "metadata", req.url()));
+        get("/connection/:connection/metadata", JSON, (req, res) -> retrieve2(() -> getConnection(attributes, req), Connection::getMetaData, TransportableDatabaseMetaData::new, "metadata", req.url()));
 
         post("/connection/:connection/readonly", JSON, (req, res) -> accept(() -> getConnection(attributes, req), connection -> connection.setReadOnly(Boolean.parseBoolean(req.body()))));
         get("/connection/:connection/readonly", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), Connection::isReadOnly));

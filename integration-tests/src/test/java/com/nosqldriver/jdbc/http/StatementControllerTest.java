@@ -158,7 +158,9 @@ public class StatementControllerTest extends ControllerTestBase {
             for (String sql : before) {
                 nativeConn.createStatement().execute(sql);
             }
-            assertResultSet(executeQuery(nativeConn, query), executeQuery(httpConn, query), query);
+            try (ResultSet nativeRs = executeQuery(nativeConn, query); ResultSet httpRs = executeQuery(httpConn, query)) {
+                assertResultSet(nativeRs, httpRs, query);
+            }
         } finally {
             for (String sql : after) {
                 nativeConn.createStatement().execute(sql);

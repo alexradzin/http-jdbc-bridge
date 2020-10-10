@@ -2,7 +2,7 @@ package com.nosqldriver.jdbc.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nosqldriver.jdbc.http.model.ParameterValue;
-import com.nosqldriver.jdbc.http.model.ResultSetMetaDataProxy;
+import com.nosqldriver.jdbc.http.model.TransportableResultSetMetaData;
 import com.nosqldriver.util.function.ThrowingBiFunction;
 import com.nosqldriver.util.function.ThrowingTriConsumer;
 import spark.Request;
@@ -37,7 +37,7 @@ public class ResultSetController extends BaseController {
 
         delete(format("%s", baseUrl), JSON, (req, res) -> accept(() -> getResultSet(attributes, req), ResultSet::close));
 
-        get(format("%s/metadata", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), ResultSet::getMetaData, ResultSetMetaDataProxy::new, "metadata", req.url()));
+        get(format("%s/metadata", baseUrl), JSON, (req, res) -> retrieve2(() -> getResultSet(attributes, req), ResultSet::getMetaData, TransportableResultSetMetaData::new, "metadata", req.url()));
 
         get(format("%s/next", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), ResultSet::next));
         get(format("%s/previous", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), ResultSet::previous));
@@ -100,8 +100,6 @@ public class ResultSetController extends BaseController {
                 updateByIndex.get(typeName).accept(rs, index, parameterValue.getValue());
             }
         }));
-
-        new ResultSetMetaDataController(attributes, objectMapper, baseUrl);
     }
 
     private static final Map<String, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>> getterByIndex = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);

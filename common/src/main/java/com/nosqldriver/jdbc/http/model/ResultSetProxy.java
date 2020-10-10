@@ -234,7 +234,7 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @JsonIgnore
     public ResultSetMetaData getMetaData() throws SQLException {
         if (md == null) {
-            md = connector.get(format("%s/metadata", entityUrl), ResultSetMetaDataProxy.class);
+            md = connector.get(format("%s/metadata", entityUrl), TransportableResultSetMetaData.class);
         }
         return md;
     }

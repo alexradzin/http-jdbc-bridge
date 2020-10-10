@@ -182,7 +182,7 @@ public class PreparedStatementProxy extends StatementProxy implements PreparedSt
     @Override
     @JsonIgnore
     public ResultSetMetaData getMetaData() throws SQLException {
-        return connector.get(format("%s/metadata", entityUrl), ResultSetMetaDataProxy.class);
+        return connector.get(format("%s/metadata", entityUrl), TransportableResultSetMetaData.class);
     }
 
     @Override
