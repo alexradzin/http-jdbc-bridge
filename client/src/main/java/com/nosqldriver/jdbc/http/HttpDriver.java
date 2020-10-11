@@ -72,11 +72,13 @@ public class HttpDriver implements Driver {
         return Logger.getLogger(getClass().getName());
     }
 
-    private String getHttpUrl(String jdbcUrl) {
-        return jdbcUrl.split("#")[0];
+    private String getHttpUrl(String url) {
+        return url.split("#")[0];
     }
 
-    private ConnectionInfo getConnectionInfo(String jdbcUrl, Properties info) {
-        return new ConnectionInfo(jdbcUrl.split("#", 2)[1], info);
+    private ConnectionInfo getConnectionInfo(String url, Properties info) {
+        String[] parts = url.split("#", 2);
+        String jdbcUrl = parts.length > 1 ? parts[1] : null;
+        return new ConnectionInfo(jdbcUrl, info);
     }
 }

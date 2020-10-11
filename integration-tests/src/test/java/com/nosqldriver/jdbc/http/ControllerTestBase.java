@@ -5,6 +5,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import spark.Spark;
 
+import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,7 +23,13 @@ abstract class ControllerTestBase {
             ).collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue));
 
     @BeforeAll
-    static void beforeAll() {
+    static void beforeAll() throws IOException {
+        // Although this configuration is needed for DriverControllerTest.createAndCloseConnectionWithPredefinedUrl
+        // it has to be done here because it uses static variables that are initialized in the beginning of the JVM life.
+        System.setProperty("java.security.auth.login.config", "src/test/resources/jaas.conf");
+        if (System.getProperty("jdbc.conf", System.getenv("jdbc.conf")) == null) {
+            System.setProperty("jdbc.conf", "src/test/resources/jdbc.properties");
+        }
         Spark.port(8080);
         new DriverController(new HashMap<>(), new ObjectMapper());
         Spark.awaitInitialization();
