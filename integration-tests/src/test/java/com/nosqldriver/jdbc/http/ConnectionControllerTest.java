@@ -51,7 +51,7 @@ public class ConnectionControllerTest extends ControllerTestBase {
                 //new AbstractMap.SimpleEntry<>("setSavepoint", Connection::setSavepoint),
                 new SimpleEntry<>("getClientInfo", c -> c.getClientInfo("")),
                 new SimpleEntry<>("getClientInfo", c -> c.getClientInfo("foo")),
-                new SimpleEntry<>("getWarnings", c -> c.isValid(0))
+                new SimpleEntry<>("isValid", c -> c.isValid(0))
         );
 
         for (Entry<String, ThrowingFunction<Connection, ?, SQLException>> getter : getters) {

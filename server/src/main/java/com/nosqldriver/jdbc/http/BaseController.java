@@ -33,7 +33,7 @@ abstract class BaseController {
         P parent = parentSupplier.get();
         T entity = entityFactory.apply(parent);
         if (entity == null) {
-            return "";
+            return "null";
         }
         int entityId = System.identityHashCode(entity);
         attributes.put(prefix + "@" + entityId, entity);
@@ -51,17 +51,17 @@ abstract class BaseController {
 
     protected <P, T> String retrieve(ThrowingSupplier<P, Exception> parentSupplier, ThrowingFunction<P, T, Exception> entityFactory, ThrowingFunction<T, T, Exception> transportableEntityFactory) throws Exception {
         T entity = entityFactory.apply(parentSupplier.get());
-        return entity == null ? "" : objectMapper.writeValueAsString(transportableEntityFactory.apply(entity));
+        return objectMapper.writeValueAsString(entity == null ? null : transportableEntityFactory.apply(entity));
     }
 
     protected <P, T> String retrieve(ThrowingSupplier<P, Exception> parentSupplier, ThrowingFunction<P, T, Exception> entityFactory) throws Exception {
         T entity = entityFactory.apply(parentSupplier.get());
-        return entity == null ? "" : objectMapper.writeValueAsString(entity);
+        return objectMapper.writeValueAsString(entity);
     }
 
     protected <P> Object accept(ThrowingSupplier<P, Exception> parentSupplier, ThrowingConsumer<P, Exception> entityFactory) throws Exception {
         entityFactory.accept(parentSupplier.get());
-        return "";
+        return "null";
     }
 
 

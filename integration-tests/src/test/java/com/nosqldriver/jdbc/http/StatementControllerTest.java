@@ -47,14 +47,13 @@ public class StatementControllerTest extends ControllerTestBase {
                 new SimpleEntry<>("getResultSetType", Statement::getResultSetType),
                 new SimpleEntry<>("getUpdateCount", Statement::getUpdateCount),
                 new SimpleEntry<>("getWarnings", Statement::getWarnings),
-
-                new SimpleEntry<>("enquoteLiteral", s -> s.enquoteLiteral("")),
-                new SimpleEntry<>("enquoteLiteral", s -> s.enquoteLiteral("abc")),
-                new SimpleEntry<>("enquoteLiteral", s -> s.enquoteIdentifier("abc", false)),
-                new SimpleEntry<>("enquoteLiteral", s -> s.enquoteIdentifier("abc", true)),
-                new SimpleEntry<>("enquoteLiteral", s -> s.isSimpleIdentifier("abc")),
-                new SimpleEntry<>("enquoteLiteral", s -> s.enquoteNCharLiteral("")),
-                new SimpleEntry<>("enquoteLiteral", s -> s.enquoteNCharLiteral("abc"))
+                new SimpleEntry<>("enquoteLiteral()", s -> s.enquoteLiteral("")),
+                new SimpleEntry<>("enquoteLiteral(abc)", s -> s.enquoteLiteral("abc")),
+                new SimpleEntry<>("enquoteIdentifier", s -> s.enquoteIdentifier("abc", false)),
+                new SimpleEntry<>("enquoteIdentifier", s -> s.enquoteIdentifier("abc", true)),
+                new SimpleEntry<>("isSimpleIdentifier", s -> s.isSimpleIdentifier("abc")),
+                new SimpleEntry<>("enquoteNCharLiteral", s -> s.enquoteNCharLiteral("")),
+                new SimpleEntry<>("enquoteNCharLiteral", s -> s.enquoteNCharLiteral("abc"))
         );
 
         for (Map.Entry<String, ThrowingFunction<Statement, ?, SQLException>> getter : getters) {

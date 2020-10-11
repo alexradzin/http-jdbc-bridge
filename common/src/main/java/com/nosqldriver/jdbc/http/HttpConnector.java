@@ -19,14 +19,7 @@ public class HttpConnector {
     public <T> T get(String url, Class<T> clazz) {
         try {
             HttpURLConnection httpConnection = (HttpURLConnection) new URL(url).openConnection();
-//            return retrieve(httpConnection, clazz);
-            InputStream in = httpConnection.getInputStream();
-            int rc = httpConnection.getResponseCode();
-            if (rc == 222) {
-                SneakyThrower.sneakyThrow(objectMapper.readValue(in, TransportableException.class).getPayload());
-            }
-            byte[] content = toByteArray(in);
-            return content.length == 0 ? null : objectMapper.readValue(content, clazz);
+            return retrieve(httpConnection, clazz);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -59,7 +52,7 @@ public class HttpConnector {
             objectMapper.writeValue(httpConnection.getOutputStream(), payload);
             return retrieve(httpConnection, clazz);
         } catch (IOException e) {
-                throw new RuntimeException(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -70,7 +63,7 @@ public class HttpConnector {
             SneakyThrower.sneakyThrow(objectMapper.readValue(in, TransportableException.class).getPayload());
         }
         byte[] content = toByteArray(in);
-        return content.length == 0 ? (String.class.equals(clazz) ? (T)"" : null) : objectMapper.readValue(content, clazz);
+        return objectMapper.readValue(content, clazz);
     }
 
     public String buildUrl(String prefix, String[] ... params) {

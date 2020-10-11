@@ -85,10 +85,10 @@ public class StatementController extends BaseController {
         post(format("%s/poolable", baseUrl), JSON, (req, res) -> accept(() -> getStatement(attributes, req), statement -> statement.setPoolable(Boolean.parseBoolean(req.body()))));
         get(format("%s/poolable", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), Statement::isPoolable));
 
-        post(format("%s/enquote/literal", baseUrl), JSON, (req, res) -> accept(() -> getStatement(attributes, req), statement -> statement.enquoteLiteral(req.body())));
-        post(format("%s/enquote/identifier/:always", baseUrl), JSON, (req, res) -> accept(() -> getStatement(attributes, req), statement -> statement.enquoteIdentifier(req.body(), Boolean.parseBoolean(req.params("always")))));
+        post(format("%s/enquote/literal", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), statement -> statement.enquoteLiteral(req.body())));
+        post(format("%s/enquote/identifier/:always", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), statement -> statement.enquoteIdentifier(req.body(), Boolean.parseBoolean(req.params("always")))));
         get(format("%s/simple/identifier/:identifier", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), statement -> statement.isSimpleIdentifier(stringParam(req, ":identifier"))));
-        post(format("%s/enquote/nchar/literal", baseUrl), JSON, (req, res) -> accept(() -> getStatement(attributes, req), statement -> statement.enquoteNCharLiteral(req.body())));
+        post(format("%s/enquote/nchar/literal", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), statement -> statement.enquoteNCharLiteral(req.body())));
 
         new ResultSetController(attributes, objectMapper, baseUrl + "/resultset/:resultset");
     }
