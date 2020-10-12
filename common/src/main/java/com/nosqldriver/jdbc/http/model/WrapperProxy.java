@@ -13,6 +13,7 @@ abstract class WrapperProxy extends EntityProxy implements Wrapper {
 
     @Override
     public final <T> T unwrap(Class<T> iface) throws SQLException {
+        //noinspection unchecked
         return (T)connector.get(format("%s/unwrap%s", entityUrl, pathParameter(iface)), Object.class);
     }
 

@@ -37,10 +37,6 @@ public class HttpConnector {
         return send(url, "PUT", payload, clazz);
     }
 
-    public <T> T patch(String url, Object payload, Class<T> clazz) {
-        return send(url, "PATCH", payload, clazz);
-    }
-
     private <T> T send(String url, String method, Object payload, Class<T> clazz) {
         try {
             HttpURLConnection httpConnection = (HttpURLConnection) new URL(url).openConnection();

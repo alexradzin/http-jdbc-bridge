@@ -20,7 +20,6 @@ import java.util.function.Function;
 import static java.lang.String.format;
 import static spark.Spark.delete;
 import static spark.Spark.get;
-import static spark.Spark.patch;
 import static spark.Spark.post;
 import static spark.Spark.put;
 
@@ -89,7 +88,7 @@ public class ResultSetController extends BaseController {
             return getOrThrow(getterByLabel, req.params(":type"), k -> new IllegalArgumentException(format("Unsupported column type '%s'",k))).apply(rs, req.params(":label"));
         }));
 
-        patch(baseUrl, JSON, (req, res) -> accept(() -> getResultSet(attributes, req), rs -> {
+        put(baseUrl, JSON, (req, res) -> accept(() -> getResultSet(attributes, req), rs -> {
             ParameterValue parameterValue = objectMapper.readValue(req.body(), ParameterValue.class);
             String label = parameterValue.getName();
             String typeName = parameterValue.getTypeName();

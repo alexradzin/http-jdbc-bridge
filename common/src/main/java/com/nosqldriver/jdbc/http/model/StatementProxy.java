@@ -159,7 +159,7 @@ public class StatementProxy extends WrapperProxy implements Statement {
 
     @Override
     public void addBatch(String sql) throws SQLException {
-        connector.patch(format("%s/batch", entityUrl), sql, Void.class);
+        connector.put(format("%s/batch", entityUrl), sql, Void.class);
     }
 
     @Override

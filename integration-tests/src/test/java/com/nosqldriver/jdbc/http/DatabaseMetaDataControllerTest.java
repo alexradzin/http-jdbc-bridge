@@ -10,7 +10,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.AbstractMap;
+import java.sql.Types;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Collection;
@@ -163,13 +163,30 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
                 new SimpleEntry<>("generatedKeyAlwaysReturned", DatabaseMetaData::generatedKeyAlwaysReturned),
                 new SimpleEntry<>("getMaxLogicalLobSize", DatabaseMetaData::getMaxLogicalLobSize),
                 new SimpleEntry<>("supportsRefCursors", DatabaseMetaData::supportsRefCursors),
-                new SimpleEntry<>("supportsSharding", DatabaseMetaData::supportsSharding)
+                new SimpleEntry<>("supportsSharding", DatabaseMetaData::supportsSharding),
+                new SimpleEntry<>("supportsDataDefinitionAndDataManipulationTransactions", DatabaseMetaData::supportsDataDefinitionAndDataManipulationTransactions),
+                new SimpleEntry<>("supportsDataManipulationTransactionsOnly", DatabaseMetaData::supportsDataManipulationTransactionsOnly),
+                new SimpleEntry<>("dataDefinitionCausesTransactionCommit", DatabaseMetaData::dataDefinitionCausesTransactionCommit),
+                new SimpleEntry<>("dataDefinitionIgnoredInTransactions", DatabaseMetaData::dataDefinitionIgnoredInTransactions),
+                new SimpleEntry<>("supportsConvert", md -> md.supportsConvert(Types.INTEGER, Types.BIGINT)),
+                new SimpleEntry<>("supportsConvert", md -> md.supportsConvert(Types.INTEGER, Types.VARCHAR)),
+                new SimpleEntry<>("supportsResultSetType", md -> md.supportsResultSetType(1)),
+                new SimpleEntry<>("ownUpdatesAreVisible", md -> md.ownUpdatesAreVisible(1)),
+                new SimpleEntry<>("ownDeletesAreVisible", md -> md.ownDeletesAreVisible(1)),
+                new SimpleEntry<>("ownInsertsAreVisible", md -> md.ownInsertsAreVisible(1)),
+                new SimpleEntry<>("othersUpdatesAreVisible", md -> md.othersUpdatesAreVisible(1)),
+                new SimpleEntry<>("othersDeletesAreVisible", md -> md.othersDeletesAreVisible(1)),
+                new SimpleEntry<>("othersInsertsAreVisible", md -> md.othersInsertsAreVisible(1)),
+                new SimpleEntry<>("othersInsertsAreVisible", md -> md.othersInsertsAreVisible(1)),
+                new SimpleEntry<>("updatesAreDetected", md -> md.updatesAreDetected(1)),
+                new SimpleEntry<>("deletesAreDetected", md -> md.deletesAreDetected(1)),
+                new SimpleEntry<>("insertsAreDetected", md -> md.insertsAreDetected(1)),
+                new SimpleEntry<>("supportsResultSetConcurrency", md -> md.supportsResultSetConcurrency(1, 2))
         );
 
         for (Entry<String, ThrowingFunction<DatabaseMetaData, ?, SQLException>> getter : getters) {
             String name = getter.getKey();
             ThrowingFunction<DatabaseMetaData, ?, SQLException> f = getter.getValue();
-            //assertEquals(f.apply(nativeMd), f.apply(httpMd), name);
             assertCall(f, nativeMd, httpMd, name);
         }
 
@@ -188,10 +205,10 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
         DatabaseMetaData nativeMd = nativeConn.getMetaData();
 
         Collection<Entry<String, ThrowingFunction<DatabaseMetaData, ResultSet, SQLException>>> getters = Arrays.asList(
-                new AbstractMap.SimpleEntry<>("getSchemas", DatabaseMetaData::getSchemas),
-                new AbstractMap.SimpleEntry<>("getCatalogs", DatabaseMetaData::getCatalogs),
-                new AbstractMap.SimpleEntry<>("getTableTypes", DatabaseMetaData::getTableTypes),
-                new AbstractMap.SimpleEntry<>("getTypeInfo", DatabaseMetaData::getTypeInfo)
+                new SimpleEntry<>("getSchemas", DatabaseMetaData::getSchemas),
+                new SimpleEntry<>("getCatalogs", DatabaseMetaData::getCatalogs),
+                new SimpleEntry<>("getTableTypes", DatabaseMetaData::getTableTypes),
+                new SimpleEntry<>("getTypeInfo", DatabaseMetaData::getTypeInfo)
         );
 
         for (Entry<String, ThrowingFunction<DatabaseMetaData, ResultSet, SQLException>> getter : getters) {
@@ -212,7 +229,7 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
         DatabaseMetaData nativeMd = nativeConn.getMetaData();
 
         Collection<Entry<String, ThrowingTriFunction<DatabaseMetaData, String, String, ResultSet, SQLException>>> getters = Arrays.asList(
-                new AbstractMap.SimpleEntry<>("getSchemas", DatabaseMetaData::getSchemas)
+                new SimpleEntry<>("getSchemas", DatabaseMetaData::getSchemas)
         );
 
         for (Entry<String, ThrowingTriFunction<DatabaseMetaData, String, String, ResultSet, SQLException>> getter : getters) {
@@ -232,15 +249,15 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
         DatabaseMetaData nativeMd = nativeConn.getMetaData();
 
         Collection<Entry<String, ThrowingQuadraFunction<DatabaseMetaData, String, String, String, ResultSet, SQLException>>> getters = Arrays.asList(
-                new AbstractMap.SimpleEntry<>("getProcedures", DatabaseMetaData::getProcedures),
-                new AbstractMap.SimpleEntry<>("getTablePrivileges", DatabaseMetaData::getTablePrivileges),
-                new AbstractMap.SimpleEntry<>("getVersionColumns", DatabaseMetaData::getVersionColumns),
-                new AbstractMap.SimpleEntry<>("getPrimaryKeys", DatabaseMetaData::getPrimaryKeys),
-                new AbstractMap.SimpleEntry<>("getImportedKeys", DatabaseMetaData::getImportedKeys),
-                new AbstractMap.SimpleEntry<>("getExportedKeys", DatabaseMetaData::getExportedKeys),
-                new AbstractMap.SimpleEntry<>("getSuperTypes", DatabaseMetaData::getSuperTypes),
-                new AbstractMap.SimpleEntry<>("getSuperTables", DatabaseMetaData::getSuperTables),
-                new AbstractMap.SimpleEntry<>("getFunctions", DatabaseMetaData::getFunctions)
+                new SimpleEntry<>("getProcedures", DatabaseMetaData::getProcedures),
+                new SimpleEntry<>("getTablePrivileges", DatabaseMetaData::getTablePrivileges),
+                new SimpleEntry<>("getVersionColumns", DatabaseMetaData::getVersionColumns),
+                new SimpleEntry<>("getPrimaryKeys", DatabaseMetaData::getPrimaryKeys),
+                new SimpleEntry<>("getImportedKeys", DatabaseMetaData::getImportedKeys),
+                new SimpleEntry<>("getExportedKeys", DatabaseMetaData::getExportedKeys),
+                new SimpleEntry<>("getSuperTypes", DatabaseMetaData::getSuperTypes),
+                new SimpleEntry<>("getSuperTables", DatabaseMetaData::getSuperTables),
+                new SimpleEntry<>("getFunctions", DatabaseMetaData::getFunctions)
         );
 
         for (Entry<String, ThrowingQuadraFunction<DatabaseMetaData, String, String, String, ResultSet, SQLException>> getter : getters) {
@@ -260,27 +277,27 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
         DatabaseMetaData nativeMd = nativeConn.getMetaData();
 
         Collection<Entry<String, ThrowingFunction<DatabaseMetaData, ResultSet, SQLException>>> getters = Arrays.asList(
-                new AbstractMap.SimpleEntry<>("getFunctionColumns", md -> md.getFunctionColumns(null, null, null, null)),
-                new AbstractMap.SimpleEntry<>("getAttributes", md -> md.getAttributes(null, null, null, null)),
-                new AbstractMap.SimpleEntry<>("getPseudoColumns", md -> md.getPseudoColumns(null, null, null, null)),
-                new AbstractMap.SimpleEntry<>("getProcedureColumns", md -> md.getProcedureColumns(null, null, null, null)),
-                new AbstractMap.SimpleEntry<>("getColumns", md -> md.getColumns(null, null, null, null)),
-                new AbstractMap.SimpleEntry<>("getColumnPrivileges", md -> md.getColumnPrivileges(null, null, null, null)),
+                new SimpleEntry<>("getFunctionColumns", md -> md.getFunctionColumns(null, null, null, null)),
+                new SimpleEntry<>("getAttributes", md -> md.getAttributes(null, null, null, null)),
+                new SimpleEntry<>("getPseudoColumns", md -> md.getPseudoColumns(null, null, null, null)),
+                new SimpleEntry<>("getProcedureColumns", md -> md.getProcedureColumns(null, null, null, null)),
+                new SimpleEntry<>("getColumns", md -> md.getColumns(null, null, null, null)),
+                new SimpleEntry<>("getColumnPrivileges", md -> md.getColumnPrivileges(null, null, null, null)),
 
-                new AbstractMap.SimpleEntry<>("getTables", md -> md.getTables(null, null, null, null)),
-                new AbstractMap.SimpleEntry<>("getTables", md -> md.getTables(null, null, null, new String[0])),
-                new AbstractMap.SimpleEntry<>("getUDTs", md -> md.getUDTs(null, null, null, null)),
-                new AbstractMap.SimpleEntry<>("getUDTs", md -> md.getUDTs(null, null, null, new int[0])),
+                new SimpleEntry<>("getTables", md -> md.getTables(null, null, null, null)),
+                new SimpleEntry<>("getTables", md -> md.getTables(null, null, null, new String[0])),
+                new SimpleEntry<>("getUDTs", md -> md.getUDTs(null, null, null, null)),
+                new SimpleEntry<>("getUDTs", md -> md.getUDTs(null, null, null, new int[0])),
 
-                new AbstractMap.SimpleEntry<>("getBestRowIdentifier", md -> md.getBestRowIdentifier(null, null, null, 0, false)),
-                new AbstractMap.SimpleEntry<>("getBestRowIdentifier", md -> md.getBestRowIdentifier(null, null, null, 0, true)),
+                new SimpleEntry<>("getBestRowIdentifier", md -> md.getBestRowIdentifier(null, null, null, 0, false)),
+                new SimpleEntry<>("getBestRowIdentifier", md -> md.getBestRowIdentifier(null, null, null, 0, true)),
 
-                new AbstractMap.SimpleEntry<>("getIndexInfo", md -> md.getIndexInfo(null, null, null, false, false)),
-                new AbstractMap.SimpleEntry<>("getIndexInfo", md -> md.getIndexInfo(null, null, null, false, true)),
-                new AbstractMap.SimpleEntry<>("getIndexInfo", md -> md.getIndexInfo(null, null, null, true, false)),
-                new AbstractMap.SimpleEntry<>("getIndexInfo", md -> md.getIndexInfo(null, null, null, true, true)),
+                new SimpleEntry<>("getIndexInfo", md -> md.getIndexInfo(null, null, null, false, false)),
+                new SimpleEntry<>("getIndexInfo", md -> md.getIndexInfo(null, null, null, false, true)),
+                new SimpleEntry<>("getIndexInfo", md -> md.getIndexInfo(null, null, null, true, false)),
+                new SimpleEntry<>("getIndexInfo", md -> md.getIndexInfo(null, null, null, true, true)),
 
-                new AbstractMap.SimpleEntry<>("getCrossReference", md -> md.getCrossReference(null, null, null, null, null, null))
+                new SimpleEntry<>("getCrossReference", md -> md.getCrossReference(null, null, null, null, null, null))
 
 
         );

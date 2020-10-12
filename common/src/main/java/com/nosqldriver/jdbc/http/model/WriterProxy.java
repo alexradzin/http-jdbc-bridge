@@ -29,7 +29,7 @@ public class WriterProxy extends Writer {
 
     @Override
     public void flush() throws IOException {
-        connector.patch(url, null, Void.class);
+        connector.post(url, null, Void.class);
     }
 
     @Override

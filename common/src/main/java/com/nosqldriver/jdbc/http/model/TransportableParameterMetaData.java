@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.sql.ParameterMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.String.format;
@@ -16,6 +17,11 @@ public class TransportableParameterMetaData extends WrapperProxy implements Para
     public TransportableParameterMetaData(@JsonProperty("entityUrl") String entityUrl, @JsonProperty("parameters") List<OneParameterMetaData> parameters) {
         super(entityUrl);
         this.parameters = parameters;
+    }
+
+    public TransportableParameterMetaData(String entityUrl, ParameterMetaData md) throws SQLException {
+        super(entityUrl);
+        parameters = getParameters(md);
     }
 
     @Override
@@ -68,5 +74,15 @@ public class TransportableParameterMetaData extends WrapperProxy implements Para
             throw new SQLException(format("Invalid column number %d", index));
         }
         return parameters.get(index - 1);
+    }
+
+    private List<OneParameterMetaData> getParameters(ParameterMetaData md) throws SQLException {
+        int n = md.getParameterCount();
+        List<OneParameterMetaData> parameters = new ArrayList<>(n);
+        for (int i = 1; i <= n; i++) {
+            parameters.add(new OneParameterMetaData(md.getParameterType(i), md.getParameterTypeName(i), md.getParameterClassName(i),
+                    md.isNullable(i), md.isSigned(i), md.getPrecision(i), md.getScale(i), md.getParameterMode(i)));
+        }
+        return parameters;
     }
 }

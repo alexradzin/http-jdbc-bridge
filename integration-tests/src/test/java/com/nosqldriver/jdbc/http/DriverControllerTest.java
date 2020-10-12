@@ -4,12 +4,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import javax.security.auth.login.FailedLoginException;
+import javax.security.auth.login.LoginException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
 import static java.lang.String.format;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -50,6 +53,20 @@ public class DriverControllerTest extends ControllerTestBase {
         assertCreateAndCloseConnection(httpUrl, props);
     }
 
+    @Test
+    void createAndCloseConnectionWithPredefinedUrlWrongCredentials() throws SQLException {
+        Properties props = new Properties();
+        props.setProperty("user", "nobody");
+        props.setProperty("password", "wrong");
+        assertEquals("Invalid username or password", assertThrows(FailedLoginException.class, () -> DriverManager.getConnection(httpUrl, props)).getMessage());
+    }
+
+    @Test
+    void createConnectionWithExistingUserNotMappedToDatabase() {
+        Properties props = new Properties();
+        props.setProperty("user", "nodb");
+        props.setProperty("password", "nopass");
+        assertEquals("User nodb is not mapped to any JDBC URL", assertThrows(LoginException.class, () -> DriverManager.getConnection(httpUrl, props)).getMessage());    }
 
     private void assertCreateAndCloseConnection(String url) throws SQLException {
         assertCreateAndCloseConnection(url, new Properties());

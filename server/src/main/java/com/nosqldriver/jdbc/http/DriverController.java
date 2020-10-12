@@ -41,6 +41,7 @@ public class DriverController extends BaseController {
                 response.body(objectMapper.writeValueAsString(new TransportableException(exception)));
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
+                throw new IllegalStateException(e);
             }
         });
 

@@ -3,6 +3,7 @@ package com.nosqldriver.jdbc.http;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nosqldriver.jdbc.http.model.ParameterValue;
 import com.nosqldriver.jdbc.http.model.ResultSetProxy;
+import com.nosqldriver.jdbc.http.model.TransportableParameterMetaData;
 import com.nosqldriver.jdbc.http.model.TransportableResultSetMetaData;
 import com.nosqldriver.util.function.ThrowingTriConsumer;
 import spark.Request;
@@ -20,7 +21,7 @@ import java.util.TreeMap;
 
 import static java.lang.String.format;
 import static spark.Spark.get;
-import static spark.Spark.patch;
+import static spark.Spark.put;
 
 public class PreparedStatementController extends StatementController {
     private static final String baseUrl = "/connection/:connection/prepared-statement/:statement";
@@ -31,8 +32,9 @@ public class PreparedStatementController extends StatementController {
         get(format("%s/execute", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), PreparedStatement::execute, ResultSetProxy::new, "resultset", req.url()));
 
         get(format("%s/:resultset/metadata", baseUrl), JSON, (req, res) -> retrieve2(() -> getStatement(attributes, req), PreparedStatement::getMetaData, TransportableResultSetMetaData::new, "metadata", req.url()));
+        get(format("%s/:resultset/parametermetadata", baseUrl), JSON, (req, res) -> retrieve2(() -> getStatement(attributes, req), PreparedStatement::getParameterMetaData, TransportableParameterMetaData::new, "metadata", req.url()));
 
-        patch(baseUrl, JSON, (req, res) -> accept(() -> getStatement(attributes, req), rs -> {
+        put(baseUrl, JSON, (req, res) -> accept(() -> getStatement(attributes, req), rs -> {
             ParameterValue<?, ?> parameterValue = objectMapper.readValue(req.body(), ParameterValue.class);
             int index = parameterValue.getIndex();
             String typeName = parameterValue.getTypeName();

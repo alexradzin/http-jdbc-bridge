@@ -21,6 +21,9 @@ import static com.nosqldriver.jdbc.http.AssertUtils.assertResultSet;
 import static java.lang.String.format;
 import static java.sql.ResultSet.FETCH_FORWARD;
 import static java.sql.ResultSet.FETCH_UNKNOWN;
+import static java.sql.Statement.CLOSE_ALL_RESULTS;
+import static java.sql.Statement.CLOSE_CURRENT_RESULT;
+import static java.sql.Statement.KEEP_CURRENT_RESULT;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_PLACEHOLDER;
 
@@ -96,6 +99,9 @@ public class StatementControllerTest extends ControllerTestBase {
                 new SimpleEntry<>("QueryTimeout", new SimpleEntry<>(Statement::getQueryTimeout, s -> s.setQueryTimeout(10))),
                 new SimpleEntry<>("QueryTimeout", new SimpleEntry<>(Statement::getQueryTimeout, s -> s.setQueryTimeout(-1))),
                 new SimpleEntry<>("QueryTimeout", new SimpleEntry<>(Statement::getQueryTimeout, s -> s.setQueryTimeout(1000))),
+                new SimpleEntry<>("Poolable(false)", new SimpleEntry<>(Statement::isPoolable, s -> s.setPoolable(false))),
+                new SimpleEntry<>("Poolable(true)", new SimpleEntry<>(Statement::isPoolable, s -> s.setPoolable(true))),
+                new SimpleEntry<>("CloseOnCompletion", new SimpleEntry<>(Statement::isCloseOnCompletion, Statement::closeOnCompletion)),
 
                 new SimpleEntry<>("Close", new SimpleEntry<>(Statement::isClosed, Statement::close))
 
@@ -116,9 +122,17 @@ public class StatementControllerTest extends ControllerTestBase {
         Statement nativeStatement = createStatement(nativeConn, db);
 
         Collection<SimpleEntry<String, ThrowingConsumer<Statement, SQLException>>> getters = Arrays.asList(
+                new SimpleEntry<>("setEscapeProcessing(true)", s -> s.setEscapeProcessing(true)),
+                new SimpleEntry<>("setEscapeProcessing(false)", s -> s.setEscapeProcessing(false)),
+                new SimpleEntry<>("setCursorName(my)", s -> s.setCursorName("my")),
+                new SimpleEntry<>("cancel", Statement::cancel),
+                new SimpleEntry<>("addBatch", s -> s.addBatch(getCheckConnectivityQuery(db))),
                 new SimpleEntry<>("clearBatch", Statement::clearBatch),
                 new SimpleEntry<>("clearWarnings", Statement::clearWarnings),
                 new SimpleEntry<>("closeOnCompletion", Statement::closeOnCompletion),
+                new SimpleEntry<>("getMoreResults(CLOSE_CURRENT_RESULT)", s -> s.getMoreResults(CLOSE_CURRENT_RESULT)),
+                new SimpleEntry<>("getMoreResults(KEEP_CURRENT_RESULT)", s -> s.getMoreResults(KEEP_CURRENT_RESULT)),
+                new SimpleEntry<>("getMoreResults(CLOSE_ALL_RESULTS)", s -> s.getMoreResults(CLOSE_ALL_RESULTS)),
                 new SimpleEntry<>("executeBatch", Statement::executeBatch),
                 new SimpleEntry<>("executeLargeBatch", Statement::executeLargeBatch)
         );

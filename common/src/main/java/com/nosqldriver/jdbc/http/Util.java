@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.Arrays;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -30,19 +29,6 @@ public class Util {
         return clazz == null ? "" : "/" + encode(clazz.getName());
     }
 
-    public static Integer toInt(String str) {
-        return str == null ? null : Integer.parseInt(str);
-    }
-
-
-    public static int[] toIntArray(String str) {
-        return str == null ? null : Arrays.stream(str.split(",")).mapToInt(Integer::parseInt).toArray();
-    }
-
-    public static String[] toStringArray(String str) {
-        return str == null ? null : str.split(",");
-    }
-
     public static byte[] toByteArray(InputStream is) throws IOException {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         int nRead;
@@ -52,5 +38,4 @@ public class Util {
         }
         return buffer.toByteArray();
     }
-
 }
