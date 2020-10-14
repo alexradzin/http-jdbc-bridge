@@ -7,18 +7,18 @@ import static com.nosqldriver.jdbc.http.Util.pathParameter;
 import static java.lang.String.format;
 
 abstract class WrapperProxy extends EntityProxy implements Wrapper {
-    protected WrapperProxy(String entityUrl) {
-        super(entityUrl);
+    protected WrapperProxy(String entityUrl, String token) {
+        super(entityUrl, token);
     }
 
     @Override
     public final <T> T unwrap(Class<T> iface) throws SQLException {
         //noinspection unchecked
-        return (T)connector.get(format("%s/unwrap%s", entityUrl, pathParameter(iface)), Object.class);
+        return (T)connector.get(format("%s/unwrap%s", entityUrl, pathParameter(iface)), Object.class, token);
     }
 
     @Override
     public final boolean isWrapperFor(Class<?> iface) throws SQLException {
-        return connector.get(format("%s/wrapper%s", entityUrl, pathParameter(iface)), Boolean.class);
+        return connector.get(format("%s/wrapper%s", entityUrl, pathParameter(iface)), Boolean.class, token);
     }
 }

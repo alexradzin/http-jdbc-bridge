@@ -16,33 +16,39 @@ import static java.lang.String.format;
 
 public class HttpConnector {
     private final ObjectMapper objectMapper = new ObjectMapper();
-    public <T> T get(String url, Class<T> clazz) {
+    public <T> T get(String url, Class<T> clazz, String token) {
         try {
             HttpURLConnection httpConnection = (HttpURLConnection) new URL(url).openConnection();
+            if (token != null) {
+                httpConnection.setRequestProperty("HttpJdbcToken", token);
+            }
             return retrieve(httpConnection, clazz);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public <T> T delete(String url, Object payload, Class<T> clazz) {
-        return send(url, "DELETE", payload, clazz);
+    public <T> T delete(String url, Object payload, Class<T> clazz, String token) {
+        return send(url, "DELETE", payload, clazz, token);
     }
 
-    public <T> T post(String url, Object payload, Class<T> clazz) {
-        return send(url, "POST", payload, clazz);
+    public <T> T post(String url, Object payload, Class<T> clazz, String token) {
+        return send(url, "POST", payload, clazz, token);
     }
 
-    public <T> T put(String url, Object payload, Class<T> clazz) {
-        return send(url, "PUT", payload, clazz);
+    public <T> T put(String url, Object payload, Class<T> clazz, String token) {
+        return send(url, "PUT", payload, clazz, token);
     }
 
-    private <T> T send(String url, String method, Object payload, Class<T> clazz) {
+    private <T> T send(String url, String method, Object payload, Class<T> clazz, String token) {
         try {
             HttpURLConnection httpConnection = (HttpURLConnection) new URL(url).openConnection();
             httpConnection.setRequestMethod(method);
             httpConnection.setRequestProperty("Accept-Charset", StandardCharsets.UTF_8.name());
             httpConnection.setRequestProperty("Content-Type", "application/json");
+            if (token != null) {
+                httpConnection.setRequestProperty("HttpJdbcToken", token);
+            }
             httpConnection.setDoOutput(true);
             httpConnection.setDoInput(true);
             objectMapper.writeValue(httpConnection.getOutputStream(), payload);

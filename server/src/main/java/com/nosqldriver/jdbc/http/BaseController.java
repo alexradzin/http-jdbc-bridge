@@ -1,10 +1,12 @@
 package com.nosqldriver.jdbc.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nosqldriver.jdbc.security.PermissionsManager;
 import com.nosqldriver.util.function.ThrowingBiFunction;
 import com.nosqldriver.util.function.ThrowingConsumer;
 import com.nosqldriver.util.function.ThrowingFunction;
 import com.nosqldriver.util.function.ThrowingSupplier;
+import com.nosqldriver.util.function.ThrowingTriFunction;
 import spark.Request;
 
 import java.io.UnsupportedEncodingException;
@@ -12,6 +14,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.function.Function;
 
 import static java.lang.String.format;
 
@@ -19,25 +22,26 @@ abstract class BaseController {
     protected final String JSON = "application/json";
     private final Map<String, Object> attributes;
     protected final ObjectMapper objectMapper;
+    protected final PermissionsManager permissionsManager = new PermissionsManager();
 
     protected BaseController(Map<String, Object> attributes, ObjectMapper objectMapper) {
         this.attributes = attributes;
         this.objectMapper = objectMapper;
     }
 
-    protected <P, T> String retrieve(ThrowingSupplier<P, Exception> parentSupplier, ThrowingFunction<P, T, Exception> entityFactory, ThrowingFunction<String, T, Exception> proxyFactory, String prefix, String url) throws Exception {
-        return retrieve2(parentSupplier, entityFactory, (url1, entity) -> proxyFactory.apply(url1), prefix, url);
+    protected <P, T> String retrieve(ThrowingSupplier<P, Exception> parentSupplier, ThrowingFunction<P, T, Exception> entityFactory, ThrowingBiFunction<String, String, T, Exception> proxyFactory, String prefix, String url, String token) throws Exception {
+        return retrieve2(parentSupplier, entityFactory, (url1, token1, entity) -> proxyFactory.apply(url1, token), prefix, url, token);
     }
 
-    protected <P, T> String retrieve2(ThrowingSupplier<P, Exception> parentSupplier, ThrowingFunction<P, T, Exception> entityFactory, ThrowingBiFunction<String, T, T, Exception> proxyFactory, String prefix, String url) throws Exception {
+    protected <P, T> String retrieve2(ThrowingSupplier<P, Exception> parentSupplier, ThrowingFunction<P, T, Exception> entityFactory, ThrowingTriFunction<String, String, T, T, Exception> proxyFactory, String prefix, String url, String token) throws Exception {
         P parent = parentSupplier.get();
-        T entity = entityFactory.apply(parent);
+        T entity = authorize(token, url, entityFactory.apply(parent));
         if (entity == null) {
             return "null";
         }
         int entityId = System.identityHashCode(entity);
         attributes.put(prefix + "@" + entityId, entity);
-        return objectMapper.writeValueAsString(proxyFactory.apply(format("%s/%s/%d", parentUrl(url), prefix, entityId), entity));
+        return objectMapper.writeValueAsString(proxyFactory.apply(format("%s/%s/%d", parentUrl(url), prefix, entityId), token, entity));
     }
 
     private String parentUrl(String url) {
@@ -120,5 +124,14 @@ abstract class BaseController {
             return new String[0];
         }
         return str.split(",");
+    }
+
+    protected <T> T authorize(String token, String resource, T value) {
+        Function<T, T> f = permissionsManager.transformer(token, resource);
+        return f.apply(value);
+    }
+
+    protected String getToken(Request req) {
+        return req.headers("HttpJdbcToken");
     }
 }

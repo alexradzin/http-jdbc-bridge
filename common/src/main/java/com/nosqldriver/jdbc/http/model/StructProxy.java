@@ -9,8 +9,8 @@ import java.util.Map;
 
 public class StructProxy extends EntityProxy implements Struct {
     @JsonCreator
-    public StructProxy(@JsonProperty("entityUrl") String entityUrl) {
-        super(entityUrl);
+    public StructProxy(@JsonProperty("entityUrl") String entityUrl, @JsonProperty("token") String token) {
+        super(entityUrl, token);
     }
 
     @Override

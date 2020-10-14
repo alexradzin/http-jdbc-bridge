@@ -158,12 +158,12 @@ public class TransportableDatabaseMetaData extends WrapperProxy implements Datab
     @JsonProperty private boolean supportsSharding;
 
     @JsonCreator
-    public TransportableDatabaseMetaData(@JsonProperty("entityUrl") String entityUrl) {
-        super(entityUrl);
+    public TransportableDatabaseMetaData(@JsonProperty("entityUrl") String entityUrl, @JsonProperty("token") String token) {
+        super(entityUrl, token);
     }
 
-    public TransportableDatabaseMetaData(String entityUrl, DatabaseMetaData md) throws SQLException {
-        super(entityUrl);
+    public TransportableDatabaseMetaData(String entityUrl, String token, DatabaseMetaData md) throws SQLException {
+        super(entityUrl, token);
         this.allProceduresAreCallable = md.allProceduresAreCallable();
         this.allTablesAreSelectable = md.allTablesAreSelectable();
         this.url = md.getURL();
@@ -496,7 +496,7 @@ public class TransportableDatabaseMetaData extends WrapperProxy implements Datab
 
     @Override
     public boolean supportsConvert(int fromType, int toType) throws SQLException {
-        return connector.get(format("%s/supports/convert/%d/%d", super.entityUrl, fromType, toType), Boolean.class);
+        return connector.get(format("%s/supports/convert/%d/%d", super.entityUrl, fromType, toType), Boolean.class, token);
     }
 
     @Override
@@ -871,7 +871,7 @@ public class TransportableDatabaseMetaData extends WrapperProxy implements Datab
 
     @Override
     public boolean supportsTransactionIsolationLevel(int level) throws SQLException {
-        return connector.get(format("%s/supports/transaction/isolation/level/%d", super.entityUrl, level), Boolean.class);
+        return connector.get(format("%s/supports/transaction/isolation/level/%d", super.entityUrl, level), Boolean.class, token);
     }
 
     @Override
@@ -897,86 +897,86 @@ public class TransportableDatabaseMetaData extends WrapperProxy implements Datab
     @Override
     public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern) throws SQLException {
         String fullUrl = connector.buildUrl(format("%s/procedures", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"procedure", procedureNamePattern});
-        return connector.get(fullUrl, ResultSetProxy.class);
+        return connector.get(fullUrl, ResultSetProxy.class, token);
     }
 
     @Override
     public ResultSet getProcedureColumns(String catalog, String schemaPattern, String procedureNamePattern, String columnNamePattern) throws SQLException {
         String fullUrl = connector.buildUrl(format("%s/procedure/columns", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"procedure", procedureNamePattern}, new String[] {"column", columnNamePattern});
-        return connector.get(fullUrl, ResultSetProxy.class);
+        return connector.get(fullUrl, ResultSetProxy.class, token);
     }
 
     @Override
     public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) throws SQLException {
         String typesStr = types == null ? null : String.join("&", types);
         String fullUrl = connector.buildUrl(format("%s/tables", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"table", tableNamePattern}, new String[] {"types", typesStr});
-        return connector.get(fullUrl, ResultSetProxy.class);
+        return connector.get(fullUrl, ResultSetProxy.class, token);
     }
 
     @Override
     @JsonIgnore
     public ResultSet getSchemas() throws SQLException {
-        return connector.get(format("%s/schemas", super.entityUrl), ResultSetProxy.class);
+        return connector.get(format("%s/schemas", super.entityUrl), ResultSetProxy.class, token);
     }
 
     @Override
     @JsonIgnore
     public ResultSet getCatalogs() throws SQLException {
-        return connector.get(format("%s/catalogs", super.entityUrl), ResultSetProxy.class);
+        return connector.get(format("%s/catalogs", super.entityUrl), ResultSetProxy.class, token);
     }
 
     @Override
     @JsonIgnore
     public ResultSet getTableTypes() throws SQLException {
-        return connector.get(format("%s/table/types", super.entityUrl), ResultSetProxy.class);
+        return connector.get(format("%s/table/types", super.entityUrl), ResultSetProxy.class, token);
     }
 
     @Override
     public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
         String fullUrl = connector.buildUrl(format("%s/columns", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"table", tableNamePattern}, new String[] {"column", columnNamePattern});
-        return connector.get(fullUrl, ResultSetProxy.class);
+        return connector.get(fullUrl, ResultSetProxy.class, token);
     }
 
     @Override
     public ResultSet getColumnPrivileges(String catalog, String schema, String table, String columnNamePattern) throws SQLException {
         String fullUrl = connector.buildUrl(format("%s/column/privileges", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schema}, new String[] {"table", table}, new String[] {"column", columnNamePattern});
-        return connector.get(fullUrl, ResultSetProxy.class);
+        return connector.get(fullUrl, ResultSetProxy.class, token);
     }
 
     @Override
     public ResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern) throws SQLException {
         String fullUrl = connector.buildUrl(format("%s/table/privileges", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"table", tableNamePattern});
-        return connector.get(fullUrl, ResultSetProxy.class);
+        return connector.get(fullUrl, ResultSetProxy.class, token);
     }
 
     @Override
     public ResultSet getBestRowIdentifier(String catalog, String schema, String table, int scope, boolean nullable) throws SQLException {
         String fullUrl = connector.buildUrl(format("%s/best/row/identifier", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schema}, new String[] {"table", table}, new String[] {"scope", "" + scope}, new String[] {"nullable", "" + nullable});
-        return connector.get(fullUrl, ResultSetProxy.class);
+        return connector.get(fullUrl, ResultSetProxy.class, token);
     }
 
     @Override
     public ResultSet getVersionColumns(String catalog, String schema, String table) throws SQLException {
         String fullUrl = connector.buildUrl(format("%s/version/columns", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schema}, new String[] {"table", table});
-        return connector.get(fullUrl, ResultSetProxy.class);
+        return connector.get(fullUrl, ResultSetProxy.class, token);
     }
 
     @Override
     public ResultSet getPrimaryKeys(String catalog, String schema, String table) throws SQLException {
         String fullUrl = connector.buildUrl(format("%s/primary/keys", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schema}, new String[] {"table", table});
-        return connector.get(fullUrl, ResultSetProxy.class);
+        return connector.get(fullUrl, ResultSetProxy.class, token);
     }
 
     @Override
     public ResultSet getImportedKeys(String catalog, String schema, String table) throws SQLException {
         String fullUrl = connector.buildUrl(format("%s/imported/keys", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schema}, new String[] {"table", table});
-        return connector.get(fullUrl, ResultSetProxy.class);
+        return connector.get(fullUrl, ResultSetProxy.class, token);
     }
 
     @Override
     public ResultSet getExportedKeys(String catalog, String schema, String table) throws SQLException {
         String fullUrl = connector.buildUrl(format("%s/exported/keys", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schema}, new String[] {"table", table});
-        return connector.get(fullUrl, ResultSetProxy.class);
+        return connector.get(fullUrl, ResultSetProxy.class, token);
     }
 
     @Override
@@ -985,74 +985,74 @@ public class TransportableDatabaseMetaData extends WrapperProxy implements Datab
                 new String[]{"parentCatalog", parentCatalog}, new String[]{"parentSchema", parentSchema}, new String[]{"parentTable", parentTable},
                 new String[]{"foreignCatalog", foreignCatalog}, new String[]{"foreignSchema", foreignSchema}, new String[]{"foreignTable", foreignTable}
         );
-        return connector.get(fullUrl, ResultSetProxy.class);
+        return connector.get(fullUrl, ResultSetProxy.class, token);
     }
 
     @Override
     @JsonIgnore
     public ResultSet getTypeInfo() throws SQLException {
-        return connector.get(format("%s/type/info", super.entityUrl), ResultSetProxy.class);
+        return connector.get(format("%s/type/info", super.entityUrl), ResultSetProxy.class, token);
     }
 
     @Override
     public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate) throws SQLException {
         String fullUrl = connector.buildUrl(format("%s/index/info", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schema}, new String[] {"table", table}, new String[] {"unique", "" + unique}, new String[] {"approximate", "" + approximate});
-        return connector.get(fullUrl, ResultSetProxy.class);
+        return connector.get(fullUrl, ResultSetProxy.class, token);
     }
 
     @Override
     public boolean supportsResultSetType(int type) throws SQLException {
-        return connector.get(format("%s/supports/resultset/type/%d", super.entityUrl, type), Boolean.class);
+        return connector.get(format("%s/supports/resultset/type/%d", super.entityUrl, type), Boolean.class, token);
     }
 
     @Override
     public boolean supportsResultSetConcurrency(int type, int concurrency) throws SQLException {
-        return connector.get(format("%s/supports/resultset/concurrency/%d/%d", super.entityUrl, type, concurrency), Boolean.class);
+        return connector.get(format("%s/supports/resultset/concurrency/%d/%d", super.entityUrl, type, concurrency), Boolean.class, token);
     }
 
     @Override
     public boolean ownUpdatesAreVisible(int type) throws SQLException {
-        return connector.get(format("%s/own/updates/visible/%d", super.entityUrl, type), Boolean.class);
+        return connector.get(format("%s/own/updates/visible/%d", super.entityUrl, type), Boolean.class, token);
     }
 
     @Override
     public boolean ownDeletesAreVisible(int type) throws SQLException {
-        return connector.get(format("%s/own/deletes/visible/%d", super.entityUrl, type), Boolean.class);
+        return connector.get(format("%s/own/deletes/visible/%d", super.entityUrl, type), Boolean.class, token);
     }
 
     @Override
     public boolean ownInsertsAreVisible(int type) throws SQLException {
-        return connector.get(format("%s/own/inserts/visible/%d", super.entityUrl, type), Boolean.class);
+        return connector.get(format("%s/own/inserts/visible/%d", super.entityUrl, type), Boolean.class, token);
     }
 
     @Override
     public boolean othersUpdatesAreVisible(int type) throws SQLException {
-        return connector.get(format("%s/others/updates/visible/%d", super.entityUrl, type), Boolean.class);
+        return connector.get(format("%s/others/updates/visible/%d", super.entityUrl, type), Boolean.class, token);
     }
 
     @Override
     public boolean othersDeletesAreVisible(int type) throws SQLException {
-        return connector.get(format("%s/others/deletes/visible/%d", super.entityUrl, type), Boolean.class);
+        return connector.get(format("%s/others/deletes/visible/%d", super.entityUrl, type), Boolean.class, token);
     }
 
     @Override
     public boolean othersInsertsAreVisible(int type) throws SQLException {
-        return connector.get(format("%s/others/inserts/visible/%d", super.entityUrl, type), Boolean.class);
+        return connector.get(format("%s/others/inserts/visible/%d", super.entityUrl, type), Boolean.class, token);
     }
 
     @Override
     public boolean updatesAreDetected(int type) throws SQLException {
-        return connector.get(format("%s/updates/detected/%d", super.entityUrl, type), Boolean.class);
+        return connector.get(format("%s/updates/detected/%d", super.entityUrl, type), Boolean.class, token);
     }
 
     @Override
     public boolean deletesAreDetected(int type) throws SQLException {
-        return connector.get(format("%s/deletes/detected/%d", super.entityUrl, type), Boolean.class);
+        return connector.get(format("%s/deletes/detected/%d", super.entityUrl, type), Boolean.class, token);
     }
 
     @Override
     public boolean insertsAreDetected(int type) throws SQLException {
-        return connector.get(format("%s/inserts/detected/%d", super.entityUrl, type), Boolean.class);
+        return connector.get(format("%s/inserts/detected/%d", super.entityUrl, type), Boolean.class, token);
     }
 
     @Override
@@ -1064,7 +1064,7 @@ public class TransportableDatabaseMetaData extends WrapperProxy implements Datab
     public ResultSet getUDTs(String catalog, String schemaPattern, String typeNamePattern, int[] types) throws SQLException {
         String typesStr = types == null ? null : Arrays.stream(types).mapToObj(i -> ""+i).collect(Collectors.joining(","));
         String fullUrl = connector.buildUrl(format("%s/udts", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"typename", typeNamePattern}, new String[] {"types", typesStr});
-        return connector.get(fullUrl, ResultSetProxy.class);
+        return connector.get(fullUrl, ResultSetProxy.class, token);
     }
 
     @Override
@@ -1096,24 +1096,24 @@ public class TransportableDatabaseMetaData extends WrapperProxy implements Datab
     @Override
     public ResultSet getSuperTypes(String catalog, String schemaPattern, String typeNamePattern) throws SQLException {
         String fullUrl = connector.buildUrl(format("%s/super/types", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"typename", typeNamePattern});
-        return connector.get(fullUrl, ResultSetProxy.class);
+        return connector.get(fullUrl, ResultSetProxy.class, token);
     }
 
     @Override
     public ResultSet getSuperTables(String catalog, String schemaPattern, String tableNamePattern) throws SQLException {
         String fullUrl = connector.buildUrl(format("%s/super/tables", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"table", tableNamePattern});
-        return connector.get(fullUrl, ResultSetProxy.class);
+        return connector.get(fullUrl, ResultSetProxy.class, token);
     }
 
     @Override
     public ResultSet getAttributes(String catalog, String schemaPattern, String typeNamePattern, String attributeNamePattern) throws SQLException {
         String fullUrl = connector.buildUrl(format("%s/attributes", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"typename", schemaPattern}, new String[] {"attribute", attributeNamePattern});
-        return connector.get(fullUrl, ResultSetProxy.class);
+        return connector.get(fullUrl, ResultSetProxy.class, token);
     }
 
     @Override
     public boolean supportsResultSetHoldability(int holdability) throws SQLException {
-        return connector.get(format("%s/supports/resultset/holdability/%d", super.entityUrl, holdability), Boolean.class);
+        return connector.get(format("%s/supports/resultset/holdability/%d", super.entityUrl, holdability), Boolean.class, token);
     }
 
     @Override
@@ -1162,13 +1162,13 @@ public class TransportableDatabaseMetaData extends WrapperProxy implements Datab
     @Override
     @JsonIgnore
     public RowIdLifetime getRowIdLifetime() throws SQLException {
-        return connector.get(format("%s/rowidlifetime", super.entityUrl), RowIdLifetime.class);
+        return connector.get(format("%s/rowidlifetime", super.entityUrl), RowIdLifetime.class, token);
     }
 
     @Override
     public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
         String fullUrl = connector.buildUrl(format("%s/schemas", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern});
-        return connector.get(fullUrl, ResultSetProxy.class);
+        return connector.get(fullUrl, ResultSetProxy.class, token);
     }
 
     @Override
@@ -1184,25 +1184,25 @@ public class TransportableDatabaseMetaData extends WrapperProxy implements Datab
     @Override
     @JsonIgnore
     public ResultSet getClientInfoProperties() throws SQLException {
-        return connector.get(format("%s/client/info/properties", super.entityUrl), ResultSetProxy.class);
+        return connector.get(format("%s/client/info/properties", super.entityUrl), ResultSetProxy.class, token);
     }
 
     @Override
     public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern) throws SQLException {
         String fullUrl = connector.buildUrl(format("%s/functions", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"function", functionNamePattern});
-        return connector.get(fullUrl, ResultSetProxy.class);
+        return connector.get(fullUrl, ResultSetProxy.class, token);
     }
 
     @Override
     public ResultSet getFunctionColumns(String catalog, String schemaPattern, String functionNamePattern, String columnNamePattern) throws SQLException {
         String fullUrl = connector.buildUrl(format("%s/function/columns", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"function", functionNamePattern}, new String[] {"column", columnNamePattern});
-        return connector.get(fullUrl, ResultSetProxy.class);
+        return connector.get(fullUrl, ResultSetProxy.class, token);
     }
 
     @Override
     public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
         String fullUrl = connector.buildUrl(format("%s/pseudo/columns", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"table", tableNamePattern}, new String[] {"column", columnNamePattern});
-        return connector.get(fullUrl, ResultSetProxy.class);
+        return connector.get(fullUrl, ResultSetProxy.class, token);
     }
 
     @Override

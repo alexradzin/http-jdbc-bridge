@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.lang.String.format;
 import static spark.Spark.post;
@@ -45,10 +46,12 @@ public class DriverController extends BaseController {
             }
         });
 
+        AtomicReference<String> user = new AtomicReference<>();
         post("/connection", JSON, (req, res) -> retrieve(() -> {
             ConnectionInfo connectionInfo = retrieveConnectionInfo(objectMapper.readValue(req.bodyAsBytes(), ConnectionInfo.class));
+            user.set(connectionInfo.getProperties().getProperty("user"));
             return DriverManager.getConnection(connectionInfo.getUrl(), connectionInfo.getProperties());
-        }, connection -> connection, ConnectionProxy::new, "connection", req.url()));
+        }, connection -> connection, ConnectionProxy::new, "connection", req.url(), user.get()));
 
         post("/acceptsurl", JSON, (req, res) -> retrieve(() -> {
             String url = req.body();

@@ -15,13 +15,13 @@ public class TransportableResultSetMetaData extends WrapperProxy implements Resu
     @JsonProperty("columns") private final List<ColumnMetaData> columns;
 
     @JsonCreator
-    public TransportableResultSetMetaData(@JsonProperty("entityUrl") String entityUrl, @JsonProperty("columns") List<ColumnMetaData> columns) {
-        super(entityUrl);
+    public TransportableResultSetMetaData(@JsonProperty("entityUrl") String entityUrl, @JsonProperty("token") String token, @JsonProperty("columns") List<ColumnMetaData> columns) {
+        super(entityUrl, token);
         this.columns = columns;
     }
 
-    public TransportableResultSetMetaData(String entityUrl, ResultSetMetaData md) throws SQLException {
-        super(entityUrl);
+    public TransportableResultSetMetaData(String entityUrl, @JsonProperty("token") String token, ResultSetMetaData md) throws SQLException {
+        super(entityUrl, token);
         this.columns = getColumns(md);
     }
 

@@ -45,7 +45,7 @@ public class ConnectionController extends BaseController {
             }
             return connection.createStatement();
         },
-        StatementProxy::new, "statement", req.url()));
+        StatementProxy::new, "statement", req.url(), getToken(req)));
 
         post("/connection/:connection/prepared-statement", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> {
             String sql = objectMapper.readValue(req.body(), String.class);
@@ -72,7 +72,7 @@ public class ConnectionController extends BaseController {
                 return connection.prepareStatement(sql, columnIndexes);
             }
             return connection.prepareStatement(sql);
-        }, PreparedStatementProxy::new, "prepared-statement", req.url()));
+        }, PreparedStatementProxy::new, "prepared-statement", req.url(), getToken(req)));
 
         post("/connection/:connection/callable-statement", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> {
             String sql = objectMapper.readValue(req.body(), String.class);
@@ -87,7 +87,7 @@ public class ConnectionController extends BaseController {
                 return connection.prepareCall(sql, type, concurrency);
             }
             return connection.prepareCall(sql);
-        }, CallableStatementProxy::new, "callable-statement", req.url()));
+        }, CallableStatementProxy::new, "callable-statement", req.url(), getToken(req)));
 
         post("/connection/:connection/nativesql", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> connection.nativeSQL(req.body())));
 
@@ -99,7 +99,7 @@ public class ConnectionController extends BaseController {
         delete("/connection/:connection", JSON, (req, res) -> accept(() -> getConnection(attributes, req), Connection::close));
         get("/connection/:connection/closed", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), Connection::isClosed));
 
-        get("/connection/:connection/metadata", JSON, (req, res) -> retrieve2(() -> getConnection(attributes, req), Connection::getMetaData, TransportableDatabaseMetaData::new, "metadata", req.url()));
+        get("/connection/:connection/metadata", JSON, (req, res) -> retrieve2(() -> getConnection(attributes, req), Connection::getMetaData, TransportableDatabaseMetaData::new, "metadata", req.url(), getToken(req)));
 
         post("/connection/:connection/readonly", JSON, (req, res) -> accept(() -> getConnection(attributes, req), connection -> connection.setReadOnly(Boolean.parseBoolean(req.body()))));
         get("/connection/:connection/readonly", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), Connection::isReadOnly));
@@ -123,12 +123,12 @@ public class ConnectionController extends BaseController {
         delete("/connection/:connection/savepoint", JSON, (req, res) -> accept(() -> getConnection(attributes, req), connection -> connection.releaseSavepoint(objectMapper.readValue(req.body(), TransportableSavepoint.class))));
         post("/connection/:connection/rollback", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> req.body() == null ? connection.setSavepoint() : connection.setSavepoint(req.body()), TransportableSavepoint::new));
 
-        post("/connection/:connection/clob", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), Connection::createClob, ClobProxy::new, "clob", req.url()));
-        post("/connection/:connection/nclob", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), Connection::createNClob, ClobProxy::new, "nclob", req.url()));
-        post("/connection/:connection/blob", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), Connection::createBlob, BlobProxy::new, "blob", req.url()));
-        post("/connection/:connection/sqlxml", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), Connection::createSQLXML, SQLXMLProxy::new, "sqlxml", req.url()));
-        post("/connection/:connection/array/:type", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> connection.createArrayOf(req.params(":type"), objectMapper.readValue(req.body(), Object[].class)), ArrayProxy::new, "array", req.url()));
-        post("/connection/:connection/struct/:type", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> connection.createStruct(req.params(":type"), objectMapper.readValue(req.body(), Object[].class)), StructProxy::new, "struct", req.url()));
+        post("/connection/:connection/clob", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), Connection::createClob, ClobProxy::new, "clob", req.url(), getToken(req)));
+        post("/connection/:connection/nclob", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), Connection::createNClob, ClobProxy::new, "nclob", req.url(), getToken(req)));
+        post("/connection/:connection/blob", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), Connection::createBlob, BlobProxy::new, "blob", req.url(), getToken(req)));
+        post("/connection/:connection/sqlxml", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), Connection::createSQLXML, SQLXMLProxy::new, "sqlxml", req.url(), getToken(req)));
+        post("/connection/:connection/array/:type", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> connection.createArrayOf(req.params(":type"), objectMapper.readValue(req.body(), Object[].class)), ArrayProxy::new, "array", req.url(), getToken(req)));
+        post("/connection/:connection/struct/:type", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> connection.createStruct(req.params(":type"), objectMapper.readValue(req.body(), Object[].class)), StructProxy::new, "struct", req.url(), getToken(req)));
 
         get("/connection/:connection/valid/:timeout", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> connection.isValid(intParam(req, ":timeout"))));
 

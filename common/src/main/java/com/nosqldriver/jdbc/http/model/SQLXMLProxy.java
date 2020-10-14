@@ -17,8 +17,8 @@ public class SQLXMLProxy extends EntityProxy implements SQLXML {
     private String string;
 
     @JsonCreator
-    public SQLXMLProxy(@JsonProperty("entityUrl") String entityUrl) {
-        super(entityUrl);
+    public SQLXMLProxy(@JsonProperty("entityUrl") String entityUrl, @JsonProperty("token") String token) {
+        super(entityUrl, token);
     }
 
     @Override

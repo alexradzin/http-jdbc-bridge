@@ -36,7 +36,7 @@ public class ResultSetController extends BaseController {
 
         delete(format("%s", baseUrl), JSON, (req, res) -> accept(() -> getResultSet(attributes, req), ResultSet::close));
 
-        get(format("%s/metadata", baseUrl), JSON, (req, res) -> retrieve2(() -> getResultSet(attributes, req), ResultSet::getMetaData, TransportableResultSetMetaData::new, "metadata", req.url()));
+        get(format("%s/metadata", baseUrl), JSON, (req, res) -> retrieve2(() -> getResultSet(attributes, req), ResultSet::getMetaData, TransportableResultSetMetaData::new, "metadata", req.url(), getToken(req)));
 
         get(format("%s/next", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), ResultSet::next));
         get(format("%s/previous", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), ResultSet::previous));

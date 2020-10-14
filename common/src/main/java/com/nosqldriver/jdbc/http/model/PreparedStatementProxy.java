@@ -30,18 +30,18 @@ import static java.lang.String.format;
 
 public class PreparedStatementProxy extends StatementProxy implements PreparedStatement {
     @JsonCreator
-    public PreparedStatementProxy(@JsonProperty("entityUrl") String entityUrl) {
-        super(entityUrl);
+    public PreparedStatementProxy(@JsonProperty("entityUrl") String entityUrl, @JsonProperty("token") String token) {
+        super(entityUrl, token);
     }
 
     @Override
     public ResultSet executeQuery() throws SQLException {
-        return connector.get(format("%s/query", entityUrl), ResultSetProxy.class).withStatement(this);
+        return connector.get(format("%s/query", entityUrl), ResultSetProxy.class, token).withStatement(this);
     }
 
     @Override
     public int executeUpdate() throws SQLException {
-        return connector.get(format("%s/update", entityUrl), Integer.class);
+        return connector.get(format("%s/update", entityUrl), Integer.class, token);
     }
 
     @Override
@@ -131,7 +131,7 @@ public class PreparedStatementProxy extends StatementProxy implements PreparedSt
 
     @Override
     public void clearParameters() throws SQLException {
-        connector.delete(format("%s", entityUrl), null, Void.class);
+        connector.delete(format("%s", entityUrl), null, Void.class, token);
     }
 
     @Override
@@ -146,12 +146,12 @@ public class PreparedStatementProxy extends StatementProxy implements PreparedSt
 
     @Override
     public boolean execute() throws SQLException {
-        return connector.get(format("%s/execute", entityUrl), Boolean.class);
+        return connector.get(format("%s/execute", entityUrl), Boolean.class, token);
     }
 
     @Override
     public void addBatch() throws SQLException {
-        connector.put(format("%s/batch", entityUrl), null, Void.class);
+        connector.put(format("%s/batch", entityUrl), null, Void.class, token);
     }
 
     @Override
@@ -182,7 +182,7 @@ public class PreparedStatementProxy extends StatementProxy implements PreparedSt
     @Override
     @JsonIgnore
     public ResultSetMetaData getMetaData() throws SQLException {
-        return connector.get(format("%s/metadata", entityUrl), TransportableResultSetMetaData.class);
+        return connector.get(format("%s/metadata", entityUrl), TransportableResultSetMetaData.class, token);
     }
 
     @Override
@@ -213,7 +213,7 @@ public class PreparedStatementProxy extends StatementProxy implements PreparedSt
     @Override
     @JsonIgnore
     public ParameterMetaData getParameterMetaData() throws SQLException {
-        return connector.get(format("%s/parametermetadata", entityUrl), TransportableParameterMetaData.class);
+        return connector.get(format("%s/parametermetadata", entityUrl), TransportableParameterMetaData.class, token);
     }
 
     @Override

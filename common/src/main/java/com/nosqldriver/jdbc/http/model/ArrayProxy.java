@@ -16,12 +16,12 @@ public class ArrayProxy extends EntityProxy implements Array {
     private int baseType;
 
     @JsonCreator
-    public ArrayProxy(@JsonProperty("entityUrl") String entityUrl) {
-        super(entityUrl);
+    public ArrayProxy(@JsonProperty("entityUrl") String entityUrl, @JsonProperty("token") String token) {
+        super(entityUrl, token);
     }
 
-    public ArrayProxy(String entityUrl, Array array) throws SQLException {
-        super(entityUrl);
+    public ArrayProxy(String entityUrl, String token, Array array) throws SQLException {
+        super(entityUrl, token);
         this.baseTypeName = array.getBaseTypeName();
         this.baseType = array.getBaseType();
     }
@@ -39,47 +39,47 @@ public class ArrayProxy extends EntityProxy implements Array {
     @Override
     @JsonIgnore
     public Object getArray() throws SQLException {
-        return connector.get(format("%s/array", entityUrl), Object.class);
+        return connector.get(format("%s/array", entityUrl), Object.class, token);
     }
 
     @Override
     public Object getArray(Map<String, Class<?>> map) throws SQLException {
-        return connector.post(format("%s/array", entityUrl), map, Object.class);
+        return connector.post(format("%s/array", entityUrl), map, Object.class, token);
     }
 
     @Override
     public Object getArray(long index, int count) throws SQLException {
-        return connector.get(format("%s/array/%d/%d", entityUrl, index, count), Object.class);
+        return connector.get(format("%s/array/%d/%d", entityUrl, index, count), Object.class, token);
     }
 
     @Override
     public Object getArray(long index, int count, Map<String, Class<?>> map) throws SQLException {
-        return connector.post(format("%s/array/%d/%d", entityUrl, index, count), map, Object.class);
+        return connector.post(format("%s/array/%d/%d", entityUrl, index, count), map, Object.class, token);
     }
 
     @Override
     @JsonIgnore
     public ResultSet getResultSet() throws SQLException {
-        return connector.get(format("%s/resultset", entityUrl), ResultSetProxy.class);
+        return connector.get(format("%s/resultset", entityUrl), ResultSetProxy.class, token);
     }
 
     @Override
     public ResultSet getResultSet(Map<String, Class<?>> map) throws SQLException {
-        return connector.post(format("%s/resultset", entityUrl), map, ResultSetProxy.class);
+        return connector.post(format("%s/resultset", entityUrl), map, ResultSetProxy.class, token);
     }
 
     @Override
     public ResultSet getResultSet(long index, int count) throws SQLException {
-        return connector.get(format("%s/resultset/%d/%d", entityUrl, index, count), ResultSetProxy.class);
+        return connector.get(format("%s/resultset/%d/%d", entityUrl, index, count), ResultSetProxy.class, token);
     }
 
     @Override
     public ResultSet getResultSet(long index, int count, Map<String, Class<?>> map) throws SQLException {
-        return connector.post(format("%s/resultset/%d/%d", entityUrl, index, count), map, ResultSetProxy.class);
+        return connector.post(format("%s/resultset/%d/%d", entityUrl, index, count), map, ResultSetProxy.class, token);
     }
 
     @Override
     public void free() throws SQLException {
-        connector.delete(format("%s", entityUrl), null, Void.class);
+        connector.delete(format("%s", entityUrl), null, Void.class, token);
     }
 }

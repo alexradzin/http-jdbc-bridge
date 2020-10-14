@@ -16,13 +16,13 @@ public class DatabaseMetaDataController extends BaseController {
         super(attributes, objectMapper);
         String baseUrl = "/connection/:connection/metadata/:metadata";
 
-        get(format("%s/catalogs", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), DatabaseMetaData::getCatalogs, ResultSetProxy::new, "schemas", req.url()));
-        get(format("%s/table/types", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), DatabaseMetaData::getTableTypes, ResultSetProxy::new, "types", req.url()));
-        get(format("%s/type/info", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), DatabaseMetaData::getTypeInfo, ResultSetProxy::new, "info", req.url()));
-        get(format("%s/schemas", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getSchemas(stringArg(req, "catalog"), stringArg(req, "schema")), ResultSetProxy::new, "schemas", req.url()));
-        get(format("%s/functions", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getFunctions(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "function")), ResultSetProxy::new, "functions", req.url()));
-        get(format("%s/function/columns", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getFunctionColumns(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "function"), stringArg(req, "column")), ResultSetProxy::new, "columns", req.url()));
-        get(format("%s/pseudo/columns", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getPseudoColumns(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table"), stringArg(req, "column")), ResultSetProxy::new, "columns", req.url()));
+        get(format("%s/catalogs", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), DatabaseMetaData::getCatalogs, ResultSetProxy::new, "schemas", req.url(), getToken(req)));
+        get(format("%s/table/types", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), DatabaseMetaData::getTableTypes, ResultSetProxy::new, "types", req.url(), getToken(req)));
+        get(format("%s/type/info", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), DatabaseMetaData::getTypeInfo, ResultSetProxy::new, "info", req.url(), getToken(req)));
+        get(format("%s/schemas", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getSchemas(stringArg(req, "catalog"), stringArg(req, "schema")), ResultSetProxy::new, "schemas", req.url(), getToken(req)));
+        get(format("%s/functions", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getFunctions(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "function")), ResultSetProxy::new, "functions", req.url(), getToken(req)));
+        get(format("%s/function/columns", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getFunctionColumns(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "function"), stringArg(req, "column")), ResultSetProxy::new, "columns", req.url(), getToken(req)));
+        get(format("%s/pseudo/columns", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getPseudoColumns(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table"), stringArg(req, "column")), ResultSetProxy::new, "columns", req.url(), getToken(req)));
 
         get(format("%s/supports/transaction/isolation/level/:level", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.supportsTransactionIsolationLevel(intParam(req, ":level"))));
         get(format("%s/supports/resultset/type/:type", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.supportsResultSetType(intParam(req, ":type"))));
@@ -41,34 +41,32 @@ public class DatabaseMetaDataController extends BaseController {
         get(format("%s/supports/convert/:from/:to", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.supportsConvert(intParam(req, ":from"), intParam(req, ":to"))));
         get(format("%s/supports/resultset/concurrency/:type/:concurrency", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.supportsResultSetConcurrency(intParam(req, ":type"), intParam(req, ":concurrency"))));
 
-        get(format("%s/procedures", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getProcedures(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "procedures")), ResultSetProxy::new, "procedures", req.url()));
-        get(format("%s/procedure/columns", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getProcedureColumns(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "procedure"), stringArg(req, "catalog")), ResultSetProxy::new, "columns", req.url()));
-        get(format("%s/tables", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getTables(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table"), stringArrayArg(req, "types")), ResultSetProxy::new, "tables", req.url()));
-        get(format("%s/table/privileges", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getTablePrivileges(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table")), ResultSetProxy::new, "privileges", req.url()));
+        get(format("%s/procedures", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getProcedures(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "procedures")), ResultSetProxy::new, "procedures", req.url(), getToken(req)));
+        get(format("%s/procedure/columns", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getProcedureColumns(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "procedure"), stringArg(req, "catalog")), ResultSetProxy::new, "columns", req.url(), getToken(req)));
+        get(format("%s/tables", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getTables(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table"), stringArrayArg(req, "types")), ResultSetProxy::new, "tables", req.url(), getToken(req)));
+        get(format("%s/table/privileges", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getTablePrivileges(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table")), ResultSetProxy::new, "privileges", req.url(), getToken(req)));
 
-        get(format("%s/version/columns", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getVersionColumns(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table")), ResultSetProxy::new, "columns", req.url()));
-        get(format("%s/primary/keys", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getPrimaryKeys(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table")), ResultSetProxy::new, "keys", req.url()));
-        get(format("%s/imported/keys", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getImportedKeys(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table")), ResultSetProxy::new, "keys", req.url()));
-        get(format("%s/exported/keys", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getExportedKeys(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table")), ResultSetProxy::new, "keys", req.url()));
+        get(format("%s/version/columns", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getVersionColumns(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table")), ResultSetProxy::new, "columns", req.url(), getToken(req)));
+        get(format("%s/primary/keys", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getPrimaryKeys(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table")), ResultSetProxy::new, "keys", req.url(), getToken(req)));
+        get(format("%s/imported/keys", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getImportedKeys(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table")), ResultSetProxy::new, "keys", req.url(), getToken(req)));
+        get(format("%s/exported/keys", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getExportedKeys(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table")), ResultSetProxy::new, "keys", req.url(), getToken(req)));
 
-        get(format("%s/columns", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getColumns(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table"), stringArg(req, "column")), ResultSetProxy::new, "columns", req.url()));
-        get(format("%s/column/privileges", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getColumnPrivileges(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table"), stringArg(req, "column")), ResultSetProxy::new, "privileges", req.url()));
+        get(format("%s/columns", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getColumns(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table"), stringArg(req, "column")), ResultSetProxy::new, "columns", req.url(), getToken(req)));
+        get(format("%s/column/privileges", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getColumnPrivileges(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table"), stringArg(req, "column")), ResultSetProxy::new, "privileges", req.url(), getToken(req)));
         get(format("%s/best/row/identifier", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req),
-                md -> {
-                    return md.getBestRowIdentifier(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table"), intArg(req, "scope"), Boolean.parseBoolean(req.queryParams("nullable")));
-                },
-                ResultSetProxy::new, "identifier", req.url()));
+                md -> md.getBestRowIdentifier(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table"), intArg(req, "scope"), Boolean.parseBoolean(req.queryParams("nullable"))),
+                ResultSetProxy::new, "identifier", req.url(), getToken(req)));
         get(format("%s/crossreference", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getCrossReference(
                 stringArg(req, "parentCatalog"), stringArg(req, "parentSchema"), stringArg(req, "parentTable"),
                 stringArg(req, "foreignCatalog"), stringArg(req, "foreignSchema"), stringArg(req, "foreignTable")
-        ), ResultSetProxy::new, "crossreference", req.url()));
+        ), ResultSetProxy::new, "crossreference", req.url(), getToken(req)));
 
-        get(format("%s/index/info", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getIndexInfo(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table"), Boolean.parseBoolean(req.params("unique")), Boolean.parseBoolean(req.queryParams("approximate"))), ResultSetProxy::new, "info", req.url()));
-        get(format("%s/udts", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getUDTs(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "typename"), intArrayArg(req, "types")), ResultSetProxy::new, "udts", req.url()));
+        get(format("%s/index/info", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getIndexInfo(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table"), Boolean.parseBoolean(req.params("unique")), Boolean.parseBoolean(req.queryParams("approximate"))), ResultSetProxy::new, "info", req.url(), getToken(req)));
+        get(format("%s/udts", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getUDTs(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "typename"), intArrayArg(req, "types")), ResultSetProxy::new, "udts", req.url(), getToken(req)));
 
-        get(format("%s/super/types", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getSuperTypes(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "typename")), ResultSetProxy::new, "types", req.url()));
-        get(format("%s/super/tables", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getSuperTables(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "typename")), ResultSetProxy::new, "tables", req.url()));
-        get(format("%s/attributes", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getAttributes(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "typename"), stringArg(req, "attribute")), ResultSetProxy::new, "attributes", req.url()));
+        get(format("%s/super/types", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getSuperTypes(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "typename")), ResultSetProxy::new, "types", req.url(), getToken(req)));
+        get(format("%s/super/tables", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getSuperTables(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "typename")), ResultSetProxy::new, "tables", req.url(), getToken(req)));
+        get(format("%s/attributes", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getAttributes(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "typename"), stringArg(req, "attribute")), ResultSetProxy::new, "attributes", req.url(), getToken(req)));
 
         get(format("%s/rowidlifetime", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), DatabaseMetaData::getRowIdLifetime));
         get(format("%s/generatedkeyalwaysreturned", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), DatabaseMetaData::generatedKeyAlwaysReturned));

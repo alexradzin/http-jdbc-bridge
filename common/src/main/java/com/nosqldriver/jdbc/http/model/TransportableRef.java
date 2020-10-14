@@ -14,8 +14,8 @@ public class TransportableRef extends EntityProxy implements Ref {
     private Object object;
 
     @JsonCreator
-    protected TransportableRef(@JsonProperty("entityUrl") String entityUrl, @JsonProperty("baseTypeName") String baseTypeName) {
-        super(entityUrl);
+    protected TransportableRef(@JsonProperty("entityUrl") String entityUrl, @JsonProperty("token") String token, @JsonProperty("baseTypeName") String baseTypeName) {
+        super(entityUrl, token);
         this.baseTypeName = baseTypeName;
     }
 
@@ -26,7 +26,7 @@ public class TransportableRef extends EntityProxy implements Ref {
 
     @Override
     public Object getObject(Map<String, Class<?>> map) throws SQLException {
-        return connector.get(format("%s", entityUrl), Map.class);
+        return connector.get(format("%s", entityUrl), Map.class, token);
     }
 
     @Override

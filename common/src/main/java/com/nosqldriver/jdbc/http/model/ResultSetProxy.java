@@ -34,358 +34,358 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     private ResultSetMetaData md;
 
     @JsonCreator
-    public ResultSetProxy(@JsonProperty("entityUrl") String entityUrl) {
-        super(entityUrl);
+    public ResultSetProxy(@JsonProperty("entityUrl") String entityUrl, @JsonProperty("token") String token) {
+        super(entityUrl, token);
     }
 
     @Override
     public boolean next() throws SQLException {
-        return connector.get(format("%s/next", entityUrl), Boolean.class);
+        return connector.get(format("%s/next", entityUrl), Boolean.class, token);
     }
 
     @Override
     public void close() throws SQLException {
-        connector.delete(format("%s", entityUrl), null, Void.class);
+        connector.delete(format("%s", entityUrl), null, Void.class, token);
     }
 
     @Override
     public boolean wasNull() throws SQLException {
-        return connector.get(format("%s/wasnull", entityUrl), Boolean.class);
+        return connector.get(format("%s/wasnull", entityUrl), Boolean.class, token);
     }
 
     @Override
     public String getString(int columnIndex) throws SQLException {
-        return connector.get(format("%s/string/index/%d", entityUrl, columnIndex), String.class);
+        return connector.get(format("%s/string/index/%d", entityUrl, columnIndex), String.class, token);
     }
 
     @Override
     public boolean getBoolean(int columnIndex) throws SQLException {
-        return connector.get(format("%s/boolean/index/%d", entityUrl, columnIndex), boolean.class);
+        return connector.get(format("%s/boolean/index/%d", entityUrl, columnIndex), boolean.class, token);
     }
 
     @Override
     public byte getByte(int columnIndex) throws SQLException {
-        return connector.get(format("%s/byte/index/%d", entityUrl, columnIndex), byte.class);
+        return connector.get(format("%s/byte/index/%d", entityUrl, columnIndex), byte.class, token);
     }
 
     @Override
     public short getShort(int columnIndex) throws SQLException {
-        return connector.get(format("%s/short/index/%d", entityUrl, columnIndex), short.class);
+        return connector.get(format("%s/short/index/%d", entityUrl, columnIndex), short.class, token);
     }
 
     @Override
     public int getInt(int columnIndex) throws SQLException {
-        return connector.get(format("%s/int/index/%d", entityUrl, columnIndex), int.class);
+        return connector.get(format("%s/int/index/%d", entityUrl, columnIndex), int.class, token);
     }
 
     @Override
     public long getLong(int columnIndex) throws SQLException {
-        return connector.get(format("%s/long/index/%d", entityUrl, columnIndex), long.class);
+        return connector.get(format("%s/long/index/%d", entityUrl, columnIndex), long.class, token);
     }
 
     @Override
     public float getFloat(int columnIndex) throws SQLException {
-        return connector.get(format("%s/float/index/%d", entityUrl, columnIndex), float.class);
+        return connector.get(format("%s/float/index/%d", entityUrl, columnIndex), float.class, token);
     }
 
     @Override
     public double getDouble(int columnIndex) throws SQLException {
-        return connector.get(format("%s/double/index/%d", entityUrl, columnIndex), Double.class);
+        return connector.get(format("%s/double/index/%d", entityUrl, columnIndex), Double.class, token);
     }
 
     @Override
     public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
-        return connector.get(format("%s/bigdecimal/index/%d", entityUrl, columnIndex), BigDecimal.class);
+        return connector.get(format("%s/bigdecimal/index/%d", entityUrl, columnIndex), BigDecimal.class, token);
     }
 
     @Override
     public byte[] getBytes(int columnIndex) throws SQLException {
-        return connector.get(format("%s/bytes/index/%d", entityUrl, columnIndex), byte[].class);
+        return connector.get(format("%s/bytes/index/%d", entityUrl, columnIndex), byte[].class, token);
     }
 
     @Override
     public Date getDate(int columnIndex) throws SQLException {
-        return connector.get(format("%s/date/index/%d", entityUrl, columnIndex), Date.class);
+        return connector.get(format("%s/date/index/%d", entityUrl, columnIndex), Date.class, token);
     }
 
     @Override
     public Time getTime(int columnIndex) throws SQLException {
-        return connector.get(format("%s/time/index/%d", entityUrl, columnIndex), Time.class);
+        return connector.get(format("%s/time/index/%d", entityUrl, columnIndex), Time.class, token);
     }
 
     @Override
     public Timestamp getTimestamp(int columnIndex) throws SQLException {
-        return connector.get(format("%s/timestamp/index/%d", entityUrl, columnIndex), Timestamp.class);
+        return connector.get(format("%s/timestamp/index/%d", entityUrl, columnIndex), Timestamp.class, token);
     }
 
     @Override
     public InputStream getAsciiStream(int columnIndex) throws SQLException {
-        return connector.get(format("%s/ascii/streem/index/%d", entityUrl, columnIndex), InputStream.class);
+        return connector.get(format("%s/ascii/streem/index/%d", entityUrl, columnIndex), InputStream.class, token);
     }
 
     @Override
     public InputStream getUnicodeStream(int columnIndex) throws SQLException {
-        return connector.get(format("%s/unicode/streem/index/%d", entityUrl, columnIndex), InputStream.class);
+        return connector.get(format("%s/unicode/streem/index/%d", entityUrl, columnIndex), InputStream.class, token);
     }
 
     @Override
     public InputStream getBinaryStream(int columnIndex) throws SQLException {
-        return connector.get(format("%s/binary/streem/index/%d", entityUrl, columnIndex), InputStream.class);
+        return connector.get(format("%s/binary/streem/index/%d", entityUrl, columnIndex), InputStream.class, token);
     }
 
     @Override
     public String getString(String columnLabel) throws SQLException {
-        return connector.get(format("%s/string/label/%s", entityUrl, columnLabel), String.class);
+        return connector.get(format("%s/string/label/%s", entityUrl, columnLabel), String.class, token);
     }
 
     @Override
     public boolean getBoolean(String columnLabel) throws SQLException {
-        return connector.get(format("%s/boolean/label/%s", entityUrl, columnLabel), boolean.class);
+        return connector.get(format("%s/boolean/label/%s", entityUrl, columnLabel), boolean.class, token);
     }
 
     @Override
     public byte getByte(String columnLabel) throws SQLException {
-        return connector.get(format("%s/byte/label/%s", entityUrl, encode(columnLabel)), byte.class);
+        return connector.get(format("%s/byte/label/%s", entityUrl, encode(columnLabel)), byte.class, token);
     }
 
     @Override
     public short getShort(String columnLabel) throws SQLException {
-        return connector.get(format("%s/short/label/%s", entityUrl, encode(columnLabel)), short.class);
+        return connector.get(format("%s/short/label/%s", entityUrl, encode(columnLabel)), short.class, token);
     }
 
     @Override
     public int getInt(String columnLabel) throws SQLException {
-        return connector.get(format("%s/int/label/%s", entityUrl, encode(columnLabel)), int.class);
+        return connector.get(format("%s/int/label/%s", entityUrl, encode(columnLabel)), int.class, token);
     }
 
     @Override
     public long getLong(String columnLabel) throws SQLException {
-        return connector.get(format("%s/long/label/%s", entityUrl, encode(columnLabel)), long.class);
+        return connector.get(format("%s/long/label/%s", entityUrl, encode(columnLabel)), long.class, token);
     }
 
     @Override
     public float getFloat(String columnLabel) throws SQLException {
-        return connector.get(format("%s/float/label/%s", entityUrl, encode(columnLabel)), float.class);
+        return connector.get(format("%s/float/label/%s", entityUrl, encode(columnLabel)), float.class, token);
     }
 
     @Override
     public double getDouble(String columnLabel) throws SQLException {
-        return connector.get(format("%s/double/label/%s", entityUrl, encode(columnLabel)), double.class);
+        return connector.get(format("%s/double/label/%s", entityUrl, encode(columnLabel)), double.class, token);
     }
 
     @Override
     public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException {
-        return connector.get(format("%s/bigdecimal/label/%s", entityUrl, encode(columnLabel)), BigDecimal.class);
+        return connector.get(format("%s/bigdecimal/label/%s", entityUrl, encode(columnLabel)), BigDecimal.class, token);
     }
 
     @Override
     public byte[] getBytes(String columnLabel) throws SQLException {
-        return connector.get(format("%s/bytes/label/%s", entityUrl, encode(columnLabel)), byte[].class);
+        return connector.get(format("%s/bytes/label/%s", entityUrl, encode(columnLabel)), byte[].class, token);
     }
 
     @Override
     public Date getDate(String columnLabel) throws SQLException {
-        return connector.get(format("%s/date/label/%s", entityUrl, encode(columnLabel)), Date.class);
+        return connector.get(format("%s/date/label/%s", entityUrl, encode(columnLabel)), Date.class, token);
     }
 
     @Override
     public Time getTime(String columnLabel) throws SQLException {
-        return connector.get(format("%s/time/label/%s", entityUrl, encode(columnLabel)), Time.class);
+        return connector.get(format("%s/time/label/%s", entityUrl, encode(columnLabel)), Time.class, token);
     }
 
     @Override
     public Timestamp getTimestamp(String columnLabel) throws SQLException {
-        return connector.get(format("%s/timestamp/label/%s", entityUrl, encode(columnLabel)), Timestamp.class);
+        return connector.get(format("%s/timestamp/label/%s", entityUrl, encode(columnLabel)), Timestamp.class, token);
     }
 
     @Override
     public InputStream getAsciiStream(String columnLabel) throws SQLException {
-        return connector.get(format("%s/asciistream/label/%s", entityUrl, encode(columnLabel)), InputStream.class);
+        return connector.get(format("%s/asciistream/label/%s", entityUrl, encode(columnLabel)), InputStream.class, token);
     }
 
     @Override
     public InputStream getUnicodeStream(String columnLabel) throws SQLException {
-        return connector.get(format("%s/unicodestream/label/%s", entityUrl, columnLabel), InputStream.class);
+        return connector.get(format("%s/unicodestream/label/%s", entityUrl, columnLabel), InputStream.class, token);
     }
 
     @Override
     public InputStream getBinaryStream(String columnLabel) throws SQLException {
-        return connector.get(format("%s/binarystream/label/%s", entityUrl, encode(columnLabel)), InputStream.class);
+        return connector.get(format("%s/binarystream/label/%s", entityUrl, encode(columnLabel)), InputStream.class, token);
     }
 
     @Override
     @JsonIgnore
     public SQLWarning getWarnings() throws SQLException {
-        return connector.get(format("%s/warnings", entityUrl), TransportableSQLWarning.class);
+        return connector.get(format("%s/warnings", entityUrl), TransportableSQLWarning.class, token);
     }
 
     @Override
     public void clearWarnings() throws SQLException {
-        connector.delete(format("%s/warnings", entityUrl), null, Void.class);
+        connector.delete(format("%s/warnings", entityUrl), null, Void.class, token);
     }
 
     @Override
     @JsonIgnore
     public String getCursorName() throws SQLException {
-        return connector.get(format("%s/cursorname", entityUrl), String.class);
+        return connector.get(format("%s/cursorname", entityUrl), String.class, token);
     }
 
     @Override
     @JsonIgnore
     public ResultSetMetaData getMetaData() throws SQLException {
         if (md == null) {
-            md = connector.get(format("%s/metadata", entityUrl), TransportableResultSetMetaData.class);
+            md = connector.get(format("%s/metadata", entityUrl), TransportableResultSetMetaData.class, token);
         }
         return md;
     }
 
     @Override
     public Object getObject(int columnIndex) throws SQLException {
-        return connector.get(format("%s/object/index/%s", entityUrl, columnIndex), Object.class);
+        return connector.get(format("%s/object/index/%s", entityUrl, columnIndex), Object.class, token);
     }
 
     @Override
     public Object getObject(String columnLabel) throws SQLException {
-        return connector.get(format("%s/object/label/%s", entityUrl, columnLabel), Object.class);
+        return connector.get(format("%s/object/label/%s", entityUrl, columnLabel), Object.class, token);
     }
 
     @Override
     public int findColumn(String columnLabel) throws SQLException {
-        return connector.get(format("%s/column/label/%s", entityUrl, encode(columnLabel)), Integer.class);
+        return connector.get(format("%s/column/label/%s", entityUrl, encode(columnLabel)), Integer.class, token);
     }
 
     @Override
     public Reader getCharacterStream(int columnIndex) throws SQLException {
-        return connector.get(format("%s/characterstream/index/%d", entityUrl, columnIndex), Reader.class);
+        return connector.get(format("%s/characterstream/index/%d", entityUrl, columnIndex), Reader.class, token);
     }
 
     @Override
     public Reader getCharacterStream(String columnLabel) throws SQLException {
-        return connector.get(format("%s/characterstream/label/%s", entityUrl, encode(columnLabel)), Reader.class);
+        return connector.get(format("%s/characterstream/label/%s", entityUrl, encode(columnLabel)), Reader.class, token);
     }
 
     @Override
     public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
-        return connector.get(format("%s/bigdecimal/index/%s", entityUrl, columnIndex), BigDecimal.class);
+        return connector.get(format("%s/bigdecimal/index/%s", entityUrl, columnIndex), BigDecimal.class, token);
     }
 
     @Override
     public BigDecimal getBigDecimal(String columnLabel) throws SQLException {
-        return connector.get(format("%s/bigdecimal/label/%s", entityUrl, columnLabel), BigDecimal.class);
+        return connector.get(format("%s/bigdecimal/label/%s", entityUrl, columnLabel), BigDecimal.class, token);
     }
 
     @Override
     @JsonIgnore
     public boolean isBeforeFirst() throws SQLException {
-        return connector.get(format("%s/before/first", entityUrl), boolean.class);
+        return connector.get(format("%s/before/first", entityUrl), boolean.class, token);
     }
 
     @Override
     @JsonIgnore
     public boolean isAfterLast() throws SQLException {
-        return connector.get(format("%s/after/last", entityUrl), boolean.class);
+        return connector.get(format("%s/after/last", entityUrl), boolean.class, token);
     }
 
     @Override
     @JsonIgnore
     public boolean isFirst() throws SQLException {
-        return connector.get(format("%s/first", entityUrl), boolean.class);
+        return connector.get(format("%s/first", entityUrl), boolean.class, token);
     }
 
     @Override
     @JsonIgnore
     public boolean isLast() throws SQLException {
-        return connector.get(format("%s/last", entityUrl), Boolean.class);
+        return connector.get(format("%s/last", entityUrl), Boolean.class, token);
     }
 
     @Override
     public void beforeFirst() throws SQLException {
-        connector.post(format("%s/before/first", entityUrl), null, Void.class);
+        connector.post(format("%s/before/first", entityUrl), null, Void.class, token);
     }
 
     @Override
     public void afterLast() throws SQLException {
-        connector.post(format("%s/after/last", entityUrl), null, Void.class);
+        connector.post(format("%s/after/last", entityUrl), null, Void.class, token);
     }
 
     @Override
     public boolean first() throws SQLException {
-        return connector.post(format("%s/first", entityUrl), null, Boolean.class);
+        return connector.post(format("%s/first", entityUrl), null, Boolean.class, token);
     }
 
     @Override
     public boolean last() throws SQLException {
-        return connector.post(format("%s/last", entityUrl), null, Boolean.class);
+        return connector.post(format("%s/last", entityUrl), null, Boolean.class, token);
     }
 
     @Override
     @JsonIgnore
     public int getRow() throws SQLException {
-        return connector.get(format("%s/row", entityUrl), int.class);
+        return connector.get(format("%s/row", entityUrl), int.class, token);
     }
 
     @Override
     public boolean absolute(int row) throws SQLException {
-        return connector.get(format("%s/absolute/%d", entityUrl, row), boolean.class);
+        return connector.get(format("%s/absolute/%d", entityUrl, row), boolean.class, token);
     }
 
     @Override
     public boolean relative(int rows) throws SQLException {
-        return connector.get(format("%s/relative/%d", entityUrl, rows), boolean.class);
+        return connector.get(format("%s/relative/%d", entityUrl, rows), boolean.class, token);
     }
 
     @Override
     public boolean previous() throws SQLException {
-        return connector.get(format("%s/previous", entityUrl), boolean.class);
+        return connector.get(format("%s/previous", entityUrl), boolean.class, token);
     }
 
     @Override
     public void setFetchDirection(int direction) throws SQLException {
-        connector.post(format("%s/fetch/direction", entityUrl), direction, Void.class);
+        connector.post(format("%s/fetch/direction", entityUrl), direction, Void.class, token);
     }
 
     @Override
     @JsonIgnore
     public int getFetchDirection() throws SQLException {
-        return connector.get(format("%s/fetch/direction", entityUrl), int.class);
+        return connector.get(format("%s/fetch/direction", entityUrl), int.class, token);
     }
 
     @Override
     public void setFetchSize(int rows) throws SQLException {
-        connector.post(format("%s/fetch/size", entityUrl), rows, Void.class);
+        connector.post(format("%s/fetch/size", entityUrl), rows, Void.class, token);
     }
 
     @Override
     @JsonIgnore
     public int getFetchSize() throws SQLException {
-        return connector.get(format("%s/fetch/size", entityUrl), int.class);
+        return connector.get(format("%s/fetch/size", entityUrl), int.class, token);
     }
 
     @Override
     @JsonIgnore
     public int getType() throws SQLException {
-        return connector.get(format("%s/type", entityUrl), int.class);
+        return connector.get(format("%s/type", entityUrl), int.class, token);
     }
 
     @Override
     @JsonIgnore
     public int getConcurrency() throws SQLException {
-        return connector.get(format("%s/concurrency", entityUrl), int.class);
+        return connector.get(format("%s/concurrency", entityUrl), int.class, token);
     }
 
     @Override
     public boolean rowUpdated() throws SQLException {
-        return connector.get(format("%s/row/updated", entityUrl), boolean.class);
+        return connector.get(format("%s/row/updated", entityUrl), boolean.class, token);
     }
 
     @Override
     public boolean rowInserted() throws SQLException {
-        return connector.get(format("%s/row/inserted", entityUrl), boolean.class);
+        return connector.get(format("%s/row/inserted", entityUrl), boolean.class, token);
     }
 
     @Override
     public boolean rowDeleted() throws SQLException {
-        return connector.get(format("%s/row/deleted", entityUrl), boolean.class);
+        return connector.get(format("%s/row/deleted", entityUrl), boolean.class, token);
     }
 
     @Override
@@ -580,37 +580,37 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public void insertRow() throws SQLException {
-        connector.post(format("%s/row", entityUrl), null, Void.class);
+        connector.post(format("%s/row", entityUrl), null, Void.class, token);
     }
 
     @Override
     public void updateRow() throws SQLException {
-        connector.put(format("%s/row", entityUrl), null, Void.class);
+        connector.put(format("%s/row", entityUrl), null, Void.class, token);
     }
 
     @Override
     public void deleteRow() throws SQLException {
-        connector.delete(format("%s/row", entityUrl), null, Void.class);
+        connector.delete(format("%s/row", entityUrl), null, Void.class, token);
     }
 
     @Override
     public void refreshRow() throws SQLException {
-        connector.get(format("%s/row", entityUrl), Void.class);
+        connector.get(format("%s/row", entityUrl), Void.class, token);
     }
 
     @Override
     public void cancelRowUpdates() throws SQLException {
-        connector.put(format("%s/row", entityUrl), "cancel", Void.class);
+        connector.put(format("%s/row", entityUrl), "cancel", Void.class, token);
     }
 
     @Override
     public void moveToInsertRow() throws SQLException {
-        connector.post(format("%s/move", entityUrl), "insert", Void.class);
+        connector.post(format("%s/move", entityUrl), "insert", Void.class, token);
     }
 
     @Override
     public void moveToCurrentRow() throws SQLException {
-        connector.post(format("%s/move", entityUrl), "current", Void.class);
+        connector.post(format("%s/move", entityUrl), "current", Void.class, token);
     }
 
     @Override
@@ -626,22 +626,22 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public Ref getRef(int columnIndex) throws SQLException {
-        return connector.get(format("%s/ref/index/%d", entityUrl, columnIndex), TransportableRef.class);
+        return connector.get(format("%s/ref/index/%d", entityUrl, columnIndex), TransportableRef.class, token);
     }
 
     @Override
     public Blob getBlob(int columnIndex) throws SQLException {
-        return connector.get(format("%s/blob/index/%d", entityUrl, columnIndex), BlobProxy.class);
+        return connector.get(format("%s/blob/index/%d", entityUrl, columnIndex), BlobProxy.class, token);
     }
 
     @Override
     public Clob getClob(int columnIndex) throws SQLException {
-        return connector.get(format("%s/clob/index/%d", entityUrl, columnIndex), ClobProxy.class);
+        return connector.get(format("%s/clob/index/%d", entityUrl, columnIndex), ClobProxy.class, token);
     }
 
     @Override
     public Array getArray(int columnIndex) throws SQLException {
-        return connector.get(format("%s/array/index/%d", entityUrl, columnIndex), ArrayProxy.class);
+        return connector.get(format("%s/array/index/%d", entityUrl, columnIndex), ArrayProxy.class, token);
     }
 
     @Override
@@ -652,62 +652,62 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public Ref getRef(String columnLabel) throws SQLException {
-        return connector.get(format("%s/ref/label/%s", entityUrl, columnLabel), TransportableRef.class);
+        return connector.get(format("%s/ref/label/%s", entityUrl, columnLabel), TransportableRef.class, token);
     }
 
     @Override
     public Blob getBlob(String columnLabel) throws SQLException {
-        return connector.get(format("%s/blob/label/%s", entityUrl, columnLabel), BlobProxy.class);
+        return connector.get(format("%s/blob/label/%s", entityUrl, columnLabel), BlobProxy.class, token);
     }
 
     @Override
     public Clob getClob(String columnLabel) throws SQLException {
-        return connector.get(format("%s/clob/label/%s", entityUrl, columnLabel), ClobProxy.class);
+        return connector.get(format("%s/clob/label/%s", entityUrl, columnLabel), ClobProxy.class, token);
     }
 
     @Override
     public Array getArray(String columnLabel) throws SQLException {
-        return connector.get(format("%s/array/label/%s", entityUrl, columnLabel), ArrayProxy.class);
+        return connector.get(format("%s/array/label/%s", entityUrl, columnLabel), ArrayProxy.class, token);
     }
 
     @Override
     public Date getDate(int columnIndex, Calendar cal) throws SQLException {
-        return connector.get(format("%s/date/index/%s/%s", entityUrl, columnIndex, calendarParameter(cal)), Date.class);
+        return connector.get(format("%s/date/index/%s/%s", entityUrl, columnIndex, calendarParameter(cal)), Date.class, token);
     }
 
     @Override
     public Date getDate(String columnLabel, Calendar cal) throws SQLException {
-        return connector.get(format("%s/date/label/%s/%s", entityUrl, columnLabel, calendarParameter(cal)), Date.class);
+        return connector.get(format("%s/date/label/%s/%s", entityUrl, columnLabel, calendarParameter(cal)), Date.class, token);
     }
 
     @Override
     public Time getTime(int columnIndex, Calendar cal) throws SQLException {
-        return connector.get(format("%s/time/index/%s/%s", entityUrl, columnIndex, calendarParameter(cal)), Time.class);
+        return connector.get(format("%s/time/index/%s/%s", entityUrl, columnIndex, calendarParameter(cal)), Time.class, token);
     }
 
     @Override
     public Time getTime(String columnLabel, Calendar cal) throws SQLException {
-        return connector.get(format("%s/time/label/%s/%s", entityUrl, columnLabel, calendarParameter(cal)), Time.class);
+        return connector.get(format("%s/time/label/%s/%s", entityUrl, columnLabel, calendarParameter(cal)), Time.class, token);
     }
 
     @Override
     public Timestamp getTimestamp(int columnIndex, Calendar cal) throws SQLException {
-        return connector.get(format("%s/timestamp/index/%s/%s", entityUrl, columnIndex, calendarParameter(cal)), Timestamp.class);
+        return connector.get(format("%s/timestamp/index/%s/%s", entityUrl, columnIndex, calendarParameter(cal)), Timestamp.class, token);
     }
 
     @Override
     public Timestamp getTimestamp(String columnLabel, Calendar cal) throws SQLException {
-        return connector.get(format("%s/timestamp/label/%s/%s", entityUrl, columnLabel, calendarParameter(cal)), Timestamp.class);
+        return connector.get(format("%s/timestamp/label/%s/%s", entityUrl, columnLabel, calendarParameter(cal)), Timestamp.class, token);
     }
 
     @Override
     public URL getURL(int columnIndex) throws SQLException {
-        return connector.get(format("%s/url/index/%d", entityUrl, columnIndex), URL.class);
+        return connector.get(format("%s/url/index/%d", entityUrl, columnIndex), URL.class, token);
     }
 
     @Override
     public URL getURL(String columnLabel) throws SQLException {
-        return connector.get(format("%s/url/label/%s", entityUrl, columnLabel), URL.class);
+        return connector.get(format("%s/url/label/%s", entityUrl, columnLabel), URL.class, token);
     }
 
     @Override
@@ -752,12 +752,12 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public RowId getRowId(int columnIndex) throws SQLException {
-        return connector.get(format("%s/rowid/label/%s", entityUrl, columnIndex), RowId.class);
+        return connector.get(format("%s/rowid/label/%s", entityUrl, columnIndex), RowId.class, token);
     }
 
     @Override
     public RowId getRowId(String columnLabel) throws SQLException {
-        return connector.get(format("%s/rowid/label/%s", entityUrl, columnLabel), RowId.class);
+        return connector.get(format("%s/rowid/label/%s", entityUrl, columnLabel), RowId.class, token);
     }
 
     @Override
@@ -773,13 +773,13 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @Override
     @JsonIgnore
     public int getHoldability() throws SQLException {
-        return connector.get(format("%s/hodability", entityUrl), Integer.class);
+        return connector.get(format("%s/hodability", entityUrl), Integer.class, token);
     }
 
     @Override
     @JsonIgnore
     public boolean isClosed() throws SQLException {
-        return connector.get(format("%s/closed", entityUrl), Boolean.class);
+        return connector.get(format("%s/closed", entityUrl), Boolean.class, token);
     }
 
     @Override
@@ -804,22 +804,22 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public NClob getNClob(int columnIndex) throws SQLException {
-        return connector.get(format("%s/nclob/index/%d", entityUrl, columnIndex), ClobProxy.class);
+        return connector.get(format("%s/nclob/index/%d", entityUrl, columnIndex), ClobProxy.class, token);
     }
 
     @Override
     public NClob getNClob(String columnLabel) throws SQLException {
-        return connector.get(format("%s/nclob/label/%s", entityUrl, columnLabel), ClobProxy.class);
+        return connector.get(format("%s/nclob/label/%s", entityUrl, columnLabel), ClobProxy.class, token);
     }
 
     @Override
     public SQLXML getSQLXML(int columnIndex) throws SQLException {
-        return connector.get(format("%s/sqlxml/index/%s", entityUrl, columnIndex), SQLXML.class);
+        return connector.get(format("%s/sqlxml/index/%s", entityUrl, columnIndex), SQLXML.class, token);
     }
 
     @Override
     public SQLXML getSQLXML(String columnLabel) throws SQLException {
-        return connector.get(format("%s/sqlxml/label/%s", entityUrl, columnLabel), SQLXML.class);
+        return connector.get(format("%s/sqlxml/label/%s", entityUrl, columnLabel), SQLXML.class, token);
     }
 
     @Override
@@ -834,22 +834,22 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public String getNString(int columnIndex) throws SQLException {
-        return connector.get(format("%s/nstring/index/%d", entityUrl, columnIndex), String.class);
+        return connector.get(format("%s/nstring/index/%d", entityUrl, columnIndex), String.class, token);
     }
 
     @Override
     public String getNString(String columnLabel) throws SQLException {
-        return connector.get(format("%s/nstring/label/%s", entityUrl, columnLabel), String.class);
+        return connector.get(format("%s/nstring/label/%s", entityUrl, columnLabel), String.class, token);
     }
 
     @Override
     public Reader getNCharacterStream(int columnIndex) throws SQLException {
-        return connector.get(format("%s/ncharacterstream/index/%d", entityUrl, columnIndex), Reader.class);
+        return connector.get(format("%s/ncharacterstream/index/%d", entityUrl, columnIndex), Reader.class, token);
     }
 
     @Override
     public Reader getNCharacterStream(String columnLabel) throws SQLException {
-        return connector.get(format("%s/ncharacterstream/label/%s", entityUrl, columnLabel), Reader.class);
+        return connector.get(format("%s/ncharacterstream/label/%s", entityUrl, columnLabel), Reader.class, token);
     }
 
     @Override
@@ -995,13 +995,13 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
-        return connector.get(format("%s/object/index/%d/%s", entityUrl, columnIndex, type), type);
+        return connector.get(format("%s/object/index/%d/%s", entityUrl, columnIndex, type), type, token);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
-        return connector.get(format("%s/object/label/%s/%s", entityUrl, columnLabel, type), type);
+        return connector.get(format("%s/object/label/%s/%s", entityUrl, columnLabel, type), type, token);
     }
 
     public ResultSetProxy withStatement(Statement statement) {

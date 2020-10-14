@@ -22,154 +22,154 @@ public class StatementProxy extends WrapperProxy implements Statement {
     private Connection connection;
 
     @JsonCreator
-    public StatementProxy(@JsonProperty("entityUrl") String entityUrl) {
-        super(entityUrl);
+    public StatementProxy(@JsonProperty("entityUrl") String entityUrl, @JsonProperty("token") String token) {
+        super(entityUrl, token);
     }
 
     @Override
     public ResultSet executeQuery(String sql) throws SQLException {
-        return connector.post(format("%s/query", entityUrl), sql, ResultSetProxy.class).withStatement(this);
+        return connector.post(format("%s/query", entityUrl), sql, ResultSetProxy.class, token).withStatement(this);
     }
 
     @Override
     public int executeUpdate(String sql) throws SQLException {
-        return connector.post(format("%s/update", entityUrl), sql, Integer.class);
+        return connector.post(format("%s/update", entityUrl), sql, Integer.class, token);
     }
 
     @Override
     public void close() throws SQLException {
-        connector.delete(format("%s", entityUrl), null, Void.class);
+        connector.delete(format("%s", entityUrl), null, Void.class, token);
     }
 
     @Override
     @JsonIgnore
     public int getMaxFieldSize() throws SQLException {
-        return connector.get(format("%s/maxfieldsize", entityUrl), Integer.class);
+        return connector.get(format("%s/maxfieldsize", entityUrl), Integer.class, token);
     }
 
     @Override
     public void setMaxFieldSize(int max) throws SQLException {
-        connector.post(format("%s/maxfieldsize", entityUrl), max, Void.class);
+        connector.post(format("%s/maxfieldsize", entityUrl), max, Void.class, token);
     }
 
     @Override
     @JsonIgnore
     public int getMaxRows() throws SQLException {
-        return connector.get(format("%s/maxrows", entityUrl), Integer.class);
+        return connector.get(format("%s/maxrows", entityUrl), Integer.class, token);
     }
 
     @Override
     public void setMaxRows(int max) throws SQLException {
-        connector.post(format("%s/maxrows", entityUrl), max, Void.class);
+        connector.post(format("%s/maxrows", entityUrl), max, Void.class, token);
     }
 
     @Override
     public void setEscapeProcessing(boolean enable) throws SQLException {
-        connector.post(format("%s/escapeprocessing", entityUrl), enable, Void.class);
+        connector.post(format("%s/escapeprocessing", entityUrl), enable, Void.class, token);
     }
 
     @Override
     @JsonIgnore
     public int getQueryTimeout() throws SQLException {
-        return connector.get(format("%s/querytimeout", entityUrl), Integer.class);
+        return connector.get(format("%s/querytimeout", entityUrl), Integer.class, token);
     }
 
     @Override
     public void setQueryTimeout(int seconds) throws SQLException {
-        connector.post(format("%s/querytimeout", entityUrl), seconds, Void.class);
+        connector.post(format("%s/querytimeout", entityUrl), seconds, Void.class, token);
     }
 
     @Override
     public void cancel() throws SQLException {
-        connector.delete(format("%s/cancel", entityUrl), null, Void.class);
+        connector.delete(format("%s/cancel", entityUrl), null, Void.class, token);
     }
 
     @Override
     @JsonIgnore
     public SQLWarning getWarnings() throws SQLException {
-        return connector.get(format("%s/warnings", entityUrl), TransportableSQLWarning.class);
+        return connector.get(format("%s/warnings", entityUrl), TransportableSQLWarning.class, token);
     }
 
     @Override
     public void clearWarnings() throws SQLException {
-        connector.delete(format("%s/warnings", entityUrl), null, Void.class);
+        connector.delete(format("%s/warnings", entityUrl), null, Void.class, token);
     }
 
     @Override
     public void setCursorName(String name) throws SQLException {
-        connector.post(format("%s/cursorname", entityUrl), name, Void.class);
+        connector.post(format("%s/cursorname", entityUrl), name, Void.class, token);
     }
 
     @Override
     public boolean execute(String sql) throws SQLException {
-        return connector.post(format("%s/execute", entityUrl), sql, Boolean.class);
+        return connector.post(format("%s/execute", entityUrl), sql, Boolean.class, token);
     }
 
     @Override
     @JsonIgnore
     public ResultSet getResultSet() throws SQLException {
-        return Optional.ofNullable(connector.get(format("%s/resultset", entityUrl), ResultSetProxy.class)).map(rs -> rs.withStatement(this)).orElse(null);
+        return Optional.ofNullable(connector.get(format("%s/resultset", entityUrl), ResultSetProxy.class, token)).map(rs -> rs.withStatement(this)).orElse(null);
     }
 
     @Override
     @JsonIgnore
     public int getUpdateCount() throws SQLException {
-        return connector.get(format("%s/updatecount", entityUrl), Integer.class);
+        return connector.get(format("%s/updatecount", entityUrl), Integer.class, token);
     }
 
     @Override
     @JsonIgnore
     public boolean getMoreResults() throws SQLException {
-        return connector.get(format("%s/more", entityUrl), Boolean.class);
+        return connector.get(format("%s/more", entityUrl), Boolean.class, token);
     }
 
     @Override
     public void setFetchDirection(int direction) throws SQLException {
-        connector.post(format("%s/fetch/direction", entityUrl), direction, Void.class);
+        connector.post(format("%s/fetch/direction", entityUrl), direction, Void.class, token);
     }
 
     @Override
     @JsonIgnore
     public int getFetchDirection() throws SQLException {
-        return connector.get(format("%s/fetch/direction", entityUrl), Integer.class);
+        return connector.get(format("%s/fetch/direction", entityUrl), Integer.class, token);
     }
 
     @Override
     public void setFetchSize(int rows) throws SQLException {
-        connector.post(format("%s/fetch/size", entityUrl), rows, Void.class);
+        connector.post(format("%s/fetch/size", entityUrl), rows, Void.class, token);
     }
 
     @Override
     @JsonIgnore
     public int getFetchSize() throws SQLException {
-        return connector.get(format("%s/fetch/size", entityUrl), Integer.class);
+        return connector.get(format("%s/fetch/size", entityUrl), Integer.class, token);
     }
 
     @Override
     @JsonIgnore
     public int getResultSetConcurrency() throws SQLException {
-        return connector.get(format("%s/resultset/concurrency", entityUrl), Integer.class);
+        return connector.get(format("%s/resultset/concurrency", entityUrl), Integer.class, token);
     }
 
     @Override
     @JsonIgnore
     public int getResultSetType() throws SQLException {
-        return connector.get(format("%s/resultset/type", entityUrl), Integer.class);
+        return connector.get(format("%s/resultset/type", entityUrl), Integer.class, token);
     }
 
     @Override
     public void addBatch(String sql) throws SQLException {
-        connector.put(format("%s/batch", entityUrl), sql, Void.class);
+        connector.put(format("%s/batch", entityUrl), sql, Void.class, token);
     }
 
     @Override
     public void clearBatch() throws SQLException {
-        connector.delete(format("%s/batch", entityUrl), null, Integer.class);
+        connector.delete(format("%s/batch", entityUrl), null, Integer.class, token);
     }
 
     @Override
     public int[] executeBatch() throws SQLException {
-        return connector.post(format("%s/batch", entityUrl), null, int[].class);
+        return connector.post(format("%s/batch", entityUrl), null, int[].class, token);
     }
 
     @Override
@@ -180,81 +180,81 @@ public class StatementProxy extends WrapperProxy implements Statement {
 
     @Override
     public boolean getMoreResults(int current) throws SQLException {
-        return connector.get(format("%s/more?current=%d", entityUrl, current), Boolean.class);
+        return connector.get(format("%s/more?current=%d", entityUrl, current), Boolean.class, token);
     }
 
     @Override
     @JsonIgnore
     public ResultSet getGeneratedKeys() throws SQLException {
-        return Optional.ofNullable(connector.get(format("%s/generatedkeys", entityUrl), ResultSetProxy.class)).map(rs -> rs.withStatement(this)).orElse(null);
+        return Optional.ofNullable(connector.get(format("%s/generatedkeys", entityUrl), ResultSetProxy.class, token)).map(rs -> rs.withStatement(this)).orElse(null);
     }
 
     @Override
     public int executeUpdate(String sql, int autoGeneratedKeys) throws SQLException {
-        return connector.post(format("%s/update?keys=%d", entityUrl, autoGeneratedKeys), sql, Integer.class);
+        return connector.post(format("%s/update?keys=%d", entityUrl, autoGeneratedKeys), sql, Integer.class, token);
     }
 
     @Override
     public int executeUpdate(String sql, int[] columnIndexes) throws SQLException {
         String indices = Arrays.stream(columnIndexes).mapToObj(i -> "" + i).collect(Collectors.joining(","));
-        return connector.post(format("%s/update?indexes=%s", entityUrl, indices), sql, Integer.class);
+        return connector.post(format("%s/update?indexes=%s", entityUrl, indices), sql, Integer.class, token);
     }
 
     @Override
     public int executeUpdate(String sql, String[] columnNames) throws SQLException {
         String columnNamesStr = columnNames == null ? null : Arrays.stream(columnNames).map(Util::encode).collect(Collectors.joining(","));
-        return connector.post(format("%s/update?names=%s", entityUrl, columnNamesStr), sql, Integer.class);
+        return connector.post(format("%s/update?names=%s", entityUrl, columnNamesStr), sql, Integer.class, token);
     }
 
     @Override
     public boolean execute(String sql, int autoGeneratedKeys) throws SQLException {
-        return connector.post(format("%s/execute?keys=%d", entityUrl, autoGeneratedKeys), sql, Boolean.class);
+        return connector.post(format("%s/execute?keys=%d", entityUrl, autoGeneratedKeys), sql, Boolean.class, token);
     }
 
     @Override
     public boolean execute(String sql, int[] columnIndexes) throws SQLException {
         String indices = Arrays.stream(columnIndexes).mapToObj(i -> "" + i).collect(Collectors.joining(","));
-        return connector.post(format("%s/execute?indexes=%s", entityUrl, indices), sql, Boolean.class);
+        return connector.post(format("%s/execute?indexes=%s", entityUrl, indices), sql, Boolean.class, token);
     }
 
     @Override
     public boolean execute(String sql, String[] columnNames) throws SQLException {
         String columnNamesStr = columnNames == null ? null : Arrays.stream(columnNames).map(Util::encode).collect(Collectors.joining(","));
-        return connector.post(format("%s/execute?names=%s", entityUrl, columnNamesStr), sql, Boolean.class);
+        return connector.post(format("%s/execute?names=%s", entityUrl, columnNamesStr), sql, Boolean.class, token);
     }
 
     @Override
     @JsonIgnore
     public int getResultSetHoldability() throws SQLException {
-        return connector.get(format("%s/resultset/holdability", entityUrl), Integer.class);
+        return connector.get(format("%s/resultset/holdability", entityUrl), Integer.class, token);
     }
 
     @Override
     @JsonIgnore
     public boolean isClosed() throws SQLException {
-        return connector.get(format("%s/closed", entityUrl), Boolean.class);
+        return connector.get(format("%s/closed", entityUrl), Boolean.class, token);
     }
 
     @Override
     public void setPoolable(boolean poolable) throws SQLException {
-        connector.post(format("%s/poolable", entityUrl), poolable, Void.class);
+        connector.post(format("%s/poolable", entityUrl), poolable, Void.class, token);
     }
 
     @Override
     @JsonIgnore
     public boolean isPoolable() throws SQLException {
-        return connector.get(format("%s/poolable", entityUrl), Boolean.class);
+        return connector.get(format("%s/poolable", entityUrl), Boolean.class, token);
     }
 
     @Override
     public void closeOnCompletion() throws SQLException {
-        connector.post(format("%s/closeoncompletion", entityUrl), null, Void.class);
+        connector.post(format("%s/closeoncompletion", entityUrl), null, Void.class, token);
     }
 
     @Override
     @JsonIgnore
     public boolean isCloseOnCompletion() throws SQLException {
-        return connector.get(format("%s/closeoncompletion", entityUrl), Boolean.class);
+        return connector.get(format("%s/closeoncompletion", entityUrl), Boolean.class, token);
     }
 
     public StatementProxy withConnection(Connection connection) {
@@ -265,64 +265,64 @@ public class StatementProxy extends WrapperProxy implements Statement {
     @Override
     @JsonIgnore
     public long getLargeUpdateCount() {
-        return connector.get(format("%s/large/updatecount", entityUrl), Long.class);
+        return connector.get(format("%s/large/updatecount", entityUrl), Long.class, token);
     }
 
     @Override
     @JsonIgnore
     public long getLargeMaxRows() throws SQLException {
-        return connector.get(format("%s/large/maxrows", entityUrl), Long.class);
+        return connector.get(format("%s/large/maxrows", entityUrl), Long.class, token);
     }
 
     @Override
     public void setLargeMaxRows(long max) throws SQLException {
-        connector.post(format("%s/large/maxrows", entityUrl), max, Void.class);
+        connector.post(format("%s/large/maxrows", entityUrl), max, Void.class, token);
     }
 
     @Override
     public long[] executeLargeBatch() throws SQLException {
-        return connector.post(format("%s/large/batch", entityUrl), null, long[].class);
+        return connector.post(format("%s/large/batch", entityUrl), null, long[].class, token);
     }
 
     @Override
     public long executeLargeUpdate(String sql) throws SQLException {
-        return connector.post(format("%s/large/update", entityUrl), sql, Long.class);
+        return connector.post(format("%s/large/update", entityUrl), sql, Long.class, token);
     }
 
     @Override
     public long executeLargeUpdate(String sql, int autoGeneratedKeys) throws SQLException {
-        return connector.post(format("%s/large/update?keys=%d", entityUrl, autoGeneratedKeys), sql, Long.class);
+        return connector.post(format("%s/large/update?keys=%d", entityUrl, autoGeneratedKeys), sql, Long.class, token);
     }
 
     @Override
     public long executeLargeUpdate(String sql, int[] columnIndexes) throws SQLException {
         String columnIndexesStr = columnIndexes == null ? null : Stream.of(columnIndexes).map(String::valueOf).collect(Collectors.joining(","));
-        return connector.post(format("%s/large/update?indexes=%s", entityUrl, columnIndexesStr), sql, Long.class);
+        return connector.post(format("%s/large/update?indexes=%s", entityUrl, columnIndexesStr), sql, Long.class, token);
     }
 
     @Override
     public long executeLargeUpdate(String sql, String[] columnNames) throws SQLException {
         String columnNamesStr = columnNames == null ? null : Arrays.stream(columnNames).map(Util::encode).collect(Collectors.joining(","));
-        return connector.post(format("%s/large/update?names=%s", entityUrl, columnNamesStr), sql, Long.class);
+        return connector.post(format("%s/large/update?names=%s", entityUrl, columnNamesStr), sql, Long.class, token);
     }
 
     @Override
     public String enquoteLiteral(String val) throws SQLException {
-        return connector.post(format("%s/enquote/literal", entityUrl), val, String.class);
+        return connector.post(format("%s/enquote/literal", entityUrl), val, String.class, token);
     }
 
     @Override
     public String enquoteIdentifier(String identifier, boolean alwaysQuote) throws SQLException {
-        return connector.post(format("%s/enquote/identifier/%s", entityUrl, alwaysQuote), identifier, String.class);
+        return connector.post(format("%s/enquote/identifier/%s", entityUrl, alwaysQuote), identifier, String.class, token);
     }
 
     @Override
     public boolean isSimpleIdentifier(String identifier) throws SQLException {
-        return connector.get(format("%s/simple/identifier/%s", entityUrl, encode(identifier)), Boolean.class);
+        return connector.get(format("%s/simple/identifier/%s", entityUrl, encode(identifier)), Boolean.class, token);
     }
 
     @Override
     public String enquoteNCharLiteral(String val) throws SQLException {
-        return connector.post(format("%s/enquote/nchar/literal", entityUrl), val, String.class);
+        return connector.post(format("%s/enquote/nchar/literal", entityUrl), val, String.class, token);
     }
 }

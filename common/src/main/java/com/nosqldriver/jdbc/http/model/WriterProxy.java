@@ -13,27 +13,30 @@ import static java.lang.String.format;
 public class WriterProxy extends Writer {
     @JsonProperty
     private final String url;
+    @JsonProperty
+    protected final String token;
     @JsonIgnore
     protected final HttpConnector connector = new HttpConnector();
 
     @JsonCreator
-    public WriterProxy(@JsonProperty("url") String url) {
+    public WriterProxy(@JsonProperty("url") String url, @JsonProperty("token") String token) {
         this.url = url;
+        this.token = token;
     }
 
 
     @Override
     public void write(char[] cbuf, int off, int len) throws IOException {
-        connector.put(format("%s/%d/%d", url, off, len), cbuf, Void.class);
+        connector.put(format("%s/%d/%d", url, off, len), cbuf, Void.class, token);
     }
 
     @Override
     public void flush() throws IOException {
-        connector.post(url, null, Void.class);
+        connector.post(url, null, Void.class, token);
     }
 
     @Override
     public void close() throws IOException {
-        connector.delete(url, null, Void.class);
+        connector.delete(url, null, Void.class, token);
     }
 }

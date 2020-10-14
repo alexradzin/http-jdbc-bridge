@@ -18,12 +18,12 @@ public class ClobProxy extends EntityProxy implements NClob {
     private long length;
 
     @JsonCreator
-    public ClobProxy(@JsonProperty("entityUrl") String entityUrl) {
-        super(entityUrl);
+    public ClobProxy(@JsonProperty("entityUrl") String entityUrl, @JsonProperty("token") String token) {
+        super(entityUrl, token);
     }
 
-    public ClobProxy(String entityUrl, long length) {
-        super(entityUrl);
+    public ClobProxy(String entityUrl, @JsonProperty("token") String token, long length) {
+        super(entityUrl, token);
         this.length = length;
     }
 
@@ -34,24 +34,24 @@ public class ClobProxy extends EntityProxy implements NClob {
 
     @Override
     public String getSubString(long pos, int length) throws SQLException {
-        return connector.get(format("%s/substring/%d/%d", entityUrl, pos, length), String.class);
+        return connector.get(format("%s/substring/%d/%d", entityUrl, pos, length), String.class, token);
     }
 
     @Override
     @JsonIgnore
     public Reader getCharacterStream() throws SQLException {
-        return connector.get(format("%s/character/stream", entityUrl), ReaderProxy.class);
+        return connector.get(format("%s/character/stream", entityUrl), ReaderProxy.class, token);
     }
 
     @Override
     @JsonIgnore
     public InputStream getAsciiStream() throws SQLException {
-        return connector.get(format("%s/ascii/stream", entityUrl), InputStreamProxy.class);
+        return connector.get(format("%s/ascii/stream", entityUrl), InputStreamProxy.class, token);
     }
 
     @Override
     public long position(String searchstr, long start) throws SQLException {
-        return connector.post(format("%s/position/%d", entityUrl, start), searchstr, Long.class);
+        return connector.post(format("%s/position/%d", entityUrl, start), searchstr, Long.class, token);
     }
 
     @Override
@@ -61,36 +61,36 @@ public class ClobProxy extends EntityProxy implements NClob {
 
     @Override
     public int setString(long pos, String str) throws SQLException {
-        return connector.put(format("%s/%d", entityUrl, pos), str, Integer.class);
+        return connector.put(format("%s/%d", entityUrl, pos), str, Integer.class, token);
     }
 
     @Override
     public int setString(long pos, String str, int offset, int len) throws SQLException {
-        return connector.put(format("%s/%d/%d/%d", entityUrl, pos, offset, len), str, Integer.class);
+        return connector.put(format("%s/%d/%d/%d", entityUrl, pos, offset, len), str, Integer.class, token);
     }
 
     @Override
     public OutputStream setAsciiStream(long pos) throws SQLException {
-        return connector.post(format("%s/ascii/stream/%d", entityUrl, pos), null, OutputStreamProxy.class);
+        return connector.post(format("%s/ascii/stream/%d", entityUrl, pos), null, OutputStreamProxy.class, token);
     }
 
     @Override
     public Writer setCharacterStream(long pos) throws SQLException {
-        return connector.post(format("%s/character/stream/%d", entityUrl, pos), null, WriterProxy.class);
+        return connector.post(format("%s/character/stream/%d", entityUrl, pos), null, WriterProxy.class, token);
     }
 
     @Override
     public void truncate(long len) throws SQLException {
-        connector.delete(entityUrl, len, Void.class);
+        connector.delete(entityUrl, len, Void.class, token);
     }
 
     @Override
     public void free() throws SQLException {
-        connector.delete(entityUrl, null, Void.class);
+        connector.delete(entityUrl, null, Void.class, token);
     }
 
     @Override
     public Reader getCharacterStream(long pos, long length) throws SQLException {
-        return connector.get(format("%s/character/stream/%d/%d", entityUrl, pos, length), ReaderProxy.class);
+        return connector.get(format("%s/character/stream/%d/%d", entityUrl, pos, length), ReaderProxy.class, token);
     }
 }

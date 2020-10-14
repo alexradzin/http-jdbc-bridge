@@ -30,12 +30,12 @@ public class HttpDriver implements Driver {
 
     @Override
     public Connection connect(String url, Properties info) throws SQLException {
-        return acceptsURL(url) ? connector.post(connector.buildUrl(getHttpUrl(url), "connection"), getConnectionInfo(url, info), ConnectionProxy.class) : null;
+        return acceptsURL(url) ? connector.post(connector.buildUrl(getHttpUrl(url), "connection"), getConnectionInfo(url, info), ConnectionProxy.class, null) : null;
     }
 
     @Override
     public boolean acceptsURL(String url) throws SQLException {
-        return url != null && (url.startsWith("http:") || url.startsWith("https:")) && connector.post(connector.buildUrl(getHttpUrl(url), "acceptsurl"), url, Boolean.class);
+        return url != null && (url.startsWith("http:") || url.startsWith("https:")) && connector.post(connector.buildUrl(getHttpUrl(url), "acceptsurl"), url, Boolean.class, null);
     }
 
     @Override
