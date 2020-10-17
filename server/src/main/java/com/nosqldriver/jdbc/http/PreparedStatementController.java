@@ -40,6 +40,8 @@ public class PreparedStatementController extends StatementController {
             String typeName = parameterValue.getTypeName();
             setByIndex.get(typeName).accept(rs, index, parameterValue.getValue());
         }));
+
+        new SQLXMLController(attributes, objectMapper, baseUrl);
     }
 
     private PreparedStatement getStatement(Map<String, Object> attributes, Request req) {

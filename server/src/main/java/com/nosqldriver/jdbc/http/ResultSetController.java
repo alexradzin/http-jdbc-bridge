@@ -1,13 +1,20 @@
 package com.nosqldriver.jdbc.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nosqldriver.jdbc.http.model.ArrayProxy;
+import com.nosqldriver.jdbc.http.model.BlobProxy;
+import com.nosqldriver.jdbc.http.model.ClobProxy;
 import com.nosqldriver.jdbc.http.model.ParameterValue;
 import com.nosqldriver.jdbc.http.model.TransportableResultSetMetaData;
 import com.nosqldriver.util.function.ThrowingBiFunction;
 import com.nosqldriver.util.function.ThrowingTriConsumer;
 import spark.Request;
 
+import java.sql.Array;
+import java.sql.Blob;
+import java.sql.Clob;
 import java.sql.Date;
+import java.sql.NClob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Time;
@@ -27,7 +34,7 @@ public class ResultSetController extends BaseController {
     private final String prefix;
     private final String id;
 
-    protected ResultSetController(Map<String, Object> attributes, ObjectMapper objectMapper, String baseUrl) {
+    protected ResultSetController(Map<String, Object> attributes, ObjectMapper objectMapper, String baseUrl, boolean withComplexTypes) {
         super(attributes, objectMapper);
 
         String[] urlParts =  baseUrl.split("/");
@@ -80,13 +87,8 @@ public class ResultSetController extends BaseController {
 
         get(format("%s/wasnull", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), ResultSet::wasNull));
 
-        get(format("%s/:type/index/:index", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> {
-            return getOrThrow(getterByIndex, req.params(":type"), k -> new IllegalArgumentException(format("Unsupported column type '%s'",k))).apply(rs, intParam(req, ":index"));
-        }));
-
-        get(format("%s/:type/label/:label", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> {
-            return getOrThrow(getterByLabel, req.params(":type"), k -> new IllegalArgumentException(format("Unsupported column type '%s'",k))).apply(rs, req.params(":label"));
-        }));
+        mapGetters(attributes, baseUrl, "index", getterByIndex, req -> intParam(req, ":index"));
+        mapGetters(attributes, baseUrl, "label", getterByLabel, req -> req.params(":label"));
 
         put(baseUrl, JSON, (req, res) -> accept(() -> getResultSet(attributes, req), rs -> {
             ParameterValue parameterValue = objectMapper.readValue(req.body(), ParameterValue.class);
@@ -99,6 +101,28 @@ public class ResultSetController extends BaseController {
                 updateByIndex.get(typeName).accept(rs, index, parameterValue.getValue());
             }
         }));
+
+        if (withComplexTypes) {
+            new ArrayController(attributes, objectMapper, format("%s/array", baseUrl));
+            new BlobController(attributes, objectMapper, format("%s/blob", baseUrl));
+            new ClobController(attributes, objectMapper, format("%s/clob", baseUrl));
+            new ClobController(attributes, objectMapper, format("%s/nclob", baseUrl));
+        }
+    }
+
+    private <T> void mapGetters(Map<String, Object> attributes, String baseUrl, String markerName, Map<String, ThrowingBiFunction<ResultSet, T, ?, SQLException>> getterByMarker, Function<Request, T> markerValueGetter) {
+        get(format("%s/:type/%s/:%s", baseUrl, markerName, markerName), JSON, (req, resp) -> {
+            String type = req.params(":type");
+            ThrowingBiFunction<ResultSet, T, Object, SQLException> getter = (ThrowingBiFunction<ResultSet, T, Object, SQLException>)getOrThrow(getterByMarker, type, k -> new IllegalArgumentException(format("Unsupported column type '%s'",k)));
+            ThrowingBiFunction<String, Object, Object, Exception> transformer = transformers.get(type);
+
+            T labelValue = markerValueGetter.apply(req);
+            if(transformer == null) {
+                return retrieve(() -> getResultSet(attributes, req), rs -> getter.apply(rs, labelValue));
+            } else {
+                return retrieve2(() -> getResultSet(attributes, req), rs -> getter.apply(rs, labelValue), transformer, type, req.url());
+            }
+        });
     }
 
     private static final Map<String, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>> getterByIndex = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
@@ -164,6 +188,14 @@ public class ResultSetController extends BaseController {
         getterByLabel.put("UnicodeStream", ResultSet::getUnicodeStream);
 
         getterByLabel.put("Object", ResultSet::getObject);
+    }
+
+    private static final Map<String, ThrowingBiFunction<String, Object, Object, Exception>> transformers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    static {
+        transformers.put("array", (url, a) -> new ArrayProxy(url, (Array)a));
+        transformers.put("blob", (url, a) -> new BlobProxy(url, (Blob)a));
+        transformers.put("clob", (url, a) -> new ClobProxy(url, (Clob)a));
+        transformers.put("nclob", (url, a) -> new ClobProxy(url, (NClob)a));
     }
 
     private static final Map<String, ThrowingTriConsumer<ResultSet, Integer, Object, SQLException>> updateByIndex = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);

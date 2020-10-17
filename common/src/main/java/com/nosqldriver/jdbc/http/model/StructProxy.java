@@ -7,24 +7,39 @@ import java.sql.SQLException;
 import java.sql.Struct;
 import java.util.Map;
 
+import static java.lang.String.format;
+
 public class StructProxy extends EntityProxy implements Struct {
+    @JsonProperty private String sqlTypeName;
+    @JsonProperty private Object[] attributes;
+
     @JsonCreator
     public StructProxy(@JsonProperty("entityUrl") String entityUrl) {
         super(entityUrl);
     }
 
+    public StructProxy(String entityUrl, Struct struct) throws SQLException {
+        this(entityUrl, struct.getSQLTypeName(), struct.getAttributes());
+    }
+
+    public StructProxy(String entityUrl, String sqlTypeName, Object[] attributes) {
+        super(entityUrl);
+        this.sqlTypeName = sqlTypeName;
+        this.attributes = attributes;
+    }
+
     @Override
     public String getSQLTypeName() throws SQLException {
-        return null;
+        return sqlTypeName;
     }
 
     @Override
     public Object[] getAttributes() throws SQLException {
-        return new Object[0];
+        return attributes;
     }
 
     @Override
     public Object[] getAttributes(Map<String, Class<?>> map) throws SQLException {
-        return new Object[0];
+        return connector.post(format("%s/attributes", entityUrl), map, Object[].class);
     }
 }

@@ -23,4 +23,9 @@ public class InputStreamProxy extends InputStream {
     public int read() throws IOException {
         return connector.get(url, int.class);
     }
+
+    @Override
+    public void close() throws IOException {
+        connector.delete(url, null, Void.class);
+    }
 }

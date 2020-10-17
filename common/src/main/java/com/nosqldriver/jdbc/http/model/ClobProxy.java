@@ -22,9 +22,9 @@ public class ClobProxy extends EntityProxy implements NClob {
         super(entityUrl);
     }
 
-    public ClobProxy(String entityUrl, long length) {
+    public ClobProxy(String entityUrl, Clob clob) throws SQLException {
         super(entityUrl);
-        this.length = length;
+        this.length = clob.length();
     }
 
     @Override

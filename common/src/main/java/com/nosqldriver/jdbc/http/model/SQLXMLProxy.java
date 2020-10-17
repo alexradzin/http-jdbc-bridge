@@ -13,9 +13,9 @@ import java.io.Writer;
 import java.sql.SQLException;
 import java.sql.SQLXML;
 
-public class SQLXMLProxy extends EntityProxy implements SQLXML {
-    private String string;
+import static java.lang.String.format;
 
+public class SQLXMLProxy extends EntityProxy implements SQLXML {
     @JsonCreator
     public SQLXMLProxy(@JsonProperty("entityUrl") String entityUrl) {
         super(entityUrl);
@@ -23,48 +23,49 @@ public class SQLXMLProxy extends EntityProxy implements SQLXML {
 
     @Override
     public void free() throws SQLException {
-
+        connector.delete(entityUrl, null, Void.class);
     }
 
     @Override
     @JsonIgnore
     public InputStream getBinaryStream() throws SQLException {
-        return null;
+        return connector.get(format("%s/binary/stream", entityUrl), InputStreamProxy.class);
     }
 
     @Override
     public OutputStream setBinaryStream() throws SQLException {
-        return null;
+        return connector.post(format("%s/binary/stream", entityUrl), null, OutputStreamProxy.class);
     }
 
     @Override
     @JsonIgnore
     public Reader getCharacterStream() throws SQLException {
-        return null;
+        return connector.get(format("%s/character/stream", entityUrl), ReaderProxy.class);
     }
 
     @Override
     public Writer setCharacterStream() throws SQLException {
-        return null;
+        return connector.post(format("%s/character/stream", entityUrl), null, WriterProxy.class);
     }
 
+    @JsonIgnore
     @Override
     public String getString() throws SQLException {
-        return string;
+        return connector.get(format("%s/string", entityUrl), String.class);
     }
 
     @Override
     public void setString(String value) throws SQLException {
-        this.string = value;
+        connector.post(format("%s/string", entityUrl), value, Void.class);
     }
 
     @Override
     public <T extends Source> T getSource(Class<T> sourceClass) throws SQLException {
-        return null;
+        return connector.get(format("%s/source/%s", entityUrl, sourceClass), sourceClass);
     }
 
     @Override
     public <T extends Result> T setResult(Class<T> resultClass) throws SQLException {
-        return null;
+        return connector.post(format("%s/result", entityUrl), resultClass, resultClass);
     }
 }

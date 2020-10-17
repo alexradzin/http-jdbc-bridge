@@ -82,7 +82,7 @@ public class DatabaseMetaDataController extends BaseController {
                 "super/tables/:tables", "functions/:functions",
                 "procedure/columns/:columns", "function/columns/:columns", "pseudo/columns/:columns",
                 "column/privileges/:privileges", "crossreference/:crossreference", "best/row/identifier/:identifier")
-                .forEach(entity -> new ResultSetController(attributes, objectMapper, format(subUrl, entity)));
+                .forEach(entity -> new ResultSetController(attributes, objectMapper, format(subUrl, entity), false));
     }
 
     private DatabaseMetaData getMetadata(Map<String, Object> attributes, Request req) {

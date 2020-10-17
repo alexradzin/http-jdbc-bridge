@@ -23,4 +23,14 @@ public class OutputStreamProxy extends OutputStream {
     public void write(int b) throws IOException {
         connector.put(url, b, Void.class);
     }
+
+    @Override
+    public void flush() throws IOException {
+        connector.post(url, null, Void.class);
+    }
+
+    @Override
+    public void close() throws IOException {
+        connector.delete(url, null, Void.class);
+    }
 }

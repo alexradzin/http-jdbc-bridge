@@ -128,7 +128,7 @@ public class ConnectionController extends BaseController {
         post("/connection/:connection/blob", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), Connection::createBlob, BlobProxy::new, "blob", req.url()));
         post("/connection/:connection/sqlxml", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), Connection::createSQLXML, SQLXMLProxy::new, "sqlxml", req.url()));
         post("/connection/:connection/array/:type", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> connection.createArrayOf(req.params(":type"), objectMapper.readValue(req.body(), Object[].class)), ArrayProxy::new, "array", req.url()));
-        post("/connection/:connection/struct/:type", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> connection.createStruct(req.params(":type"), objectMapper.readValue(req.body(), Object[].class)), StructProxy::new, "struct", req.url()));
+        post("/connection/:connection/struct/:type", JSON, (req, res) -> retrieve2(() -> getConnection(attributes, req), connection -> connection.createStruct(req.params(":type"), objectMapper.readValue(req.body(), Object[].class)), StructProxy::new, "struct", req.url()));
 
         get("/connection/:connection/valid/:timeout", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> connection.isValid(intParam(req, ":timeout"))));
 
@@ -148,6 +148,12 @@ public class ConnectionController extends BaseController {
         new DatabaseMetaDataController(attributes, objectMapper);
         new StatementController(attributes, objectMapper, "/connection/:connection/statement/:statement");
         new PreparedStatementController(attributes, objectMapper);
+        new ArrayController(attributes, objectMapper, "/connection/:connection/array/:array");
+        new BlobController(attributes, objectMapper, "/connection/:connection/blob/:blob");
+        new ClobController(attributes, objectMapper, "/connection/:connection/clob/:clob");
+        new ClobController(attributes, objectMapper, "/connection/:connection/nclob/:nclob");
+        new SQLXMLController(attributes, objectMapper, "/connection/:connection/sqlxml/:sqlxml");
+        new StructController(attributes, objectMapper, "/connection/:connection/struct/:struct");
     }
 
     private Connection getConnection(Map<String, Object> attributes, Request req) {

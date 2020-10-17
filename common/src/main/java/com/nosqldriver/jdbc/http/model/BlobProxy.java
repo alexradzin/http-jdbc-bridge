@@ -19,9 +19,9 @@ public class BlobProxy extends EntityProxy implements Blob {
         super(entityUrl);
     }
 
-    public BlobProxy(@JsonProperty("entityUrl") String entityUrl, long length) {
+    public BlobProxy(@JsonProperty("entityUrl") String entityUrl, Blob blob) throws SQLException {
         super(entityUrl);
-        this.length = length;
+        this.length = blob.length();
     }
 
     @Override

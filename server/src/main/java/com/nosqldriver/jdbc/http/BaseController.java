@@ -82,6 +82,10 @@ abstract class BaseController {
         return intValue(req.queryParams(name));
     }
 
+    protected Long longArg(Request req, String name) {
+        return longValue(req.queryParams(name));
+    }
+
     protected String stringArg(Request req, String name) throws UnsupportedEncodingException {
         return stringValue(req.queryParams(name));
     }
@@ -96,6 +100,10 @@ abstract class BaseController {
 
     protected Integer intValue(String str) {
         return str == null ? null : Integer.parseInt(str);
+    }
+
+    protected Long longValue(String str) {
+        return str == null ? null : Long.parseLong(str);
     }
 
     protected String stringValue(String value) throws UnsupportedEncodingException {
