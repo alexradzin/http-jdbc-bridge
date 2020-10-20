@@ -7,17 +7,25 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static java.lang.String.format;
 
 public class TransportableResultSetMetaData extends WrapperProxy implements ResultSetMetaData {
     @JsonProperty("columns") private final List<ColumnMetaData> columns;
+    private final Map<String, Integer> columnIndices = new HashMap<>();
 
     @JsonCreator
     public TransportableResultSetMetaData(@JsonProperty("entityUrl") String entityUrl, @JsonProperty("columns") List<ColumnMetaData> columns) {
         super(entityUrl);
         this.columns = columns;
+        int i = 1;
+        for(ColumnMetaData column : columns) {
+            columnIndices.put(column.getLabel(), i);
+            i++;
+        }
     }
 
     public TransportableResultSetMetaData(String entityUrl, ResultSetMetaData md) throws SQLException {
@@ -150,5 +158,9 @@ public class TransportableResultSetMetaData extends WrapperProxy implements Resu
                     md.isReadOnly(i), md.isWritable(i), md.isDefinitelyWritable(i)));
         }
         return columns;
+    }
+
+    public Integer getIndex(String label) {
+        return columnIndices.get(label);
     }
 }

@@ -5,8 +5,10 @@ import com.nosqldriver.jdbc.http.model.ArrayProxy;
 import com.nosqldriver.jdbc.http.model.BlobProxy;
 import com.nosqldriver.jdbc.http.model.ClobProxy;
 import com.nosqldriver.jdbc.http.model.ParameterValue;
+import com.nosqldriver.jdbc.http.model.RowData;
 import com.nosqldriver.jdbc.http.model.TransportableResultSetMetaData;
 import com.nosqldriver.util.function.ThrowingBiFunction;
+import com.nosqldriver.util.function.ThrowingFunction;
 import com.nosqldriver.util.function.ThrowingTriConsumer;
 import spark.Request;
 
@@ -16,9 +18,11 @@ import java.sql.Clob;
 import java.sql.Date;
 import java.sql.NClob;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -66,6 +70,15 @@ public class ResultSetController extends BaseController {
         get(format("%s/first", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), ResultSet::isFirst));
         get(format("%s/after/last", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), ResultSet::isAfterLast));
         get(format("%s/last", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), ResultSet::isLast));
+
+        ///////// navigation with cache
+        get(format("%s/nextrow", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, ResultSet::next)));
+        get(format("%s/previousrow", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, ResultSet::previous)));
+        get(format("%s/firstrow", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, ResultSet::first)));
+        get(format("%s/lastrow", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, ResultSet::last)));
+        get(format("%s/absolute/:row", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, r -> r.absolute(intParam(req, "row")))));
+        get(format("%s/relative/:row", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, r -> r.relative(intParam(req, "row")))));
+
 
         get(format("%s/fetch/size", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), ResultSet::getFetchSize));
         post(format("%s/fetch/size", baseUrl), JSON, (req, res) -> accept(() -> getResultSet(attributes, req), rs -> rs.setFetchSize(Integer.parseInt(req.body()))));
@@ -231,6 +244,35 @@ public class ResultSetController extends BaseController {
     }
 
 
+
+    private static final Map<Integer, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>> getterByType = new TreeMap<>();
+    static {
+        getterByType.put(Types.VARCHAR, ResultSet::getString);
+        getterByType.put(Types.NVARCHAR, ResultSet::getNString);
+        getterByType.put(Types.TINYINT, ResultSet::getByte);
+        getterByType.put(Types.SMALLINT, ResultSet::getShort);
+        getterByType.put(Types.INTEGER, ResultSet::getInt);
+        getterByType.put(Types.BIGINT, ResultSet::getLong);
+        getterByType.put(Types.BOOLEAN, ResultSet::getBoolean);
+        getterByType.put(Types.BIT, ResultSet::getBoolean);
+        getterByType.put(Types.FLOAT, ResultSet::getFloat);
+        getterByType.put(Types.DOUBLE, ResultSet::getDouble);
+        getterByType.put(Types.DATE, ResultSet::getDate);
+        getterByType.put(Types.TIME, ResultSet::getTime);
+        getterByType.put(Types.TIME_WITH_TIMEZONE, ResultSet::getTime);
+        getterByType.put(Types.TIMESTAMP, ResultSet::getTimestamp);
+        getterByType.put(Types.TIMESTAMP_WITH_TIMEZONE, ResultSet::getTimestamp);
+
+        getterByType.put(Types.ARRAY, ResultSet::getArray);
+        getterByType.put(Types.BLOB, ResultSet::getBlob);
+        getterByType.put(Types.CLOB, ResultSet::getClob);
+        getterByType.put(Types.NCLOB, ResultSet::getNClob);
+        getterByType.put(Types.REF, ResultSet::getRef);
+
+        getterByType.put(Types.JAVA_OBJECT, ResultSet::getObject);
+    }
+
+
     private ResultSet getResultSet(Map<String, Object> attributes, Request req) {
         return getEntity(attributes, req, prefix, id);
     }
@@ -239,4 +281,18 @@ public class ResultSetController extends BaseController {
         return Optional.ofNullable(map.get(key)).orElseThrow(() -> exceptionFactory.apply(key));
     }
 
+    private Object[] readRow(ResultSet rs) throws SQLException {
+        ResultSetMetaData md = rs.getMetaData();
+        int n = md.getColumnCount();
+        Object[] row = new Object[n];
+        for (int i = 0; i < n; i++) {
+            int column = i + 1;
+            row[i] = getterByType.getOrDefault(md.getColumnType(column), ResultSet::getObject).apply(rs, column);
+        }
+        return row;
+    }
+
+    public RowData move(ResultSet rs, ThrowingFunction<ResultSet, Boolean, SQLException> move) throws Exception {
+        return move.apply(rs) ? new RowData(true, readRow(rs)) : new RowData(false, null);
+    }
 }

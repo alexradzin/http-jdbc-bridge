@@ -3,6 +3,8 @@ package com.nosqldriver.jdbc.http.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -23,15 +25,55 @@ import java.sql.SQLXML;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.Calendar;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.nosqldriver.jdbc.http.Util.encode;
 import static java.lang.String.format;
 
 public class ResultSetProxy extends WrapperProxy implements ResultSet {
+    private static final Map<Class<?>, Function<Object, Object>> bigDecimalCasters = Stream.of(
+            new SimpleEntry<Class<?>, Function<Object, Object>>(Byte.class, e -> BigDecimal.valueOf((Byte)e)),
+            new SimpleEntry<Class<?>, Function<Object, Object>>(byte.class, e -> BigDecimal.valueOf((byte)e)),
+            new SimpleEntry<Class<?>, Function<Object, Object>>(Short.class, e -> BigDecimal.valueOf((Short)e)),
+            new SimpleEntry<Class<?>, Function<Object, Object>>(short.class, e -> BigDecimal.valueOf((short)e)),
+            new SimpleEntry<Class<?>, Function<Object, Object>>(Integer.class, e -> BigDecimal.valueOf((Integer)e)),
+            new SimpleEntry<Class<?>, Function<Object, Object>>(int.class, e -> BigDecimal.valueOf((int)e)),
+            new SimpleEntry<Class<?>, Function<Object, Object>>(Long.class, e -> BigDecimal.valueOf((Long)e)),
+            new SimpleEntry<Class<?>, Function<Object, Object>>(long.class, e -> BigDecimal.valueOf((long)e)),
+            new SimpleEntry<Class<?>, Function<Object, Object>>(Float.class, e -> BigDecimal.valueOf((Float)e)),
+            new SimpleEntry<Class<?>, Function<Object, Object>>(float.class, e -> BigDecimal.valueOf((float)e)),
+            new SimpleEntry<Class<?>, Function<Object, Object>>(Double.class, e -> BigDecimal.valueOf((Double)e)),
+            new SimpleEntry<Class<?>, Function<Object, Object>>(double.class, e -> BigDecimal.valueOf((double)e))
+    ).collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue));
+
+    private static final Map<Class<?>, Function<Object, Object>> casters = Stream.of(
+            new SimpleEntry<Class<?>, Function<Object, Object>>(Byte.class, e -> ((Number)e).byteValue()),
+            new SimpleEntry<Class<?>, Function<Object, Object>>(byte.class, e -> ((Number)e).byteValue()),
+            new SimpleEntry<Class<?>, Function<Object, Object>>(Short.class, e -> ((Number)e).shortValue()),
+            new SimpleEntry<Class<?>, Function<Object, Object>>(short.class, e -> ((Number)e).shortValue()),
+            new SimpleEntry<Class<?>, Function<Object, Object>>(Integer.class, e -> ((Number)e).intValue()),
+            new SimpleEntry<Class<?>, Function<Object, Object>>(int.class, e -> ((Number)e).intValue()),
+            new SimpleEntry<Class<?>, Function<Object, Object>>(Long.class, e -> ((Number)e).longValue()),
+            new SimpleEntry<Class<?>, Function<Object, Object>>(long.class, e -> ((Number)e).longValue()),
+            new SimpleEntry<Class<?>, Function<Object, Object>>(BigDecimal.class, e -> bigDecimalCasters.get(e.getClass()).apply(e)),
+            new SimpleEntry<Class<?>, Function<Object, Object>>(Float.class, e -> ((Number)e).floatValue()),
+            new SimpleEntry<Class<?>, Function<Object, Object>>(float.class, e -> ((Number)e).floatValue()),
+            new SimpleEntry<Class<?>, Function<Object, Object>>(Double.class, e -> ((Number)e).doubleValue()),
+            new SimpleEntry<Class<?>, Function<Object, Object>>(double.class, e -> ((Number)e).doubleValue())
+    ).collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue));
+
+
+
+
     private Statement statement;
     private ResultSetMetaData md;
+    private volatile RowData rowData = null;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @JsonCreator
     public ResultSetProxy(@JsonProperty("entityUrl") String entityUrl) {
@@ -40,7 +82,8 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public boolean next() throws SQLException {
-        return connector.get(format("%s/next", entityUrl), Boolean.class);
+        rowData = connector.get(format("%s/nextrow", entityUrl), RowData.class);
+        return rowData.isMoved();
     }
 
     @Override
@@ -55,162 +98,162 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public String getString(int columnIndex) throws SQLException {
-        return connector.get(format("%s/string/index/%d", entityUrl, columnIndex), String.class);
+        return getValue("index", columnIndex, String.class, columnIndex);
     }
 
     @Override
     public boolean getBoolean(int columnIndex) throws SQLException {
-        return connector.get(format("%s/boolean/index/%d", entityUrl, columnIndex), boolean.class);
+        return getValue("index", columnIndex, boolean.class, columnIndex);
     }
 
     @Override
     public byte getByte(int columnIndex) throws SQLException {
-        return connector.get(format("%s/byte/index/%d", entityUrl, columnIndex), byte.class);
+        return getValue("index", columnIndex, byte.class, columnIndex);
     }
 
     @Override
     public short getShort(int columnIndex) throws SQLException {
-        return connector.get(format("%s/short/index/%d", entityUrl, columnIndex), short.class);
+        return getValue("index", columnIndex, short.class, columnIndex);
     }
 
     @Override
     public int getInt(int columnIndex) throws SQLException {
-        return connector.get(format("%s/int/index/%d", entityUrl, columnIndex), int.class);
+        return getValue("index", columnIndex, int.class, columnIndex);
     }
 
     @Override
     public long getLong(int columnIndex) throws SQLException {
-        return connector.get(format("%s/long/index/%d", entityUrl, columnIndex), long.class);
+        return getValue("index", columnIndex, long.class, columnIndex);
     }
 
     @Override
     public float getFloat(int columnIndex) throws SQLException {
-        return connector.get(format("%s/float/index/%d", entityUrl, columnIndex), float.class);
+        return getValue("index", columnIndex, float.class, columnIndex);
     }
 
     @Override
     public double getDouble(int columnIndex) throws SQLException {
-        return connector.get(format("%s/double/index/%d", entityUrl, columnIndex), Double.class);
+        return getValue("index", columnIndex, double.class, columnIndex);
     }
 
     @Override
     public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
-        return connector.get(format("%s/bigdecimal/index/%d", entityUrl, columnIndex), BigDecimal.class);
+        return getValue("index", columnIndex, BigDecimal.class, columnIndex);
     }
 
     @Override
     public byte[] getBytes(int columnIndex) throws SQLException {
-        return connector.get(format("%s/bytes/index/%d", entityUrl, columnIndex), byte[].class);
+        return getValue("index", columnIndex, byte[].class, "bytes", columnIndex);
     }
 
     @Override
     public Date getDate(int columnIndex) throws SQLException {
-        return connector.get(format("%s/date/index/%d", entityUrl, columnIndex), Date.class);
+        return getValue("index", columnIndex, Date.class, columnIndex);
     }
 
     @Override
     public Time getTime(int columnIndex) throws SQLException {
-        return connector.get(format("%s/time/index/%d", entityUrl, columnIndex), Time.class);
+        return getValue("index", columnIndex, Time.class, columnIndex);
     }
 
     @Override
     public Timestamp getTimestamp(int columnIndex) throws SQLException {
-        return connector.get(format("%s/timestamp/index/%d", entityUrl, columnIndex), Timestamp.class);
+        return getValue("index", columnIndex, Timestamp.class, columnIndex);
     }
 
     @Override
     public InputStream getAsciiStream(int columnIndex) throws SQLException {
-        return connector.get(format("%s/ascii/streem/index/%d", entityUrl, columnIndex), InputStream.class);
+        return getValue("index", columnIndex, InputStream.class, "ascii/stream", columnIndex);
     }
 
     @Override
     public InputStream getUnicodeStream(int columnIndex) throws SQLException {
-        return connector.get(format("%s/unicode/streem/index/%d", entityUrl, columnIndex), InputStream.class);
+        return getValue("index", columnIndex, InputStream.class, "unicode/stream", columnIndex);
     }
 
     @Override
     public InputStream getBinaryStream(int columnIndex) throws SQLException {
-        return connector.get(format("%s/binary/streem/index/%d", entityUrl, columnIndex), InputStream.class);
+        return getValue("index", columnIndex, InputStream.class, "binary/stream", columnIndex);
     }
 
     @Override
     public String getString(String columnLabel) throws SQLException {
-        return connector.get(format("%s/string/label/%s", entityUrl, columnLabel), String.class);
+        return getValue("label", columnLabel, String.class, getIndex(columnLabel));
     }
 
     @Override
     public boolean getBoolean(String columnLabel) throws SQLException {
-        return connector.get(format("%s/boolean/label/%s", entityUrl, columnLabel), boolean.class);
+        return getValue("label", columnLabel, boolean.class, getIndex(columnLabel));
     }
 
     @Override
     public byte getByte(String columnLabel) throws SQLException {
-        return connector.get(format("%s/byte/label/%s", entityUrl, encode(columnLabel)), byte.class);
+        return getValue("label", columnLabel, byte.class, getIndex(columnLabel));
     }
 
     @Override
     public short getShort(String columnLabel) throws SQLException {
-        return connector.get(format("%s/short/label/%s", entityUrl, encode(columnLabel)), short.class);
+        return getValue("label", columnLabel, short.class, getIndex(columnLabel));
     }
 
     @Override
     public int getInt(String columnLabel) throws SQLException {
-        return connector.get(format("%s/int/label/%s", entityUrl, encode(columnLabel)), int.class);
+        return getValue("label", columnLabel, int.class, getIndex(columnLabel));
     }
 
     @Override
     public long getLong(String columnLabel) throws SQLException {
-        return connector.get(format("%s/long/label/%s", entityUrl, encode(columnLabel)), long.class);
+        return getValue("label", columnLabel, long.class, getIndex(columnLabel));
     }
 
     @Override
     public float getFloat(String columnLabel) throws SQLException {
-        return connector.get(format("%s/float/label/%s", entityUrl, encode(columnLabel)), float.class);
+        return getValue("label", columnLabel, float.class, getIndex(columnLabel));
     }
 
     @Override
     public double getDouble(String columnLabel) throws SQLException {
-        return connector.get(format("%s/double/label/%s", entityUrl, encode(columnLabel)), double.class);
+        return getValue("label", columnLabel, double.class, getIndex(columnLabel));
     }
 
     @Override
     public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException {
-        return connector.get(format("%s/bigdecimal/label/%s", entityUrl, encode(columnLabel)), BigDecimal.class);
+        return getValue("label", columnLabel, BigDecimal.class, getIndex(columnLabel));
     }
 
     @Override
     public byte[] getBytes(String columnLabel) throws SQLException {
-        return connector.get(format("%s/bytes/label/%s", entityUrl, encode(columnLabel)), byte[].class);
+        return getValue("label", columnLabel, byte[].class, "bytes", getIndex(columnLabel));
     }
 
     @Override
     public Date getDate(String columnLabel) throws SQLException {
-        return connector.get(format("%s/date/label/%s", entityUrl, encode(columnLabel)), Date.class);
+        return getValue("label", columnLabel, Date.class, getIndex(columnLabel));
     }
 
     @Override
     public Time getTime(String columnLabel) throws SQLException {
-        return connector.get(format("%s/time/label/%s", entityUrl, encode(columnLabel)), Time.class);
+        return getValue("label", columnLabel, Time.class, getIndex(columnLabel));
     }
 
     @Override
     public Timestamp getTimestamp(String columnLabel) throws SQLException {
-        return connector.get(format("%s/timestamp/label/%s", entityUrl, encode(columnLabel)), Timestamp.class);
+        return getValue("label", columnLabel, Timestamp.class, getIndex(columnLabel));
     }
 
     @Override
     public InputStream getAsciiStream(String columnLabel) throws SQLException {
-        return connector.get(format("%s/asciistream/label/%s", entityUrl, encode(columnLabel)), InputStream.class);
+        return getValue("label", columnLabel, InputStream.class, "ascii/stream", getIndex(columnLabel));
     }
 
     @Override
     public InputStream getUnicodeStream(String columnLabel) throws SQLException {
-        return connector.get(format("%s/unicodestream/label/%s", entityUrl, columnLabel), InputStream.class);
+        return getValue("label", columnLabel, InputStream.class, "unicode/stream", getIndex(columnLabel));
     }
 
     @Override
     public InputStream getBinaryStream(String columnLabel) throws SQLException {
-        return connector.get(format("%s/binarystream/label/%s", entityUrl, encode(columnLabel)), InputStream.class);
+        return getValue("label", columnLabel, InputStream.class, "binary/stream", getIndex(columnLabel));
     }
 
     @Override
@@ -241,12 +284,12 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public Object getObject(int columnIndex) throws SQLException {
-        return connector.get(format("%s/object/index/%s", entityUrl, columnIndex), Object.class);
+        return getValue("index", columnIndex, Object.class, columnIndex);
     }
 
     @Override
     public Object getObject(String columnLabel) throws SQLException {
-        return connector.get(format("%s/object/label/%s", entityUrl, columnLabel), Object.class);
+        return getValue("label", columnLabel, Object.class, getIndex(columnLabel));
     }
 
     @Override
@@ -256,28 +299,28 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public Reader getCharacterStream(int columnIndex) throws SQLException {
-        return connector.get(format("%s/characterstream/index/%d", entityUrl, columnIndex), Reader.class);
+        return getValue("index", columnIndex, Reader.class, "character/stream", columnIndex);
     }
 
     @Override
     public Reader getCharacterStream(String columnLabel) throws SQLException {
-        return connector.get(format("%s/characterstream/label/%s", entityUrl, encode(columnLabel)), Reader.class);
+        return getValue("label", columnLabel, Reader.class, "character/stream", getIndex(columnLabel));
     }
 
     @Override
     public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
-        return connector.get(format("%s/bigdecimal/index/%s", entityUrl, columnIndex), BigDecimal.class);
+        return getValue("index", columnIndex, BigDecimal.class, columnIndex);
     }
 
     @Override
     public BigDecimal getBigDecimal(String columnLabel) throws SQLException {
-        return connector.get(format("%s/bigdecimal/label/%s", entityUrl, columnLabel), BigDecimal.class);
+        return getValue("label", columnLabel, BigDecimal.class, getIndex(columnLabel));
     }
 
     @Override
     @JsonIgnore
     public boolean isBeforeFirst() throws SQLException {
-        return connector.get(format("%s/before/first", entityUrl), boolean.class);
+        return connector.get(format("%s/before/firstrow", entityUrl), boolean.class);
     }
 
     @Override
@@ -300,22 +343,26 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public void beforeFirst() throws SQLException {
+        rowData = null;
         connector.post(format("%s/before/first", entityUrl), null, Void.class);
     }
 
     @Override
     public void afterLast() throws SQLException {
+        rowData = null;
         connector.post(format("%s/after/last", entityUrl), null, Void.class);
     }
 
     @Override
     public boolean first() throws SQLException {
-        return connector.post(format("%s/first", entityUrl), null, Boolean.class);
+        rowData = connector.get(format("%s/firstrow", entityUrl), RowData.class);
+        return rowData.isMoved();
     }
 
     @Override
     public boolean last() throws SQLException {
-        return connector.post(format("%s/last", entityUrl), null, Boolean.class);
+        rowData = connector.get(format("%s/lastrow", entityUrl), RowData.class);
+        return rowData.isMoved();
     }
 
     @Override
@@ -326,17 +373,20 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public boolean absolute(int row) throws SQLException {
-        return connector.get(format("%s/absolute/%d", entityUrl, row), boolean.class);
+        rowData = connector.get(format("%s/absolute/%d", entityUrl, row), RowData.class);
+        return rowData.isMoved();
     }
 
     @Override
     public boolean relative(int rows) throws SQLException {
-        return connector.get(format("%s/relative/%d", entityUrl, rows), boolean.class);
+        rowData = connector.get(format("%s/relative/%d", entityUrl, rows), RowData.class);
+        return rowData.isMoved();
     }
 
     @Override
     public boolean previous() throws SQLException {
-        return connector.get(format("%s/previous", entityUrl), boolean.class);
+        rowData = connector.get(format("%s/previousrow", entityUrl), RowData.class);
+        return rowData.isMoved();
     }
 
     @Override
@@ -626,22 +676,22 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public Ref getRef(int columnIndex) throws SQLException {
-        return connector.get(format("%s/ref/index/%d", entityUrl, columnIndex), TransportableRef.class);
+        return getValue("index", columnIndex, Ref.class, columnIndex);
     }
 
     @Override
     public Blob getBlob(int columnIndex) throws SQLException {
-        return connector.get(format("%s/blob/index/%d", entityUrl, columnIndex), BlobProxy.class);
+        return getValue("index", columnIndex, Blob.class, columnIndex);
     }
 
     @Override
     public Clob getClob(int columnIndex) throws SQLException {
-        return connector.get(format("%s/clob/index/%d", entityUrl, columnIndex), ClobProxy.class);
+        return getValue("index", columnIndex, Clob.class, columnIndex);
     }
 
     @Override
     public Array getArray(int columnIndex) throws SQLException {
-        return connector.get(format("%s/array/index/%d", entityUrl, columnIndex), ArrayProxy.class);
+        return getValue("index", columnIndex, Array.class, columnIndex);
     }
 
     @Override
@@ -652,62 +702,62 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public Ref getRef(String columnLabel) throws SQLException {
-        return connector.get(format("%s/ref/label/%s", entityUrl, columnLabel), TransportableRef.class);
+        return getValue("label", columnLabel, TransportableRef.class, "ref", getIndex(columnLabel));
     }
 
     @Override
     public Blob getBlob(String columnLabel) throws SQLException {
-        return connector.get(format("%s/blob/label/%s", entityUrl, columnLabel), BlobProxy.class);
+        return getValue("label", columnLabel, Blob.class, getIndex(columnLabel));
     }
 
     @Override
     public Clob getClob(String columnLabel) throws SQLException {
-        return connector.get(format("%s/clob/label/%s", entityUrl, columnLabel), ClobProxy.class);
+        return getValue("label", columnLabel, Clob.class, getIndex(columnLabel));
     }
 
     @Override
     public Array getArray(String columnLabel) throws SQLException {
-        return connector.get(format("%s/array/label/%s", entityUrl, columnLabel), ArrayProxy.class);
+        return getValue("label", columnLabel, Array.class, getIndex(columnLabel));
     }
 
     @Override
     public Date getDate(int columnIndex, Calendar cal) throws SQLException {
-        return connector.get(format("%s/date/index/%s/%s", entityUrl, columnIndex, calendarParameter(cal)), Date.class);
+        return rowData == null ? connector.get(format("%s/date/index/%s/%s", entityUrl, columnIndex, calendarParameter(cal)), Date.class) : (Date)rowData.getRow()[columnIndex - 1];
     }
 
     @Override
     public Date getDate(String columnLabel, Calendar cal) throws SQLException {
-        return connector.get(format("%s/date/label/%s/%s", entityUrl, columnLabel, calendarParameter(cal)), Date.class);
+        return rowData == null ? connector.get(format("%s/date/label/%s/%s", entityUrl, columnLabel, calendarParameter(cal)), Date.class) : (Date)rowData.getRow()[getIndex(columnLabel)];
     }
 
     @Override
     public Time getTime(int columnIndex, Calendar cal) throws SQLException {
-        return connector.get(format("%s/time/index/%s/%s", entityUrl, columnIndex, calendarParameter(cal)), Time.class);
+        return rowData == null ? connector.get(format("%s/time/index/%s/%s", entityUrl, columnIndex, calendarParameter(cal)), Time.class) : (Time)rowData.getRow()[columnIndex - 1];
     }
 
     @Override
     public Time getTime(String columnLabel, Calendar cal) throws SQLException {
-        return connector.get(format("%s/time/label/%s/%s", entityUrl, columnLabel, calendarParameter(cal)), Time.class);
+        return rowData == null ? connector.get(format("%s/time/label/%s/%s", entityUrl, columnLabel, calendarParameter(cal)), Time.class) : (Time)rowData.getRow()[getIndex(columnLabel)];
     }
 
     @Override
     public Timestamp getTimestamp(int columnIndex, Calendar cal) throws SQLException {
-        return connector.get(format("%s/timestamp/index/%s/%s", entityUrl, columnIndex, calendarParameter(cal)), Timestamp.class);
+        return rowData == null ? connector.get(format("%s/timestamp/index/%s/%s", entityUrl, columnIndex, calendarParameter(cal)), Timestamp.class) : (Timestamp)rowData.getRow()[columnIndex - 1];
     }
 
     @Override
     public Timestamp getTimestamp(String columnLabel, Calendar cal) throws SQLException {
-        return connector.get(format("%s/timestamp/label/%s/%s", entityUrl, columnLabel, calendarParameter(cal)), Timestamp.class);
+        return rowData == null ? connector.get(format("%s/timestamp/label/%s/%s", entityUrl, columnLabel, calendarParameter(cal)), Timestamp.class) : (Timestamp)rowData.getRow()[getIndex(columnLabel)];
     }
 
     @Override
     public URL getURL(int columnIndex) throws SQLException {
-        return connector.get(format("%s/url/index/%d", entityUrl, columnIndex), URL.class);
+        return getValue("index", columnIndex, URL.class, columnIndex);
     }
 
     @Override
     public URL getURL(String columnLabel) throws SQLException {
-        return connector.get(format("%s/url/label/%s", entityUrl, columnLabel), URL.class);
+        return getValue("label", columnLabel, URL.class, getIndex(columnLabel));
     }
 
     @Override
@@ -752,12 +802,12 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public RowId getRowId(int columnIndex) throws SQLException {
-        return connector.get(format("%s/rowid/label/%s", entityUrl, columnIndex), RowId.class);
+        return getValue("index", columnIndex, RowId.class, columnIndex);
     }
 
     @Override
     public RowId getRowId(String columnLabel) throws SQLException {
-        return connector.get(format("%s/rowid/label/%s", entityUrl, columnLabel), RowId.class);
+        return getValue("label", columnLabel, RowId.class, getIndex(columnLabel));
     }
 
     @Override
@@ -773,7 +823,7 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @Override
     @JsonIgnore
     public int getHoldability() throws SQLException {
-        return connector.get(format("%s/hodability", entityUrl), Integer.class);
+        return connector.get(format("%s/holdability", entityUrl), Integer.class);
     }
 
     @Override
@@ -804,22 +854,22 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public NClob getNClob(int columnIndex) throws SQLException {
-        return connector.get(format("%s/nclob/index/%d", entityUrl, columnIndex), ClobProxy.class);
+        return getValue("index", columnIndex, NClob.class, columnIndex);
     }
 
     @Override
     public NClob getNClob(String columnLabel) throws SQLException {
-        return connector.get(format("%s/nclob/label/%s", entityUrl, columnLabel), ClobProxy.class);
+        return getValue("label", columnLabel, NClob.class, getIndex(columnLabel));
     }
 
     @Override
     public SQLXML getSQLXML(int columnIndex) throws SQLException {
-        return connector.get(format("%s/sqlxml/index/%s", entityUrl, columnIndex), SQLXML.class);
+        return getValue("index", columnIndex, SQLXML.class, columnIndex);
     }
 
     @Override
     public SQLXML getSQLXML(String columnLabel) throws SQLException {
-        return connector.get(format("%s/sqlxml/label/%s", entityUrl, columnLabel), SQLXML.class);
+        return getValue("label", columnLabel, SQLXML.class, getIndex(columnLabel));
     }
 
     @Override
@@ -834,22 +884,22 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public String getNString(int columnIndex) throws SQLException {
-        return connector.get(format("%s/nstring/index/%d", entityUrl, columnIndex), String.class);
+        return getValue("index", columnIndex, String.class, "nstring", columnIndex);
     }
 
     @Override
     public String getNString(String columnLabel) throws SQLException {
-        return connector.get(format("%s/nstring/label/%s", entityUrl, columnLabel), String.class);
+        return getValue("label", columnLabel, String.class, "nstring", getIndex(columnLabel));
     }
 
     @Override
     public Reader getNCharacterStream(int columnIndex) throws SQLException {
-        return connector.get(format("%s/ncharacterstream/index/%d", entityUrl, columnIndex), Reader.class);
+        return getValue("index", columnIndex, Reader.class, "ncharacter/stream", columnIndex);
     }
 
     @Override
     public Reader getNCharacterStream(String columnLabel) throws SQLException {
-        return connector.get(format("%s/ncharacterstream/label/%s", entityUrl, columnLabel), Reader.class);
+        return getValue("label", columnLabel, Reader.class, "ncharacter/stream", getIndex(columnLabel));
     }
 
     @Override
@@ -995,13 +1045,13 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
-        return connector.get(format("%s/object/index/%d/%s", entityUrl, columnIndex, type), type);
+        return rowData == null ? connector.get(format("%s/object/index/%d/%s", entityUrl, columnIndex, type), type) : cast(rowData.getRow()[columnIndex - 1], type);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
-        return connector.get(format("%s/object/label/%s/%s", entityUrl, columnLabel, type), type);
+        return rowData == null ? connector.get(format("%s/object/label/%s/%s", entityUrl, columnLabel, type), type) : cast(rowData.getRow()[getIndex(columnLabel)], type);
     }
 
     public ResultSetProxy withStatement(Statement statement) {
@@ -1012,5 +1062,36 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     private String calendarParameter(Calendar cal) {
         // TODO: try to add some support of Locale: it can be passed to constructor but is not stored as-is in Calendar: parts are used instead
         return format("tz=%s,millis=%d", cal.getTimeZone().getID(), cal.getTimeInMillis());
+    }
+
+    private <T, M> T getValue(String markerName, M columnMarker, Class<T> clazz, Integer columnIndex) {
+        return getValue(markerName, columnMarker, clazz, clazz.getSimpleName().toLowerCase(), columnIndex);
+    }
+
+    private <T, M> T getValue(String markerName, M columnMarker, Class<T> clazz, String typeName, Integer columnIndex) {
+        return rowData == null || columnIndex == null ? connector.get(format("%s/%s/%s/%s", entityUrl, typeName, markerName, columnMarker), clazz) : cast(rowData.getRow()[columnIndex - 1], clazz);
+    }
+
+    private Integer getIndex(String columnLabel) throws SQLException {
+        return ((TransportableResultSetMetaData)getMetaData()).getIndex(columnLabel);
+    }
+
+    private <T> T cast(Object obj, Class<T> clazz) {
+        if (obj == null) {
+            return null;
+        }
+        Function<Object, Object> caster = casters.get(clazz);
+        //noinspection unchecked
+        try {
+            if (caster != null) {
+                return (T)caster.apply(obj);
+            }
+            if (obj instanceof String && String.class.equals(clazz)) {
+                return (T)obj;
+            }
+            return objectMapper.readValue(obj instanceof String ? "\"" + obj + "\"" : "" + obj, clazz);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 }
