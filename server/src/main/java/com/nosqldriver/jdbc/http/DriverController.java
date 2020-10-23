@@ -15,6 +15,7 @@ import javax.security.auth.login.LoginException;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -25,6 +26,7 @@ import java.util.Optional;
 import java.util.Properties;
 
 import static java.lang.String.format;
+import static spark.Spark.options;
 import static spark.Spark.post;
 
 public class DriverController extends BaseController {
@@ -44,6 +46,18 @@ public class DriverController extends BaseController {
                 throw new IllegalStateException(e);
             }
         });
+        Spark.after((req, res) -> {
+            res.header("Access-Control-Allow-Origin", "*");
+            res.header("Access-Control-Allow-Headers", "content-type");
+            res.header("Access-Control-Allow-Methods","PUT, POST, GET, DELETE, PATCH, OPTIONS");
+        });
+
+        options("*", (req, res) -> {
+            System.out.println("OPTIONS");
+            res.status(HttpURLConnection.HTTP_NO_CONTENT);
+            return "";
+        });
+
 
         post("/connection", JSON, (req, res) -> retrieve(() -> {
             ConnectionInfo connectionInfo = retrieveConnectionInfo(objectMapper.readValue(req.bodyAsBytes(), ConnectionInfo.class));
@@ -110,6 +124,7 @@ public class DriverController extends BaseController {
     public static void main(String[] args) throws IOException {
         String baseUrl = args.length > 0 ? args[0] : "http://localhost:8080/";
         int port = new URL(baseUrl).getPort();
+        Spark.staticFiles.location("/");
         if (port > 0) {
             spark.Spark.port(new URL(baseUrl).getPort());
         }

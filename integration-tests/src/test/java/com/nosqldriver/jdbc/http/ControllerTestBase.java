@@ -1,16 +1,25 @@
 package com.nosqldriver.jdbc.http;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import net.sourceforge.htmlunit.corejs.javascript.Undefined;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
 import spark.Spark;
 
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.lang.String.format;
 
 abstract class ControllerTestBase {
     protected static final String httpUrl = "http://localhost:8080";
@@ -21,6 +30,10 @@ abstract class ControllerTestBase {
                     new SimpleEntry<>("db2", "SELECT 1 FROM SYSIBM.SYSDUMMY1"),
                     new SimpleEntry<>("oracle", "SELECT 1 FROM DUAL")
             ).collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue));
+    protected String testName;
+    protected final WebClient webClient = new WebClient();
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
 
     @BeforeAll
     static void beforeAll() throws IOException {
@@ -30,6 +43,7 @@ abstract class ControllerTestBase {
         if (System.getProperty("jdbc.conf", System.getenv("jdbc.conf")) == null) {
             System.setProperty("jdbc.conf", "src/test/resources/jdbc.properties");
         }
+        Spark.staticFiles.location("/");
         Spark.port(8080);
         new DriverController(new HashMap<>(), new ObjectMapper());
         Spark.awaitInitialization();
@@ -41,6 +55,11 @@ abstract class ControllerTestBase {
         Spark.awaitStop();
     }
 
+    @BeforeEach
+    void beforeEach(TestInfo testInfo) {
+        testName = testInfo.getTestMethod().get().getName();
+    }
+
     protected String db(String url) {
         return url.split(":")[1];
     }
@@ -49,4 +68,24 @@ abstract class ControllerTestBase {
         return checkConnectionQuery.getOrDefault(db, "select 1");
     }
 
+    protected <T> T executeJavaScript(Object ... args) throws IOException {
+        HtmlPage page = webClient.getPage(format("%s/tests.html", httpUrl));
+        String argsStr = Arrays.stream(args)
+                .map(a -> {
+                    try {
+                        return objectMapper.writeValueAsString(a).replace('"', '\'');
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .collect(Collectors.joining(", "));
+        Object res = page.executeJavaScript(format("%s.%s(%s)", getClass().getSimpleName(), testName, argsStr)).getJavaScriptResult();
+        if (res == null || res instanceof Undefined) {
+            return null;
+        }
+        if (res instanceof Map) {
+            new HashMap<>((Map<String, Object>)res);
+        }
+        return (T)res;
+    }
 }

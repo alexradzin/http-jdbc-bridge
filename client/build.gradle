@@ -43,4 +43,9 @@ dependencies {
 }
 
 
-
+copy {
+    into 'build/resources/main/'
+    from('src/main/javascript') {
+        include '**/*.js'
+    }
+}
