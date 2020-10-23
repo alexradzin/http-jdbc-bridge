@@ -24,6 +24,7 @@ public class DriverControllerTest extends ControllerTestBase {
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void createAndCloseConnection(String nativeUrl) throws SQLException, IOException {
+        System.out.println("jjjjjjjjjjjjjjj=" + getClass().getResource("/HttpConnector.js"));
         assertCreateAndCloseConnection(format("%s#%s", httpUrl, nativeUrl));
         assertCreateAndCloseConnection(nativeUrl);
         executeJavaScript(nativeUrl);
@@ -32,6 +33,7 @@ public class DriverControllerTest extends ControllerTestBase {
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @ValueSource(strings = {"jdbc:unsupported:foo", httpUrl + "#" + "jdbc:unsupported:foo"})
     void createConnectionViaDriverManagerUsingUnsupportedJdbcUrl(String url) throws IOException {
+        System.out.println("jjjjjjjjjjjjjjj=" + getClass().getResource("/HttpConnector.js"));
         assertThrows(SQLException.class, () -> DriverManager.getConnection(url));
         assertThrows(ScriptException.class, () -> executeJavaScript(url));
     }
@@ -39,12 +41,14 @@ public class DriverControllerTest extends ControllerTestBase {
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @ValueSource(strings = {"jdbc:unsupported:foo", httpUrl + "#" + "jdbc:unsupported:foo"})
     void getDriverUsingUnsupportedJdbcUrl(String url) {
+        System.out.println("jjjjjjjjjjjjjjj=" + getClass().getResource("/HttpConnector.js"));
         assertThrows(SQLException.class, () -> DriverManager.getDriver(url));
         assertThrows(ScriptException.class, () -> executeJavaScript(url));
     }
 
     @Test
     void getUsingUnsupportedJdbcUrlConnectionDirectly() throws SQLException, IOException {
+        System.out.println("jjjjjjjjjjjjjjj=" + getClass().getResource("/HttpConnector.js"));
         String url = httpUrl + "#" + "jdbc:unsupported:foo";
         assertNull(new HttpDriver().connect(url, null));
         executeJavaScript(url);
@@ -53,6 +57,7 @@ public class DriverControllerTest extends ControllerTestBase {
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void createAndCloseConnectionWithPredefinedUrl(String nativeUrl) throws SQLException, IOException {
+        System.out.println("jjjjjjjjjjjjjjj=" + getClass().getResource("/HttpConnector.js"));
         Properties props = new Properties();
         String db = nativeUrl.split(":")[1];
         props.setProperty("user", db);
@@ -63,6 +68,7 @@ public class DriverControllerTest extends ControllerTestBase {
 
     @Test
     void createAndCloseConnectionWithPredefinedUrlWrongCredentials() throws SQLException, IOException {
+        System.out.println("jjjjjjjjjjjjjjj=" + getClass().getResource("/HttpConnector.js"));
         Properties props = new Properties();
         props.setProperty("user", "nobody");
         props.setProperty("password", "wrong");
@@ -72,6 +78,7 @@ public class DriverControllerTest extends ControllerTestBase {
 
     @Test
     void createConnectionWithExistingUserNotMappedToDatabase() {
+        System.out.println("jjjjjjjjjjjjjjj=" + getClass().getResource("/HttpConnector.js"));
         Properties props = new Properties();
         props.setProperty("user", "nodb");
         props.setProperty("password", "nopass");
