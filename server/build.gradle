@@ -45,5 +45,14 @@ dependencies {
     )
 }
 
+task fatJar(type: Jar) {
+    manifest {
+        attributes 'Implementation-Title': 'JDBC driver over HTTP', 'Implementation-Version': "1.0",
+        'Main-Class': 'com.nosqldriver.jdbc.http.DriverController'
+    }
+    baseName = project.name + '-all'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
 
 

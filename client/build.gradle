@@ -44,8 +44,16 @@ dependencies {
 
 
 copy {
+    println "cccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
     into 'build/resources/main/'
     from('src/main/javascript') {
         include '**/*.js'
     }
+}
+
+
+task fatJar(type: Jar) {
+    baseName = project.name + '-all'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
 }
