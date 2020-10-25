@@ -50,7 +50,7 @@ abstract class ControllerTestBase {
         System.out.println("../client/build/resources/main: " + Arrays.toString(new File("../client/build/resources/main").list()));
         System.out.println("../client/src/main/javascript: " + Arrays.toString(new File("../client/src/main/javascript").list()));
 
-        //Spark.staticFiles.location("/");
+        Spark.staticFiles.location("/");
         Spark.externalStaticFileLocation("build/resources/test");
         Spark.port(8080);
         new DriverController(new HashMap<>(), new ObjectMapper());
