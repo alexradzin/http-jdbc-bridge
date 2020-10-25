@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 import spark.Spark;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
@@ -43,7 +44,9 @@ abstract class ControllerTestBase {
         if (System.getProperty("jdbc.conf", System.getenv("jdbc.conf")) == null) {
             System.setProperty("jdbc.conf", "src/test/resources/jdbc.properties");
         }
-        Spark.staticFiles.location("/");
+        System.out.println("Server initialization: " + new File(".").getAbsolutePath() + ", " + new File("build/resources/test/HttpConnector.js").exists());
+        //Spark.staticFiles.location("/");
+        Spark.externalStaticFileLocation("build/resources/test");
         Spark.port(8080);
         new DriverController(new HashMap<>(), new ObjectMapper());
         Spark.awaitInitialization();
