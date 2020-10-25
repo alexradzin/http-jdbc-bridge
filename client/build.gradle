@@ -46,6 +46,7 @@ dependencies {
 copy {
     println "cccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
     into 'build/resources/main/'
+    into "../integration-tests/build/resources/test"
     from('src/main/javascript') {
         include '**/*.js'
     }
