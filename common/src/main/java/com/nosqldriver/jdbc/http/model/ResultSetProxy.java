@@ -72,7 +72,9 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     private Statement statement;
     private ResultSetMetaData md;
+    // TODO: fix multi-threading support (rowData and wasNull)
     private volatile RowData rowData = null;
+    private volatile boolean wasNull = false;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @JsonCreator
@@ -83,6 +85,7 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @Override
     public boolean next() throws SQLException {
         rowData = connector.get(format("%s/nextrow", entityUrl), RowData.class);
+        wasNull = false;
         return rowData.isMoved();
     }
 
@@ -93,7 +96,7 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public boolean wasNull() throws SQLException {
-        return connector.get(format("%s/wasnull", entityUrl), Boolean.class);
+        return rowData == null ? connector.get(format("%s/wasnull", entityUrl), Boolean.class) : wasNull;
     }
 
     @Override
@@ -344,24 +347,28 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @Override
     public void beforeFirst() throws SQLException {
         rowData = null;
+        wasNull = false;
         connector.post(format("%s/before/first", entityUrl), null, Void.class);
     }
 
     @Override
     public void afterLast() throws SQLException {
         rowData = null;
+        wasNull = false;
         connector.post(format("%s/after/last", entityUrl), null, Void.class);
     }
 
     @Override
     public boolean first() throws SQLException {
         rowData = connector.get(format("%s/firstrow", entityUrl), RowData.class);
+        wasNull = false;
         return rowData.isMoved();
     }
 
     @Override
     public boolean last() throws SQLException {
         rowData = connector.get(format("%s/lastrow", entityUrl), RowData.class);
+        wasNull = false;
         return rowData.isMoved();
     }
 
@@ -374,18 +381,21 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @Override
     public boolean absolute(int row) throws SQLException {
         rowData = connector.get(format("%s/absolute/%d", entityUrl, row), RowData.class);
+        wasNull = false;
         return rowData.isMoved();
     }
 
     @Override
     public boolean relative(int rows) throws SQLException {
         rowData = connector.get(format("%s/relative/%d", entityUrl, rows), RowData.class);
+        wasNull = false;
         return rowData.isMoved();
     }
 
     @Override
     public boolean previous() throws SQLException {
         rowData = connector.get(format("%s/previousrow", entityUrl), RowData.class);
+        wasNull = false;
         return rowData.isMoved();
     }
 
@@ -1078,8 +1088,10 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     private <T> T cast(Object obj, Class<T> clazz) {
         if (obj == null) {
+            wasNull = true;
             return null;
         }
+        wasNull = false;
         Function<Object, Object> caster = casters.get(clazz);
         //noinspection unchecked
         try {

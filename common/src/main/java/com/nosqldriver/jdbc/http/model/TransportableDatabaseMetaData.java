@@ -908,7 +908,7 @@ public class TransportableDatabaseMetaData extends WrapperProxy implements Datab
 
     @Override
     public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) throws SQLException {
-        String typesStr = types == null ? null : String.join("&", types);
+        String typesStr = types == null ? null : String.join(",", types);
         String fullUrl = connector.buildUrl(format("%s/tables", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"table", tableNamePattern}, new String[] {"types", typesStr});
         return connector.get(fullUrl, ResultSetProxy.class);
     }

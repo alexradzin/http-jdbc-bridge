@@ -75,7 +75,7 @@ abstract class BaseController {
     }
 
     protected String stringParam(Request req, String name) throws UnsupportedEncodingException {
-        return stringValue(req.params(name));
+        return req.params(name);
     }
 
     protected Integer intArg(Request req, String name) {
@@ -87,7 +87,7 @@ abstract class BaseController {
     }
 
     protected String stringArg(Request req, String name) throws UnsupportedEncodingException {
-        return stringValue(req.queryParams(name));
+        return req.queryParams(name);
     }
 
     protected int[] intArrayArg(Request req, String name) {
@@ -104,10 +104,6 @@ abstract class BaseController {
 
     protected Long longValue(String str) {
         return str == null ? null : Long.parseLong(str);
-    }
-
-    protected String stringValue(String value) throws UnsupportedEncodingException {
-        return value == null ? null : URLDecoder.decode(value, StandardCharsets.UTF_8.name());
     }
 
     protected int[] intArrayValue(String str, String name) {
