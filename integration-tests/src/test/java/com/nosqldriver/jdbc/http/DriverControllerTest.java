@@ -8,6 +8,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -33,6 +34,7 @@ public class DriverControllerTest extends ControllerTestBase {
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @ValueSource(strings = {"jdbc:unsupported:foo", httpUrl + "#" + "jdbc:unsupported:foo"})
     void createConnectionViaDriverManagerUsingUnsupportedJdbcUrl(String url) throws IOException {
+        System.out.println("CLASSPATH=" + ManagementFactory.getRuntimeMXBean().getClassPath());
         System.out.println("jjjjjjjjjjjjjjj=" + getClass().getResource("/HttpConnector.js"));
         assertThrows(SQLException.class, () -> DriverManager.getConnection(url));
         assertThrows(ScriptException.class, () -> executeJavaScript(url));
@@ -41,6 +43,7 @@ public class DriverControllerTest extends ControllerTestBase {
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @ValueSource(strings = {"jdbc:unsupported:foo", httpUrl + "#" + "jdbc:unsupported:foo"})
     void getDriverUsingUnsupportedJdbcUrl(String url) {
+        System.out.println("CLASSPATH=" + ManagementFactory.getRuntimeMXBean().getClassPath());
         System.out.println("jjjjjjjjjjjjjjj=" + getClass().getResource("/HttpConnector.js"));
         assertThrows(SQLException.class, () -> DriverManager.getDriver(url));
         assertThrows(ScriptException.class, () -> executeJavaScript(url));
@@ -48,6 +51,7 @@ public class DriverControllerTest extends ControllerTestBase {
 
     @Test
     void getUsingUnsupportedJdbcUrlConnectionDirectly() throws SQLException, IOException {
+        System.out.println("CLASSPATH=" + ManagementFactory.getRuntimeMXBean().getClassPath());
         System.out.println("jjjjjjjjjjjjjjj=" + getClass().getResource("/HttpConnector.js"));
         String url = httpUrl + "#" + "jdbc:unsupported:foo";
         assertNull(new HttpDriver().connect(url, null));
