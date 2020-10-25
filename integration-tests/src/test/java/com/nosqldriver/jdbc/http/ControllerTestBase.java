@@ -44,13 +44,7 @@ abstract class ControllerTestBase {
         if (System.getProperty("jdbc.conf", System.getenv("jdbc.conf")) == null) {
             System.setProperty("jdbc.conf", "src/test/resources/jdbc.properties");
         }
-//        System.out.println("Server initialization: " + new File(".").getAbsolutePath() + ", " + new File("build/resources/test/HttpConnector.js").exists());
-//        System.out.println("build/resources/test: " + Arrays.toString(new File("build/resources/test").list()));
-//        System.out.println("../client/build/resources/main: " + Arrays.toString(new File("../client/build/resources/main").list()));
-//        System.out.println("../client/src/main/javascript: " + Arrays.toString(new File("../client/src/main/javascript").list()));
-
         Spark.staticFiles.location("/");
-//        Spark.externalStaticFileLocation("build/resources/test");
         Spark.port(8080);
         new DriverController(new HashMap<>(), new ObjectMapper());
         Spark.awaitInitialization();
