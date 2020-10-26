@@ -1,5 +1,8 @@
 package com.nosqldriver.jdbc.http.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class ParameterValue<T, A> {
     private int index;
     private String name;
@@ -38,6 +41,19 @@ public class ParameterValue<T, A> {
         this.value = value;
         this.additionalArgument = additionalArgument;
     }
+
+    @JsonCreator
+    public ParameterValue(
+            @JsonProperty("type") Class<?> type,
+            @JsonProperty("typeName") String typeName,
+            @JsonProperty("value") T value,
+            @JsonProperty("additionalArgument") A additionalArgument) {
+        this.type = type;
+        this.typeName = typeName;
+        this.value = value;
+        this.additionalArgument = additionalArgument;
+    }
+
 
     public int getIndex() {
         return index;

@@ -9,13 +9,12 @@ import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
-
-import static java.util.stream.Collectors.toList;
+import java.util.stream.Collectors;
 
 public class HttpDriver implements Driver {
     static {
@@ -39,17 +38,19 @@ public class HttpDriver implements Driver {
     }
 
     @Override
-    public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
-        int questionPos = url.indexOf('?');
-        Collection<DriverPropertyInfo> allInfo = new ArrayList<>();
-        if (questionPos > 0 && questionPos < url.length() - 1) {
-            Arrays.stream(url.substring(questionPos + 1).split("&")).forEach(p -> {
-                String[] kv = p.split("=");
-                allInfo.add(new DriverPropertyInfo(kv[0], kv.length > 1 ? kv[1] : null));
-            });
+    public DriverPropertyInfo[] getPropertyInfo(String fullUrl, Properties info) throws SQLException {
+        Map<String, DriverPropertyInfo> allInfo = new HashMap<>();
+        for (String url : fullUrl.split("#")) {
+            int questionPos = url.indexOf('?');
+            if (questionPos > 0 && questionPos < url.length() - 1) {
+                Arrays.stream(url.substring(questionPos + 1).split("&")).forEach(p -> {
+                    String[] kv = p.split("=");
+                    allInfo.put(kv[0], new DriverPropertyInfo(kv[0], kv.length > 1 ? kv[1] : null));
+                });
+            }
         }
-        allInfo.addAll(info.entrySet().stream().map(e -> new DriverPropertyInfo((String)e.getKey(), (String)e.getValue())).collect(toList()));
-        return allInfo.toArray(new DriverPropertyInfo[0]);
+        allInfo.putAll(info.entrySet().stream().map(e -> new DriverPropertyInfo((String)e.getKey(), (String)e.getValue())).collect(Collectors.toMap(p -> p.name, p -> p)));
+        return allInfo.values().toArray(new DriverPropertyInfo[0]);
     }
 
     @Override
