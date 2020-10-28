@@ -44,7 +44,7 @@ function buildUrl(prefix, suffix) {
 }
 
 function throwIfError(obj) {
-    if (obj != null && obj.className && obj.message) {
+    if (obj.className && obj.message) {
         throw obj.className + ": " + obj.message;
     }
     return obj;

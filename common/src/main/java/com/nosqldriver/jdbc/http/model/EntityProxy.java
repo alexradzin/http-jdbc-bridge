@@ -51,4 +51,8 @@ abstract class EntityProxy {
     protected <T> void set(String parameterName, Class<?> type, T value) throws SQLException {
         connector.put(entityUrl, new ParameterValue<>(parameterName, type, value), Void.class);
     }
+
+    public String getEntityUrl() {
+        return entityUrl;
+    }
 }

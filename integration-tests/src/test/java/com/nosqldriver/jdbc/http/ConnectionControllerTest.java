@@ -48,7 +48,6 @@ public class ConnectionControllerTest extends ControllerTestBase {
                 new SimpleEntry<>("getTransactionIsolation", Connection::getTransactionIsolation),
                 new SimpleEntry<>("getTypeMap", Connection::getTypeMap),
                 new SimpleEntry<>("getWarnings", Connection::getWarnings),
-                //new AbstractMap.SimpleEntry<>("setSavepoint", Connection::setSavepoint),
                 new SimpleEntry<>("getClientInfo", c -> c.getClientInfo("")),
                 new SimpleEntry<>("getClientInfo", c -> c.getClientInfo("foo")),
                 new SimpleEntry<>("isValid", c -> c.isValid(0))
@@ -155,6 +154,8 @@ public class ConnectionControllerTest extends ControllerTestBase {
                 new SimpleEntry<>("prepareStatement", c -> c.prepareStatement(query, NO_GENERATED_KEYS)),
                 new SimpleEntry<>("prepareStatement", c -> c.prepareStatement(query, new int[0])),
                 new SimpleEntry<>("prepareStatement", c -> c.prepareStatement(query, new String[0])),
+                new SimpleEntry<>("prepareStatement", c -> c.prepareStatement(query, new int[] {1})),
+                new SimpleEntry<>("prepareStatement", c -> c.prepareStatement(query, new String[] {"1"})),
 
                 new SimpleEntry<>("prepareStatement", c -> c.prepareCall(query)),
                 new SimpleEntry<>("prepareStatement", c -> c.prepareCall(query, TYPE_FORWARD_ONLY, CONCUR_READ_ONLY)),
@@ -178,12 +179,38 @@ public class ConnectionControllerTest extends ControllerTestBase {
                 new SimpleEntry<>("prepareStatement", c -> c.prepareCall(query, TYPE_SCROLL_SENSITIVE, CONCUR_READ_ONLY, CLOSE_CURSORS_AT_COMMIT)),
                 new SimpleEntry<>("prepareStatement", c -> c.prepareCall(query, TYPE_SCROLL_SENSITIVE, CONCUR_UPDATABLE, CLOSE_CURSORS_AT_COMMIT)),
 
-                new SimpleEntry<>("createSQLXML", Connection::createSQLXML)
-        );
+                new SimpleEntry<>("createSQLXML", Connection::createSQLXML),
+                new SimpleEntry<>("nativeSql", c -> c.nativeSQL(query)),
+                new SimpleEntry<>("setSavepoint", c -> c.setSavepoint()),
+                new SimpleEntry<>("setSavepoint(name)", c -> c.setSavepoint("savepoint"))
+                );
 
         for (Entry<String, ThrowingFunction<Connection, ?, SQLException>> function : functions) {
             String name = function.getKey();
             ThrowingFunction<Connection, ?, SQLException> f = function.getValue();
+            assertCall(f, nativeConn, httpConn, name);
+        }
+    }
+
+
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void voidMethods(String nativeUrl) throws SQLException {
+        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
+        Connection nativeConn = DriverManager.getConnection(nativeUrl);
+
+        Collection<SimpleEntry<String, ThrowingConsumer<Connection, SQLException>>> functions = Arrays.asList(
+                new SimpleEntry<>("commit", c -> c.commit()),
+                new SimpleEntry<>("rollback", c -> c.rollback()),
+                new SimpleEntry<>("rollback(savepoint)", c -> c.rollback(c.setSavepoint())),
+                new SimpleEntry<>("releaseSavepoint(savepoint)", c -> c.releaseSavepoint(c.setSavepoint())),
+                new SimpleEntry<>("clearWarnings", c -> c.clearWarnings()),
+                new SimpleEntry<>("abort", c -> c.abort(Executors.newSingleThreadExecutor()))
+        );
+
+        for (Entry<String, ThrowingConsumer<Connection, SQLException>> function : functions) {
+            String name = function.getKey();
+            ThrowingConsumer<Connection, SQLException> f = function.getValue();
             assertCall(f, nativeConn, httpConn, name);
         }
     }

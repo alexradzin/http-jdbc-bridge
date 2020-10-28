@@ -95,7 +95,6 @@ public class ConnectionController extends BaseController {
         get("/connection/:connection/autocommit", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), Connection::getAutoCommit));
 
         post("/connection/:connection/commit", JSON, (req, res) -> accept(() -> getConnection(attributes, req), Connection::commit));
-        post("/connection/:connection/rollback", JSON, (req, res) -> accept(() -> getConnection(attributes, req), Connection::rollback));
         delete("/connection/:connection", JSON, (req, res) -> accept(() -> getConnection(attributes, req), Connection::close));
         get("/connection/:connection/closed", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), Connection::isClosed));
 
@@ -119,9 +118,28 @@ public class ConnectionController extends BaseController {
         post("/connection/:connection/holdability", JSON, (req, res) -> accept(() -> getConnection(attributes, req), connection -> connection.setHoldability(Integer.parseInt(req.body()))));
         get("/connection/:connection/holdability", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), Connection::getHoldability));
 
-        post("/connection/:connection/savepoint", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> req.body() == null ? connection.setSavepoint() : connection.setSavepoint(req.body()), TransportableSavepoint::new));
-        delete("/connection/:connection/savepoint", JSON, (req, res) -> accept(() -> getConnection(attributes, req), connection -> connection.releaseSavepoint(objectMapper.readValue(req.body(), TransportableSavepoint.class))));
-        post("/connection/:connection/rollback", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> req.body() == null ? connection.setSavepoint() : connection.setSavepoint(req.body()), TransportableSavepoint::new));
+        post("/connection/:connection/savepoint", JSON, (req, res) -> retrieve2(() -> getConnection(attributes, req), connection -> {
+            String name = objectMapper.readValue(req.body(), String.class);
+            return name == null ? connection.setSavepoint() : connection.setSavepoint(name);
+        }, TransportableSavepoint::new, "savepoint", req.url()));
+
+        delete("/connection/:connection/savepoint", JSON, (req, res) -> accept(() -> getConnection(attributes, req), connection -> {
+            String[] urlParts = objectMapper.readValue(req.body(), TransportableSavepoint.class).getEntityUrl().split("/");
+            String savepointId = urlParts[urlParts.length - 1];
+            connection.releaseSavepoint(getEntity(attributes, "savepoint", savepointId));
+        }));
+
+        post("/connection/:connection/rollback", JSON, (req, res) -> accept(() -> getConnection(attributes, req), connection -> {
+            TransportableSavepoint ts = objectMapper.readValue(req.body(), TransportableSavepoint.class);
+            if (ts == null) {
+                connection.rollback();
+            } else {
+                String[] urlParts = ts.getEntityUrl().split("/");
+                String savepointId = urlParts[urlParts.length - 1];
+                connection.rollback(getEntity(attributes, "savepoint", savepointId));
+            }
+        }));
+
 
         post("/connection/:connection/clob", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), Connection::createClob, ClobProxy::new, "clob", req.url()));
         post("/connection/:connection/nclob", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), Connection::createNClob, ClobProxy::new, "nclob", req.url()));

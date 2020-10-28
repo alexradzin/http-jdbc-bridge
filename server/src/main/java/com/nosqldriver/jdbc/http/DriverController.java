@@ -54,7 +54,6 @@ public class DriverController extends BaseController {
         });
 
         options("*", (req, res) -> {
-            System.out.println("OPTIONS");
             res.status(HttpURLConnection.HTTP_NO_CONTENT);
             return "";
         });

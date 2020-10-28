@@ -181,6 +181,9 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
                 new SimpleEntry<>("updatesAreDetected", md -> md.updatesAreDetected(1)),
                 new SimpleEntry<>("deletesAreDetected", md -> md.deletesAreDetected(1)),
                 new SimpleEntry<>("insertsAreDetected", md -> md.insertsAreDetected(1)),
+                new SimpleEntry<>("supportsResultSetHoldability", md -> md.supportsResultSetHoldability(0)),
+                new SimpleEntry<>("supportsResultSetHoldability", md -> md.supportsResultSetHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT)),
+                new SimpleEntry<>("supportsResultSetHoldability", md -> md.supportsResultSetHoldability(ResultSet.CLOSE_CURSORS_AT_COMMIT)),
                 new SimpleEntry<>("supportsResultSetConcurrency", md -> md.supportsResultSetConcurrency(1, 2))
         );
 

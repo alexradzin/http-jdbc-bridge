@@ -6,28 +6,55 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.sql.SQLException;
 import java.sql.Savepoint;
 
-public class TransportableSavepoint implements Savepoint {
-    private final int savePointId;
-    private final String savePointName;
+public class TransportableSavepoint extends EntityProxy implements Savepoint {
+    @JsonProperty private final int savepointId;
+    @JsonProperty private final String savepointName;
 
-    public TransportableSavepoint(Savepoint savepoint) throws SQLException {
-        this(savepoint.getSavepointId(), savepoint.getSavepointName());
+    public TransportableSavepoint(String entityUrl, Savepoint savepoint) throws SQLException {
+        this(entityUrl, retrieveSavepointId(savepoint), retrieveSavepointName(savepoint));
+    }
+
+    /**
+     * Some implementations throw exceptions when {@link Savepoint#getSavepointName()} is called on unnamed savepoint.
+     * @param savepoint original savepoint
+     * @return name or null
+     */
+    private static String retrieveSavepointName(Savepoint savepoint) {
+        try {
+            return savepoint.getSavepointName();
+        } catch (SQLException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Some implementations throw exceptions when {@link Savepoint#getSavepointId()} is called on named savepoint.
+     * @param savepoint original savepoint
+     * @return name or 0
+     */
+    private static int retrieveSavepointId(Savepoint savepoint) {
+        try {
+            return savepoint.getSavepointId();
+        } catch (SQLException e) {
+            return 0;
+        }
     }
 
     @JsonCreator
-    public TransportableSavepoint(@JsonProperty("savePointId") int savePointId, @JsonProperty("savePointName") String savePointName) {
-        this.savePointId = savePointId;
-        this.savePointName = savePointName;
+    public TransportableSavepoint(@JsonProperty("entityUrl") String entityUrl, @JsonProperty("savepointId") int savepointId, @JsonProperty("savepointName") String savepointName) {
+        super(entityUrl);
+        this.savepointId = savepointId;
+        this.savepointName = savepointName;
     }
 
 
     @Override
     public int getSavepointId() throws SQLException {
-        return savePointId;
+        return savepointId;
     }
 
     @Override
     public String getSavepointName() throws SQLException {
-        return savePointName;
+        return savepointName;
     }
 }

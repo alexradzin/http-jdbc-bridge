@@ -8,8 +8,6 @@ import com.nosqldriver.util.function.ThrowingSupplier;
 import spark.Request;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -65,9 +63,13 @@ abstract class BaseController {
     }
 
 
+    protected <T> T getEntity(Map<String, Object> attributes, Request req, String prefix, String idName) {
+        return getEntity(attributes, prefix, req.params(idName));
+    }
+
     @SuppressWarnings("unchecked")
-    protected <T> T getEntity(Map<String, Object> attributes, Request req, String prefix, String id) {
-        return (T)attributes.get(format("%s@%s", prefix, req.params(id)));
+    protected <T> T getEntity(Map<String, Object> attributes, String prefix, String id) {
+        return (T)attributes.get(format("%s@%s", prefix, id));
     }
 
     protected int intParam(Request req, String name) {
@@ -86,16 +88,16 @@ abstract class BaseController {
         return longValue(req.queryParams(name));
     }
 
-    protected String stringArg(Request req, String name) throws UnsupportedEncodingException {
+    protected String stringArg(Request req, String name) {
         return req.queryParams(name);
     }
 
     protected int[] intArrayArg(Request req, String name) {
-        return intArrayValue(req.queryParams(name), name);
+        return intArrayValue(req.queryParams(name));
     }
 
     protected String[] stringArrayArg(Request req, String name) {
-        return stringArrayValue(req.queryParams(name), name);
+        return stringArrayValue(req.queryParams(name));
     }
 
     protected Integer intValue(String str) {
@@ -106,7 +108,7 @@ abstract class BaseController {
         return str == null ? null : Long.parseLong(str);
     }
 
-    protected int[] intArrayValue(String str, String name) {
+    protected int[] intArrayValue(String str) {
         if (str == null) {
             return null;
         }
@@ -116,7 +118,7 @@ abstract class BaseController {
         return Arrays.stream(str.split(",")).mapToInt(Integer::parseInt).toArray();
     }
 
-    protected String[] stringArrayValue(String str, String name) {
+    protected String[] stringArrayValue(String str) {
         if (str == null) {
             return null;
         }

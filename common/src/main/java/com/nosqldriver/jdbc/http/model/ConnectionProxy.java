@@ -188,12 +188,12 @@ public class ConnectionProxy extends WrapperProxy implements Connection {
 
     @Override
     public void rollback(Savepoint savepoint) throws SQLException {
-        connector.post(format("%s/rollback", entityUrl), new TransportableSavepoint(savepoint), Void.class);
+        connector.post(format("%s/rollback", entityUrl), savepoint, Void.class);
     }
 
     @Override
     public void releaseSavepoint(Savepoint savepoint) throws SQLException {
-        connector.delete(format("%s/savepoint", entityUrl), new TransportableSavepoint(savepoint), Void.class);
+        connector.delete(format("%s/savepoint", entityUrl), savepoint, Void.class);
     }
 
     @Override
