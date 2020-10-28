@@ -8,6 +8,20 @@
         };
 
         var connection = null;
+        function doConnect() {
+            var url = document.getElementById('jdbcUrl').value;
+            var user = document.getElementById('user').value;
+            var password = document.getElementById('password').value;
+            var properties = Object.fromEntries(document.getElementById('properties').value.split("\n").map(p => p.split("=")))
+            if (user) {
+                properties["user"] = user;
+            }
+            if (password) {
+                properties["password"] = password;
+            }
+            connect(url, properties);
+        }
+
         function connect(url, props) {
             DriverManager.getConnection(url, props, function(con) {
                 connection = con;
@@ -26,25 +40,6 @@
                 })
             } catch (e) {
                 alert(e.message)
-            }
-        }
-
-        function resultSetToText(rs, textArea) {
-            var md = rs.getMetaData();
-            var n = md.getColumnCount();
-            var header = new Array();
-            for (var i = 1; i <= n; i++) {
-                var label = md.getColumnLabel(i)
-                header[header.length] = label;
-            }
-            textArea.value = header.join(",") + "\n";
-
-            while(rs.next()) {
-                var row = new Array();
-                for (var i = 1; i <= n; i++) {
-                    row[row.length] = rs.getString(i);
-                }
-                textArea.value += row.join(",") + "\n";
             }
         }
 
@@ -73,22 +68,25 @@
 
 
 <body>
-JDBC URL: <input id="jdbcUrl" type="text">
-<button type="submit" id="connect" onclick="connect(document.getElementById('jdbcUrl').value)">connect</button>
+<table>
+    <tr><td><label for="jdbcUrl">JDBC URL:</label></td><td><input id="jdbcUrl" type="text"></td></tr>
+    <tr><td><label for="user">User:</label></td><td><input id="user" type="text"></td></tr>
+    <tr><td><label for="password">Password:</label></td><td><input id="password" type="password"></td></tr>
+</table>
+
+<label for="properties">Properties:</label><br/>
+<textarea id="properties" rows="10" cols="60"></textarea><br/>
+
+<button type="submit" id="connect" onclick="doConnect()">connect</button>
 <button type="submit" id="disconnect" onclick="connection.close(); connection = null; this.disabled = true" disabled>disconnect</button>
-<br/>
-<textarea id="sql" rows="10" cols="60"></textarea>
 <br/>
 SQL
 <br/>
-<button type="submit" id="query_to_text" onclick="query(document.getElementById('sql').value, 'text')">query to text</button>
-<button type="submit" id="query_to_table" onclick="query(document.getElementById('sql').value, 'table')">query to table</button>
-
+<textarea id="sql" rows="10" cols="60"></textarea>
+<br/>
+<button type="submit" id="query" onclick="query(document.getElementById('sql').value, 'table')">query</button>
 <br/>
 Result
-<br/>
-<textarea id="result" rows="10" cols="60"></textarea>
-<br/>
 <table id="result_table" border="1"></table>
 
 </body>
