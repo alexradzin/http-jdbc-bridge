@@ -1,0 +1,55 @@
+<html>
+<head>
+<script src="../../../../client/src/main/resources/HttpConnector.js"></script>
+
+<script>
+function getConnection2() {
+    DriverManager.getConnection('http://localhost:8080#jdbc:postgresql://localhost:5432/test_db?user=alex&password=alex', null, 
+    function(connection) {
+        alert('connection='+connection); document.con=connection; alert('getConnection()='+document.con)
+    })
+}
+
+function createStatement() {
+    DriverManager.getConnection('http://localhost:8080#jdbc:postgresql://localhost:5432/test_db?user=alex&password=alex', null, 
+    function(connection) {
+        connection.createStatement(function(st) {
+            alert("SSSSSSSSSSSSSS");
+        })
+    })
+    
+}
+
+
+function Test() {
+    this.foo = function(arg) {
+        dialog("foo " + arg);
+    }
+    function dialog(msg) {
+        alert("dialog " + msg)
+    }
+}
+
+</script>
+</head>
+<body>
+<button type="submit" onclick="alert(new HttpDriver().acceptsURL('http://localhost:8080#jdbc:postgresql://localhost:5432/test_db'))">acceptsUrl</button>
+<button type="submit" onclick="alert(new HttpDriver().connect('http://localhost:8080#jdbc:postgresql://localhost:5432/test_db?user=alex&password=alex'))">connect</button>
+
+<button type="submit" onclick="new HttpDriver().acceptsURL('http://localhost:8080#jdbc:postgresql://localhost:5432/test_db', function(accepts) {alert('accepts='+accepts); document.accepts=accepts; alert('doc.accepts='+document.accepts); })">acceptsUrl</button>
+<button type="submit" onclick="new HttpDriver().connect('http://localhost:8080#jdbc:postgresql://localhost:5432/test_db?user=alex&password=alex', null, function(connection) {alert('connection='+connection); document.con=connection; alert('global con='+document.con)})">connect</button>
+
+
+
+<button type="submit" onclick="DriverManager.getConnection('http://localhost:8080#jdbc:postgresql://localhost:5432/test_db?user=alex&password=alex', null, function(connection) {alert('connection='+connection); document.con=connection; alert('getConnection()='+document.con)})">getConnection</button>
+<button type="submit" onclick="getConnection2()">getConnection2</button>
+<br/>
+
+<button type="submit" onclick="createStatement()">createStatement</button>
+
+<br/>
+<button type="submit" onclick="new Test().foo('hello')">foo</button>
+
+
+</body>
+</html>

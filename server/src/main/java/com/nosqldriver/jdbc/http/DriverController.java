@@ -46,7 +46,8 @@ public class DriverController extends BaseController {
                 throw new IllegalStateException(e);
             }
         });
-        Spark.after((req, res) -> {
+
+        Spark.afterAfter((req, res) -> {
             res.header("Access-Control-Allow-Origin", "*");
             res.header("Access-Control-Allow-Headers", "content-type");
             res.header("Access-Control-Allow-Methods","PUT, POST, GET, DELETE, PATCH, OPTIONS");

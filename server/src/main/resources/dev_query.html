@@ -1,0 +1,94 @@
+<html>
+<head>
+    <!-- <script src="../../../../client/src/main/resources/HttpConnector.js"></script> -->
+    <script src="http://localhost:8080/HttpConnector.js"></script>
+    <script crossorigin>
+        window.onerror = function(message, file, lineNumber, columnNumber, error) {
+          return alert(message);
+        };
+
+        var connection = null;
+        function connect(url, props) {
+            DriverManager.getConnection(url, props, function(con) {
+                connection = con;
+                document.getElementById('disconnect').disabled = false;
+            })
+        }
+        function query(sql, output) {
+            try {
+                connection.createStatement(function(statement) {
+                    statement.executeQuery(sql, function(rs) {
+                        switch(output) {
+                            case 'text': resultSetToText(rs, document.getElementById('result')); break;
+                            case 'table': resultSetToTable(rs, document.getElementById('result_table')); break;
+                        }
+                    });
+                })
+            } catch (e) {
+                alert(e.message)
+            }
+        }
+
+        function resultSetToText(rs, textArea) {
+            var md = rs.getMetaData();
+            var n = md.getColumnCount();
+            var header = new Array();
+            for (var i = 1; i <= n; i++) {
+                var label = md.getColumnLabel(i)
+                header[header.length] = label;
+            }
+            textArea.value = header.join(",") + "\n";
+
+            while(rs.next()) {
+                var row = new Array();
+                for (var i = 1; i <= n; i++) {
+                    row[row.length] = rs.getString(i);
+                }
+                textArea.value += row.join(",") + "\n";
+            }
+        }
+
+        function resultSetToTable(rs, table) {
+            table.deleteTHead();
+            var md = rs.getMetaData();
+            var n = md.getColumnCount();
+            var header = new Array();
+            var thead = table.createTHead();
+            var row = thead.insertRow();
+            for (var i = 1; i <= n; i++) {
+                var th = document.createElement("th");
+                th.appendChild(document.createTextNode(md.getColumnLabel(i)));
+                row.appendChild(th);
+            }
+            while(rs.next()) {
+                var row = table.insertRow();
+                for (var i = 1; i <= n; i++) {
+                    row.insertCell().appendChild(document.createTextNode(rs.getString(i)));
+                }
+            }
+        }
+    </script>
+</head>
+
+
+
+<body>
+JDBC URL: <input id="jdbcUrl" type="text">
+<button type="submit" id="connect" onclick="connect(document.getElementById('jdbcUrl').value)">connect</button>
+<button type="submit" id="disconnect" onclick="connection.close(); connection = null; this.disabled = true" disabled>disconnect</button>
+<br/>
+<textarea id="sql" rows="10" cols="60"></textarea>
+<br/>
+SQL
+<br/>
+<button type="submit" id="query_to_text" onclick="query(document.getElementById('sql').value, 'text')">query to text</button>
+<button type="submit" id="query_to_table" onclick="query(document.getElementById('sql').value, 'table')">query to table</button>
+
+<br/>
+Result
+<br/>
+<textarea id="result" rows="10" cols="60"></textarea>
+<br/>
+<table id="result_table" border="1"></table>
+
+</body>
