@@ -28,13 +28,17 @@
                 document.getElementById('disconnect').disabled = false;
             })
         }
-        function query(sql, output) {
+
+        function execute(sql) {
             try {
                 connection.createStatement(function(statement) {
-                    statement.executeQuery(sql, function(rs) {
-                        switch(output) {
-                            case 'text': resultSetToText(rs, document.getElementById('result')); break;
-                            case 'table': resultSetToTable(rs, document.getElementById('result_table')); break;
+                    statement.execute(sql, function(res) {
+                        if (res) {
+                            statement.getResultSet(function(rs) {
+                                resultSetToTable(rs, document.getElementById('result_table'))
+                            })
+                        } else {
+                            alert("done");
                         }
                     });
                 })
@@ -62,6 +66,12 @@
                 }
             }
         }
+
+        function executeOnCtrlEnter(e) {
+            if(e.key == "Enter" && e.ctrlKey) {
+                execute(document.getElementById('sql').value)
+            }
+        }
     </script>
 </head>
 
@@ -82,9 +92,9 @@
 <br/>
 SQL
 <br/>
-<textarea id="sql" rows="10" cols="60"></textarea>
+<textarea id="sql" rows="10" cols="60" onkeypress="executeOnCtrlEnter(event)"></textarea>
 <br/>
-<button type="submit" id="query" onclick="query(document.getElementById('sql').value, 'table')">query</button>
+<button type="submit" id="execute" onclick="execute(document.getElementById('sql').value)">execute</button>
 <br/>
 Result
 <table id="result_table" border="1"></table>

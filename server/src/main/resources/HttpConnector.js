@@ -143,7 +143,13 @@ function Statement(proxy, connection) {
     },
 
     this.executeUpdate = function(sql, callback) {
-        return post(this.entityUrl + "/update", sql, callback)
+        if (callback) {
+            post(this.entityUrl + "/update", sql, function(proxy) {
+                callback(proxy)
+            })
+        } else {
+            return post(this.entityUrl + "/update", null);
+        }
     },
 
     this.getMaxFieldSize = function(callback) {
@@ -190,8 +196,31 @@ function Statement(proxy, connection) {
         return post(this.entityUrl + "/cursorname", name)
     },
 
-    this.execute = function(sql, callback) {
-        return post(this.entityUrl + "/execute", sql, callback)
+    this.execute = function(sql, arg1, arg2) {
+        var url = this.entityUrl + "/execute";
+        if (typeof(arg1)) {
+            callback = arg1;
+        } else {
+            callback = arg2;
+            if (Array.isArray(arg1)) {
+                if (arg1.length > 0 && typeof(arg1[0]) == 'number') {
+                    url = url + "?indexes=" + arg1.join(",");
+                } else {
+                    url = url + "?names=" + arg1.map(a => encode(a)).join(",");
+                }
+            } else {
+                url = url + "?keys=" + arg1
+            }
+
+        }
+
+        if (callback) {
+            post(this.entityUrl + "/execute", sql, function(proxy) {
+                callback(proxy)
+            })
+        } else {
+            return post(this.entityUrl + "/execute", sql)
+        }
     },
 
     this.getResultSet = function(callback) {
@@ -312,12 +341,6 @@ function Statement(proxy, connection) {
     this.executeLargeUpdate = function() {
         var allArgs = arguments;
         allArgs.unshift("large/update");
-        return execute(allArgs)
-    },
-
-    this.execute = function() {
-        var allArgs = arguments;
-        allArgs.unshift("execute");
         return execute(allArgs)
     },
 
