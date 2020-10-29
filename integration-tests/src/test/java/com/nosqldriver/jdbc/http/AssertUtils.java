@@ -9,59 +9,98 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class AssertUtils {
-    private static final Collection<Class<?>> integerTypes = new HashSet<>(Arrays.asList(Byte.class, Short.class, Integer.class, Long.class));
-    private static final Collection<Class<?>> floatingTypes = new HashSet<>(Arrays.asList(Float.class, Double.class, BigDecimal.class));
-    private static final Map<Integer, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>> getters = new HashMap<>();
+    private static final Collection<Class<?>> integerTypes = new HashSet<>(asList(Byte.class, Short.class, Integer.class, Long.class));
+    private static final Collection<Class<?>> floatingTypes = new HashSet<>(asList(Float.class, Double.class, BigDecimal.class));
+    private static final Map<Integer, Collection<ThrowingBiFunction<ResultSet, Integer, ?, SQLException>>> typedGettersByIndex = new HashMap<>();
     static {
-        getters.put(Types.BIT, ResultSet::getObject);
-        getters.put(Types.TINYINT, ResultSet::getByte);
-        getters.put(Types.SMALLINT, ResultSet::getShort);
-        getters.put(Types.INTEGER, ResultSet::getInt);
-        getters.put(Types.BIGINT, ResultSet::getLong);
-        getters.put(Types.FLOAT, ResultSet::getFloat);
-        getters.put(Types.REAL, ResultSet::getDouble);
-        getters.put(Types.DOUBLE, ResultSet::getDouble);
-        getters.put(Types.NUMERIC, ResultSet::getDouble);
-        getters.put(Types.DECIMAL, ResultSet::getBigDecimal);
-        getters.put(Types.CHAR, (rs, i) -> {String s = rs.getString(i); return s == null ? null : s.length() > 0 ? s.substring(0, 1) : "";});
-        getters.put(Types.VARCHAR, ResultSet::getString);
-        getters.put(Types.LONGVARCHAR, ResultSet::getString);
-        getters.put(Types.DATE, ResultSet::getDate);
-        getters.put(Types.TIME, ResultSet::getTime);
-        getters.put(Types.TIME_WITH_TIMEZONE, ResultSet::getTime);
-        getters.put(Types.TIMESTAMP, ResultSet::getTimestamp);
-        getters.put(Types.TIMESTAMP_WITH_TIMEZONE, ResultSet::getTimestamp);
+        typedGettersByIndex.put(Types.BIT, asList(ResultSet::getBoolean, ResultSet::getObject));
+        typedGettersByIndex.put(Types.TINYINT, asList(ResultSet::getByte, ResultSet::getShort, ResultSet::getInt, ResultSet::getLong));
+        typedGettersByIndex.put(Types.SMALLINT, asList(ResultSet::getShort, ResultSet::getInt, ResultSet::getLong));
+        typedGettersByIndex.put(Types.INTEGER, asList(ResultSet::getInt, ResultSet::getLong));
+        typedGettersByIndex.put(Types.BIGINT, asList(ResultSet::getLong));
+        typedGettersByIndex.put(Types.FLOAT, asList(ResultSet::getFloat, ResultSet::getDouble));
+        typedGettersByIndex.put(Types.REAL, asList(ResultSet::getDouble));
+        typedGettersByIndex.put(Types.DOUBLE, asList(ResultSet::getDouble));
+        typedGettersByIndex.put(Types.NUMERIC, asList(ResultSet::getDouble));
+        typedGettersByIndex.put(Types.DECIMAL, asList(ResultSet::getBigDecimal));
+        typedGettersByIndex.put(Types.CHAR, asList((rs, i) -> {String s = rs.getString(i); return s == null ? null : s.length() > 0 ? s.substring(0, 1) : "";}));
+        typedGettersByIndex.put(Types.VARCHAR, asList(ResultSet::getString));
+        typedGettersByIndex.put(Types.LONGVARCHAR, asList(ResultSet::getString));
+        typedGettersByIndex.put(Types.DATE, asList(ResultSet::getDate));
+        typedGettersByIndex.put(Types.TIME, asList(ResultSet::getTime));
+        typedGettersByIndex.put(Types.TIME_WITH_TIMEZONE, asList(ResultSet::getTime));
+        typedGettersByIndex.put(Types.TIMESTAMP, asList(ResultSet::getTimestamp));
+        typedGettersByIndex.put(Types.TIMESTAMP_WITH_TIMEZONE, asList(ResultSet::getTimestamp));
         //getters.put(Types.BINARY, ResultSet::getObject);
         //getters.put(Types.VARBINARY, ResultSet::getInt);
         //getters.put(Types.LONGVARBINARY, ResultSet::getInt);
-        getters.put(Types.NULL, ResultSet::getObject);
+        typedGettersByIndex.put(Types.NULL, asList(ResultSet::getObject));
         //getters.put(Types.OTHER, ResultSet::getObject);
         //getters.put(Types.JAVA_OBJECT, ResultSet::getObject);
         //getters.put(Types.DISTINCT, ResultSet::getInt);
         //getters.put(Types.STRUCT, ResultSet::getInt);
-        getters.put(Types.ARRAY, ResultSet::getArray);
-        getters.put(Types.BLOB, ResultSet::getBlob);
-        getters.put(Types.CLOB, ResultSet::getClob);
-        getters.put(Types.REF, ResultSet::getRef);
+        typedGettersByIndex.put(Types.ARRAY, asList(ResultSet::getArray));
+        typedGettersByIndex.put(Types.BLOB, asList(ResultSet::getBlob));
+        typedGettersByIndex.put(Types.CLOB, asList(ResultSet::getClob));
+        typedGettersByIndex.put(Types.REF, asList(ResultSet::getRef));
         //getters.put(Types.DATALINK, ResultSet::getObject);
-        getters.put(Types.BOOLEAN, ResultSet::getBoolean);
-        getters.put(Types.ROWID, ResultSet::getRowId);
+        typedGettersByIndex.put(Types.BOOLEAN, asList(ResultSet::getBoolean));
+        typedGettersByIndex.put(Types.ROWID, asList(ResultSet::getRowId));
     }
 
-    public static void assertResultSet(ResultSet expected, ResultSet actual, String message, int limit) throws SQLException {
+    private static final Map<Integer, Collection<ThrowingBiFunction<ResultSet, String, ?, SQLException>>> typedGettersByLabel = new HashMap<>();
+    static {
+        typedGettersByLabel.put(Types.BIT, asList(ResultSet::getBoolean, ResultSet::getObject));
+        typedGettersByLabel.put(Types.TINYINT, asList(ResultSet::getByte, ResultSet::getShort, ResultSet::getInt, ResultSet::getLong));
+        typedGettersByLabel.put(Types.SMALLINT, asList(ResultSet::getShort, ResultSet::getInt, ResultSet::getLong));
+        typedGettersByLabel.put(Types.INTEGER, asList(ResultSet::getInt, ResultSet::getLong));
+        typedGettersByLabel.put(Types.BIGINT, asList(ResultSet::getLong));
+        typedGettersByLabel.put(Types.FLOAT, asList(ResultSet::getFloat, ResultSet::getDouble));
+        typedGettersByLabel.put(Types.REAL, asList(ResultSet::getDouble));
+        typedGettersByLabel.put(Types.DOUBLE, asList(ResultSet::getDouble));
+        typedGettersByLabel.put(Types.NUMERIC, asList(ResultSet::getDouble));
+        typedGettersByLabel.put(Types.DECIMAL, asList(ResultSet::getBigDecimal));
+        typedGettersByLabel.put(Types.CHAR, asList((rs, i) -> {String s = rs.getString(i); return s == null ? null : s.length() > 0 ? s.substring(0, 1) : "";}));
+        typedGettersByLabel.put(Types.VARCHAR, asList(ResultSet::getString));
+        typedGettersByLabel.put(Types.LONGVARCHAR, asList(ResultSet::getString));
+        typedGettersByLabel.put(Types.DATE, asList(ResultSet::getDate));
+        typedGettersByLabel.put(Types.TIME, asList(ResultSet::getTime));
+        typedGettersByLabel.put(Types.TIME_WITH_TIMEZONE, asList(ResultSet::getTime));
+        typedGettersByLabel.put(Types.TIMESTAMP, asList(ResultSet::getTimestamp));
+        typedGettersByLabel.put(Types.TIMESTAMP_WITH_TIMEZONE, asList(ResultSet::getTimestamp));
+        //getters.put(Types.BINARY, ResultSet::getObject);
+        //getters.put(Types.VARBINARY, ResultSet::getInt);
+        //getters.put(Types.LONGVARBINARY, ResultSet::getInt);
+        typedGettersByLabel.put(Types.NULL, asList(ResultSet::getObject));
+        //getters.put(Types.OTHER, ResultSet::getObject);
+        //getters.put(Types.JAVA_OBJECT, ResultSet::getObject);
+        //getters.put(Types.DISTINCT, ResultSet::getInt);
+        //getters.put(Types.STRUCT, ResultSet::getInt);
+        typedGettersByLabel.put(Types.ARRAY, asList(ResultSet::getArray));
+        typedGettersByLabel.put(Types.BLOB, asList(ResultSet::getBlob));
+        typedGettersByLabel.put(Types.CLOB, asList(ResultSet::getClob));
+        typedGettersByLabel.put(Types.REF, asList(ResultSet::getRef));
+        //getters.put(Types.DATALINK, ResultSet::getObject);
+        typedGettersByLabel.put(Types.BOOLEAN, asList(ResultSet::getBoolean));
+        typedGettersByLabel.put(Types.ROWID, asList(ResultSet::getRowId));
+    }
+
+
+    public static void assertResultSet(String nativeUrl, ResultSet expected, ResultSet actual, String message, int limit) throws SQLException {
         if (expected == null) {
             assertNull(actual);
             return;
@@ -72,10 +111,21 @@ public class AssertUtils {
 
         int row = 0;
         boolean checkExtraRows = true;
-        while (expected.next() && actual.next()) {
+
+        assertResultSetNavigationState(nativeUrl, expected, actual);
+        while (next(expected, actual)) {
+            assertResultSetNavigationState(nativeUrl, expected, actual);
             for (int i = 1; i <= n; i++) {
-                ThrowingBiFunction<ResultSet, Integer, ?, SQLException> getter = getters.getOrDefault(md.getColumnType(i), ResultSet::getObject);
-                assertValues(getter.apply(expected, i), getter.apply(actual, i), format("%s:column#%d:%s", message, i, md.getColumnName(i)));
+                for (ThrowingBiFunction<ResultSet, Integer, ?, SQLException> getter : typedGettersByIndex.getOrDefault(md.getColumnType(i), Collections.singleton(ResultSet::getObject))) {
+                    assertValues(getter.apply(expected, i), getter.apply(actual, i), format("%s:column#%d:%s", message, i, md.getColumnName(i)));
+                }
+                for (ThrowingBiFunction<ResultSet, String, ?, SQLException> getter : typedGettersByLabel.getOrDefault(md.getColumnType(i), Collections.singleton(ResultSet::getObject))) {
+                    int type = md.getColumnType(i);
+                    if (nativeUrl.startsWith("jdbc:derby") && (type == Types.BLOB || type == Types.CLOB)) {
+                        continue; // patch for derby that does not allow to retrieve blobs and clobs more than once. The first time they were retrieved by index.
+                    }
+                    assertValues(getter.apply(expected, md.getColumnLabel(i)), getter.apply(actual, md.getColumnLabel(i)), format("%s:column#%s", message, md.getColumnLabel(i)));
+                }
              }
             row++;
             if (row > limit) {
@@ -83,11 +133,31 @@ public class AssertUtils {
                 break;
             }
         }
+        assertResultSetNavigationState(nativeUrl, expected, actual);
 
         if (checkExtraRows) {
             assertFalse(expected.next(), format("%s:expected result set has extra rows", message));
             assertFalse(actual.next(), format("%s:actual result set has extra rows", message));
         }
+    }
+
+
+    private static boolean next(ResultSet expected, ResultSet actual) throws SQLException {
+        boolean expectedNext = expected.next();
+        boolean actualNext = actual.next();
+        assertEquals(expectedNext, actualNext);
+        return expectedNext;
+    }
+
+    private static void assertResultSetNavigationState(String nativeUrl, ResultSet expected, ResultSet actual) throws SQLException {
+        if (nativeUrl.startsWith("jdbc:derby")) {
+            // Derby throws exception on each isXXX() method: java.sql.SQLException: The 'isXXX' method is only allowed on scroll cursors.
+            return;
+        }
+        assertEquals(expected.isBeforeFirst(), actual.isBeforeFirst());
+        assertEquals(expected.isFirst(), actual.isFirst());
+        assertEquals(expected.isLast(), actual.isLast());
+        assertEquals(expected.isAfterLast(), actual.isAfterLast());
     }
 
     public static void assertResultSetMetaData(ResultSetMetaData expected, ResultSetMetaData actual, String message) throws SQLException {

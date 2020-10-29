@@ -188,7 +188,7 @@ public abstract class StatementControllerTestBase<T extends Statement> extends C
             for (String sql : before) {
                 nativeConn.createStatement().execute(sql);
             }
-            executeQueries(nativeConn, httpConn, query, setters);
+            executeQueries(nativeUrl, nativeConn, httpConn, query, setters);
         } finally {
             for (String sql : after) {
                 nativeConn.createStatement().execute(sql);
@@ -206,7 +206,7 @@ public abstract class StatementControllerTestBase<T extends Statement> extends C
 
 
     @SafeVarargs
-    private void executeQueries(Connection nativeConn, Connection httpConn, String query, ThrowingConsumer<T, SQLException>... setters) throws SQLException {
+    private void executeQueries(String nativeUrl, Connection nativeConn, Connection httpConn, String query, ThrowingConsumer<T, SQLException>... setters) throws SQLException {
         ResultSet nativeRs = null;
         SQLException nativeEx = null;
         ResultSet httpRs = null;
@@ -226,7 +226,7 @@ public abstract class StatementControllerTestBase<T extends Statement> extends C
             if (nativeRs != null) {
                 assertNotNull(httpRs);
                 assertNull(httpEx);
-                assertResultSet(nativeRs, httpRs, query, Integer.MAX_VALUE);
+                assertResultSet(nativeUrl, nativeRs, httpRs, query, Integer.MAX_VALUE);
             } else {
                 assertNull(httpRs);
                 assertNotNull(httpEx);

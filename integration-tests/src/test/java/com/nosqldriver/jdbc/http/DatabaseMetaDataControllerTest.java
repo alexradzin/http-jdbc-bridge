@@ -217,7 +217,7 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
         for (Entry<String, ThrowingFunction<DatabaseMetaData, ResultSet, SQLException>> getter : getters) {
             String name = getter.getKey();
             ThrowingFunction<DatabaseMetaData, ResultSet, SQLException> f = getter.getValue();
-            assertResultSets(nativeMd, httpMd, f, name, Integer.MAX_VALUE);
+            assertResultSets(nativeUrl, nativeMd, httpMd, f, name, Integer.MAX_VALUE);
         }
     }
 
@@ -238,7 +238,7 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
         for (Entry<String, ThrowingTriFunction<DatabaseMetaData, String, String, ResultSet, SQLException>> getter : getters) {
             String name = getter.getKey();
             ThrowingTriFunction<DatabaseMetaData, String, String, ResultSet, SQLException> f = getter.getValue();
-            assertResultSets(nativeMd, httpMd, md -> f.apply(md, null, null), name, Integer.MAX_VALUE);
+            assertResultSets(nativeUrl, nativeMd, httpMd, md -> f.apply(md, null, null), name, Integer.MAX_VALUE);
         }
     }
 
@@ -266,7 +266,7 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
         for (Entry<String, ThrowingQuadraFunction<DatabaseMetaData, String, String, String, ResultSet, SQLException>> getter : getters) {
             String name = getter.getKey();
             ThrowingQuadraFunction<DatabaseMetaData, String, String, String, ResultSet, SQLException> f = getter.getValue();
-            assertResultSets(nativeMd, httpMd, md -> f.apply(md, null, null, null), name, Integer.MAX_VALUE);
+            assertResultSets(nativeUrl, nativeMd, httpMd, md -> f.apply(md, null, null, null), name, Integer.MAX_VALUE);
         }
     }
 
@@ -308,12 +308,12 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
         for (Entry<String, ThrowingFunction<DatabaseMetaData, ResultSet, SQLException>> getter : getters) {
             String name = getter.getKey();
             ThrowingFunction<DatabaseMetaData, ResultSet, SQLException> f = getter.getValue();
-            assertResultSets(nativeMd, httpMd, f, name, 100);
+            assertResultSets(nativeUrl, nativeMd, httpMd, f, name, 100);
         }
     }
 
 
-    private <T> void assertResultSets(T obj1, T obj2, ThrowingFunction<T, ResultSet, SQLException> f, String message, int limit) throws SQLException {
+    private <T> void assertResultSets(String nativeUrl, T obj1, T obj2, ThrowingFunction<T, ResultSet, SQLException> f, String message, int limit) throws SQLException {
         ResultSet nativeRes = null;
         ResultSet httpRes = null;
         Exception nativeEx = null;
@@ -329,7 +329,7 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
             httpEx = e;
         }
         if (nativeEx == null) {
-            AssertUtils.assertResultSet(nativeRes, httpRes, message, limit);
+            AssertUtils.assertResultSet(nativeUrl, nativeRes, httpRes, message, limit);
         } else {
             assertNotNull(httpEx);
             assertEquals(nativeEx.getMessage(), httpEx.getMessage());

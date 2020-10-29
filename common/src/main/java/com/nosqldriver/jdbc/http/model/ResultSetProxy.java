@@ -323,25 +323,25 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @Override
     @JsonIgnore
     public boolean isBeforeFirst() throws SQLException {
-        return connector.get(format("%s/before/firstrow", entityUrl), boolean.class);
+        return connector.get(format("%s/is/before/first", entityUrl), boolean.class);
     }
 
     @Override
     @JsonIgnore
     public boolean isAfterLast() throws SQLException {
-        return connector.get(format("%s/after/last", entityUrl), boolean.class);
+        return connector.get(format("%s/is/after/last", entityUrl), boolean.class);
     }
 
     @Override
     @JsonIgnore
     public boolean isFirst() throws SQLException {
-        return connector.get(format("%s/first", entityUrl), boolean.class);
+        return connector.get(format("%s/is/first", entityUrl), boolean.class);
     }
 
     @Override
     @JsonIgnore
     public boolean isLast() throws SQLException {
-        return connector.get(format("%s/last", entityUrl), Boolean.class);
+        return connector.get(format("%s/is/last", entityUrl), Boolean.class);
     }
 
     @Override

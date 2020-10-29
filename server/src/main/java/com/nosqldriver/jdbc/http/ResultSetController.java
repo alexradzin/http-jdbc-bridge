@@ -66,10 +66,10 @@ public class ResultSetController extends BaseController {
         post(format("%s/first", baseUrl), JSON, (req, res) -> accept(() -> getResultSet(attributes, req), ResultSet::first));
         post(format("%s/after/last", baseUrl), JSON, (req, res) -> accept(() -> getResultSet(attributes, req), ResultSet::afterLast));
         post(format("%s/last", baseUrl), JSON, (req, res) -> accept(() -> getResultSet(attributes, req), ResultSet::last));
-        get(format("%s/before/first", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), ResultSet::isBeforeFirst));
-        get(format("%s/first", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), ResultSet::isFirst));
-        get(format("%s/after/last", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), ResultSet::isAfterLast));
-        get(format("%s/last", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), ResultSet::isLast));
+        get(format("%s/is/before/first", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), ResultSet::isBeforeFirst));
+        get(format("%s/is/first", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), ResultSet::isFirst));
+        get(format("%s/is/after/last", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), ResultSet::isAfterLast));
+        get(format("%s/is/last", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), ResultSet::isLast));
 
         ///////// navigation with cache
         get(format("%s/nextrow", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, ResultSet::next)));
