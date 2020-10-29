@@ -10,9 +10,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_PLACEHOLDER;
 
-public class PreparedStatementControllerTest extends StatementControllerTestBase<PreparedStatement> {
+
+public class PreparedStatementControllerExecuteTest extends StatementControllerTestBase<PreparedStatement> {
     @Override
     protected Statement createStatement(Connection conn, String db) throws SQLException {
         return conn.prepareStatement(getCheckConnectivityQuery(db));
@@ -21,10 +23,9 @@ public class PreparedStatementControllerTest extends StatementControllerTestBase
     @Override
     protected ResultSet executeQuery(Connection conn, String query, ThrowingConsumer<PreparedStatement, SQLException>... setters) throws SQLException {
         PreparedStatement ps = conn.prepareStatement(query);
-        for (ThrowingConsumer<PreparedStatement, SQLException> setter : setters) {
-            setter.accept(ps);
-        }
-        return ps.executeQuery();
+        runSetters(ps, setters);
+        assertTrue(ps.execute(query));
+        return ps.getResultSet();
     }
 
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)

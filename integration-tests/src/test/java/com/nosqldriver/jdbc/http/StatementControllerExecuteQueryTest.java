@@ -7,14 +7,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-public class StatementControllerTest extends StatementControllerTestBase<Statement> {
+public class StatementControllerExecuteQueryTest extends StatementControllerTestBase<Statement> {
     @SafeVarargs
     @Override
     protected final ResultSet executeQuery(Connection conn, String query, ThrowingConsumer<Statement, SQLException>... setters) throws SQLException {
         Statement statement = conn.createStatement();
-        for (ThrowingConsumer<Statement, SQLException> setter : setters) {
-            setter.accept(statement);
-        }
+        runSetters(statement, setters);
         return statement.executeQuery(query);
     }
 }

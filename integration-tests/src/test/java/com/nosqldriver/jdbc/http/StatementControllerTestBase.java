@@ -24,6 +24,9 @@ import static java.sql.ResultSet.FETCH_UNKNOWN;
 import static java.sql.Statement.CLOSE_ALL_RESULTS;
 import static java.sql.Statement.CLOSE_CURRENT_RESULT;
 import static java.sql.Statement.KEEP_CURRENT_RESULT;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_PLACEHOLDER;
 
@@ -185,9 +188,7 @@ public abstract class StatementControllerTestBase<T extends Statement> extends C
             for (String sql : before) {
                 nativeConn.createStatement().execute(sql);
             }
-            try (ResultSet nativeRs = executeQuery(nativeConn, query, setters); ResultSet httpRs = executeQuery(httpConn, query, setters)) {
-                assertResultSet(nativeRs, httpRs, query, Integer.MAX_VALUE);
-            }
+            executeQueries(nativeConn, httpConn, query, setters);
         } finally {
             for (String sql : after) {
                 nativeConn.createStatement().execute(sql);
@@ -203,5 +204,51 @@ public abstract class StatementControllerTestBase<T extends Statement> extends C
         }
     }
 
+
+    @SafeVarargs
+    private void executeQueries(Connection nativeConn, Connection httpConn, String query, ThrowingConsumer<T, SQLException>... setters) throws SQLException {
+        ResultSet nativeRs = null;
+        SQLException nativeEx = null;
+        ResultSet httpRs = null;
+        SQLException httpEx = null;
+        try {
+            try {
+                nativeRs = executeQuery(nativeConn, query, setters);
+            } catch (SQLException e) {
+                nativeEx = e;
+            }
+            try {
+                httpRs = executeQuery(httpConn, query, setters);
+            } catch (SQLException e) {
+                httpEx = e;
+            }
+
+            if (nativeRs != null) {
+                assertNotNull(httpRs);
+                assertNull(httpEx);
+                assertResultSet(nativeRs, httpRs, query, Integer.MAX_VALUE);
+            } else {
+                assertNull(httpRs);
+                assertNotNull(httpEx);
+                assertEquals(nativeEx.getMessage(), httpEx.getMessage());
+            }
+        } finally {
+            if (nativeRs != null) {
+                nativeRs.close();
+            }
+            if (httpRs != null) {
+                httpRs.close();
+            }
+        }
+    }
+
+
+
     protected abstract ResultSet executeQuery(Connection conn, String query, ThrowingConsumer<T, SQLException>... setters) throws SQLException;
+
+    protected void runSetters(T object, ThrowingConsumer<T, SQLException>... setters) throws SQLException {
+        for (ThrowingConsumer<T, SQLException> setter : setters) {
+            setter.accept(object);
+        }
+    }
 }
