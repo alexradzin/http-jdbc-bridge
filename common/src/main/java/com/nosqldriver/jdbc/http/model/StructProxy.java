@@ -29,6 +29,7 @@ public class StructProxy extends EntityProxy implements Struct {
     }
 
     @Override
+    @JsonProperty(value = "sqlTypeName")
     public String getSQLTypeName() throws SQLException {
         return sqlTypeName;
     }

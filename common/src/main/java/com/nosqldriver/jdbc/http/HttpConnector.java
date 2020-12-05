@@ -11,7 +11,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.nosqldriver.jdbc.http.Util.toByteArray;

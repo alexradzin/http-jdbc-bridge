@@ -38,7 +38,7 @@ abstract class BaseController {
         return objectMapper.writeValueAsString(proxyFactory.apply(format("%s/%s/%d", parentUrl(url), prefix, entityId), entity));
     }
 
-    private String parentUrl(String url) {
+    protected String parentUrl(String url) {
         String parent = url.replaceFirst("/$", "");
         int lastSlash = parent.lastIndexOf('/');
         if (lastSlash >= 0) {

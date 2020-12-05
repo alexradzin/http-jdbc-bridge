@@ -1,13 +1,15 @@
 package com.nosqldriver.jdbc.http;
 
+import com.nosqldriver.jdbc.mock.MockDriver;
 import com.nosqldriver.util.function.ThrowingConsumer;
 import com.nosqldriver.util.function.ThrowingFunction;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.mockito.Mockito;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Struct;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,8 +32,18 @@ import static java.sql.ResultSet.TYPE_SCROLL_SENSITIVE;
 import static java.sql.Statement.NO_GENERATED_KEYS;
 import static java.sql.Statement.RETURN_GENERATED_KEYS;
 import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_PLACEHOLDER;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class ConnectionControllerTest extends ControllerTestBase {
+//    private final Struct struct;
+//
+//    ConnectionControllerTest() throws SQLException {
+//        struct = mock(Struct.class);
+//        when(Mockito.spy(MockDriver.getConnection()).createStruct(any(String.class), any(Object[].class))).thenReturn(struct);
+//    }
+
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void getters(String nativeUrl) throws SQLException {
@@ -71,7 +83,7 @@ public class ConnectionControllerTest extends ControllerTestBase {
                 new SimpleEntry<>("ClientInfo", new SimpleEntry<>(Connection::getClientInfo, s -> s.setClientInfo(new Properties()))),
                 new SimpleEntry<>("ClientInfo", new SimpleEntry<>(Connection::getClientInfo, s -> s.setClientInfo("foo", "bar"))),
                 new SimpleEntry<>("Holdability", new SimpleEntry<>(Connection::getHoldability, s -> s.setHoldability(HOLD_CURSORS_OVER_COMMIT))),
-                new SimpleEntry<>("Holdability", new SimpleEntry<>(Connection::getHoldability, s -> s.setHoldability(ResultSet.CLOSE_CURSORS_AT_COMMIT))),
+                new SimpleEntry<>("Holdability", new SimpleEntry<>(Connection::getHoldability, s -> s.setHoldability(CLOSE_CURSORS_AT_COMMIT))),
                 new SimpleEntry<>("NetworkTimeout", new SimpleEntry<>(Connection::getNetworkTimeout, s -> s.setNetworkTimeout(Executors.newSingleThreadExecutor(), 0))),
                 new SimpleEntry<>("NetworkTimeout", new SimpleEntry<>(Connection::getTransactionIsolation, s -> s.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED))),
                 new SimpleEntry<>("NetworkTimeout", new SimpleEntry<>(Connection::getTransactionIsolation, s -> s.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED))),
@@ -91,11 +103,22 @@ public class ConnectionControllerTest extends ControllerTestBase {
     }
 
 
+//    @Test
+//    void create() throws SQLException {
+//        create("jdbc:mock");
+//    }
+
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void create(String nativeUrl) throws SQLException {
         Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
         Connection nativeConn = DriverManager.getConnection(nativeUrl);
+
+        if ("jdbc:mock".equals(nativeUrl)) {
+            Struct struct = mock(Struct.class);
+            when(Mockito.spy(nativeConn).createStruct(any(String.class), any(Object[].class))).thenReturn(struct);
+        }
+
 
         String query = getCheckConnectivityQuery(db(nativeUrl));
         Collection<SimpleEntry<String, ThrowingFunction<Connection, ?,  SQLException>>> functions = Arrays.asList(

@@ -145,8 +145,8 @@ public class ConnectionController extends BaseController {
         post("/connection/:connection/nclob", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), Connection::createNClob, ClobProxy::new, "nclob", req.url()));
         post("/connection/:connection/blob", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), Connection::createBlob, BlobProxy::new, "blob", req.url()));
         post("/connection/:connection/sqlxml", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), Connection::createSQLXML, SQLXMLProxy::new, "sqlxml", req.url()));
-        post("/connection/:connection/array/:type", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> connection.createArrayOf(req.params(":type"), objectMapper.readValue(req.body(), Object[].class)), ArrayProxy::new, "array", req.url()));
-        post("/connection/:connection/struct/:type", JSON, (req, res) -> retrieve2(() -> getConnection(attributes, req), connection -> connection.createStruct(req.params(":type"), objectMapper.readValue(req.body(), Object[].class)), StructProxy::new, "struct", req.url()));
+        post("/connection/:connection/array/:type", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> connection.createArrayOf(req.params(":type"), objectMapper.readValue(req.body(), Object[].class)), ArrayProxy::new, "array", parentUrl(req.url())));
+        post("/connection/:connection/struct/:type", JSON, (req, res) -> retrieve2(() -> getConnection(attributes, req), connection -> connection.createStruct(req.params(":type"), objectMapper.readValue(req.body(), Object[].class)), StructProxy::new, "struct", parentUrl(req.url())));
 
         get("/connection/:connection/valid/:timeout", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> connection.isValid(intParam(req, ":timeout"))));
 
