@@ -33,3 +33,9 @@ build/*
 target/*
 classes/*
 out/*
+*/out/*
+
+#HSQL
+*/mem.lck
+*/mem.properties
+*/mem.script
