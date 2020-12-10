@@ -24,6 +24,9 @@ public class ReaderProxy extends Reader {
     @Override
     public int read(char[] cbuf, int off, int len) throws IOException {
         char[] chars = connector.get(format("%s/%d/%d", url, off, len), char[].class);
+        if (chars == null) {
+            return -1;
+        }
         System.arraycopy(chars, 0, cbuf, off, chars.length);
         return chars.length;
     }

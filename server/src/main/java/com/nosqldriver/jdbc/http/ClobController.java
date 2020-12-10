@@ -35,7 +35,7 @@ public class ClobController extends BaseController {
             }
         }));
 
-        new ReaderController(attributes, objectMapper, baseUrl + "/reader");
+        new ReaderController(attributes, objectMapper, baseUrl + "/stream");
         new InputStreamController(attributes, objectMapper, baseUrl + "/stream/*");
         new OutputStreamController(attributes, objectMapper, baseUrl + "/stream/*");
     }

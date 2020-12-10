@@ -172,6 +172,7 @@ public class ConnectionController extends BaseController {
         new ClobController(attributes, objectMapper, "/connection/:connection/nclob/:nclob");
         new SQLXMLController(attributes, objectMapper, "/connection/:connection/sqlxml/:sqlxml");
         new StructController(attributes, objectMapper, "/connection/:connection/struct/:struct");
+        new ClosableController(attributes, objectMapper, "/connection/:connection/*/*/*/stream/:stream", "stream");
     }
 
     private Connection getConnection(Map<String, Object> attributes, Request req) {
