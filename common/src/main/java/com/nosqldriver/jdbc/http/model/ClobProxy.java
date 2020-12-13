@@ -61,12 +61,12 @@ public class ClobProxy extends EntityProxy implements NClob {
 
     @Override
     public int setString(long pos, String str) throws SQLException {
-        return connector.put(format("%s/%d", entityUrl, pos), str, Integer.class);
+        return connector.post(format("%s/%d", entityUrl, pos), str, Integer.class);
     }
 
     @Override
     public int setString(long pos, String str, int offset, int len) throws SQLException {
-        return connector.put(format("%s/%d/%d/%d", entityUrl, pos, offset, len), str, Integer.class);
+        return connector.post(format("%s/%d/%d/%d", entityUrl, pos, offset, len), str, Integer.class);
     }
 
     @Override

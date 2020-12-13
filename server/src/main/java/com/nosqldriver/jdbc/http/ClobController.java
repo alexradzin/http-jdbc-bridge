@@ -22,9 +22,20 @@ public class ClobController extends BaseController {
         get(format("%s/character/stream", baseUrl), JSON, (req, res) -> retrieve(() -> getClob(attributes, req), Clob::getCharacterStream, ReaderProxy::new, "reader", req.url()));
         get(format("%s/character/stream/:pos/:length", baseUrl), JSON, (req, res) -> retrieve(() -> getClob(attributes, req), c -> c.getCharacterStream(intParam(req, ":pos"), intParam(req, ":length")), ReaderProxy::new, "reader", req.url()));
         post(format("%s/position/:start", baseUrl), JSON, (req, res) -> retrieve(() -> getClob(attributes, req), b -> b.position(req.body(), intParam(req, ":start"))));
-        post(format("%s/:pos", baseUrl), JSON, (req, res) -> retrieve(() -> getClob(attributes, req), b -> b.setString(intParam(req, ":pos"), req.body())));
-        post(format("%s/:pos/:offset/:length", baseUrl), JSON, (req, res) -> retrieve(() -> getClob(attributes, req), b -> b.setString(intParam(req, ":pos"), req.body(), intParam(req, ":offset"), intParam(req, ":length"))));
-        post(format("%s/ascii/stream/:pos", baseUrl), JSON, (req, res) -> retrieve(() -> getClob(attributes, req), c -> c.setAsciiStream(intParam(req, ":pos")), InputStreamProxy::new, "stream", req.url()));
+        post(format("%s/:pos", baseUrl), JSON, (req, res) -> retrieve(() -> getClob(attributes, req), b -> b.setString(intParam(req, ":pos"), objectMapper.readValue(req.body(), String.class))));
+
+//        post(format("%s/:pos/:offset/:length", baseUrl), JSON, (req, res) -> retrieve(() -> getClob(attributes, req), b -> b.setString(intParam(req, ":pos"), objectMapper.readValue(req.body(), String.class), intParam(req, ":offset"), intParam(req, ":length"))));
+//        post(format("%s/ascii/stream/:pos", baseUrl), JSON, (req, res) -> retrieve(() -> getClob(attributes, req), c -> c.setAsciiStream(intParam(req, ":pos")), InputStreamProxy::new, "stream", req.url()));
+
+        post(format("%s/:one/:two/:pos", baseUrl), JSON, (req, res) -> {
+            String type = stringParam(req, ":one");
+            if ("ascii".equals(type)) {
+                return retrieve(() -> getClob(attributes, req), c -> c.setAsciiStream(intParam(req, ":pos")), InputStreamProxy::new, "stream", parentUrl(req.url()));
+            }
+            return retrieve(() -> getClob(attributes, req), b -> b.setString(intParam(req, ":one"), objectMapper.readValue(req.body(), String.class), intParam(req, ":two"), intParam(req, ":length")));
+        });
+
+
         post(format("%s/character/stream/:pos", baseUrl), JSON, (req, res) -> retrieve(() -> getClob(attributes, req), c -> c.setCharacterStream(intParam(req, ":pos")), WriterProxy::new, "writer", req.url()));
         delete(baseUrl, JSON, (req, res) -> accept(() -> getClob(attributes, req), b -> {
             Long len = longArg(req, ":len");
@@ -35,12 +46,13 @@ public class ClobController extends BaseController {
             }
         }));
 
-        new ReaderController(attributes, objectMapper, baseUrl + "/stream");
-        new InputStreamController(attributes, objectMapper, baseUrl + "/stream/*");
-        new OutputStreamController(attributes, objectMapper, baseUrl + "/stream/*");
+        new ReaderController(attributes, objectMapper, baseUrl + "/character/stream/:stream");
+        new WriterController(attributes, objectMapper, baseUrl + "/character/stream/:stream");
+        new InputStreamController(attributes, objectMapper, baseUrl + "/ascii/stream/:stream");
+        new OutputStreamController(attributes, objectMapper, baseUrl + "/ascii/stream/:stream");
     }
 
     private Clob getClob(Map<String, Object> attributes, Request req) {
-        return getEntity(attributes, req, "blob", ":blob");
+        return getEntity(attributes, req, "clob", ":clob");
     }
 }
