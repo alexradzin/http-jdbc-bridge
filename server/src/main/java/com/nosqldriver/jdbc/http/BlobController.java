@@ -1,7 +1,6 @@
 package com.nosqldriver.jdbc.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nosqldriver.jdbc.http.model.InputStreamProxy;
 import com.nosqldriver.jdbc.http.model.OutputStreamProxy;
 import spark.Request;
 
