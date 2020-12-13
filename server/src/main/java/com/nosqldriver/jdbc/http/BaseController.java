@@ -76,6 +76,10 @@ abstract class BaseController {
         return intValue(req.params(name));
     }
 
+    protected long longParam(Request req, String name) {
+        return longValue(req.params(name));
+    }
+
     protected String stringParam(Request req, String name) throws UnsupportedEncodingException {
         return req.params(name);
     }

@@ -1,0 +1,114 @@
+package com.nosqldriver.jdbc.http;
+
+import org.junit.jupiter.params.ParameterizedTest;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.sql.Blob;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+
+import static java.lang.String.format;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_PLACEHOLDER;
+
+class BlobControllerTest extends ControllerTestBase {
+    private Blob nativeBlob;
+    private Blob httpBlob;
+
+    private void create(String nativeUrl) throws SQLException {
+        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
+        Connection nativeConn = DriverManager.getConnection(nativeUrl);
+
+        SQLException nativeEx = null;
+        SQLException httpEx = null;
+
+        try {
+            nativeBlob = nativeConn.createBlob();
+        } catch (SQLException e) {
+            nativeEx = e;
+        }
+
+        try {
+            httpBlob = httpConn.createBlob();
+        } catch (SQLException e) {
+            httpEx = e;
+        }
+
+        if (nativeEx == null) {
+            if (nativeBlob == null) {
+                assertNull(nativeBlob);
+            } else {
+                assertNotNull(httpBlob);
+            }
+        } else {
+            assertNotNull(httpEx);
+            assertEquals(nativeEx.getMessage(), httpEx.getMessage());
+        }
+    }
+
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void bytes(String nativeUrl) throws SQLException {
+        create(nativeUrl);
+        if (nativeBlob == null) {
+            return;
+        }
+
+        byte[] xml = "<hello/>".getBytes();
+        httpBlob.setBytes(1, xml);
+        assertArrayEquals(xml, httpBlob.getBytes(1, xml.length));
+        assertArrayEquals("ello/>".getBytes(), httpBlob.getBytes(3, xml.length - 2));
+    }
+
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void stream(String nativeUrl) throws SQLException, IOException {
+        create(nativeUrl);
+        if (nativeBlob == null) {
+            return;
+        }
+
+        byte[] xml = "<hello/>".getBytes();
+
+        try {
+            OutputStream os = httpBlob.setBinaryStream(1);
+            os.write(xml);
+            os.flush();
+            os.close();
+
+            assertArrayEquals(xml, httpBlob.getBinaryStream().readAllBytes());
+            assertArrayEquals(xml, httpBlob.getBinaryStream(1, xml.length).readAllBytes());
+            assertArrayEquals("hello".getBytes(), httpBlob.getBinaryStream(2, xml.length - 3).readAllBytes());
+        } catch (SQLFeatureNotSupportedException e) {
+            // ignore. Unsupported...
+        }
+    }
+
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void stream2(String nativeUrl) throws SQLException, IOException {
+        create(nativeUrl);
+        if (nativeBlob == null) {
+            return;
+        }
+
+        byte[] xml = "<hello/>".getBytes();
+
+        try {
+            OutputStream os = httpBlob.setBinaryStream(2);
+            os.write(xml);
+            os.flush();
+            os.close();
+
+            assertArrayEquals(xml, httpBlob.getBinaryStream(2, xml.length).readAllBytes());
+        } catch (SQLFeatureNotSupportedException e) {
+            // ignore. Unsupported...
+        }
+    }
+}

@@ -20,10 +20,10 @@ public class BlobController extends BaseController {
         get(format("%s/bytes/:pos/:length", baseUrl), JSON, (req, res) -> retrieve(() -> getBlob(attributes, req), b -> b.getBytes(intParam(req, ":pos"), intParam(req, ":length"))));
         post(format("%s/position/:pos/:length", baseUrl), JSON, (req, res) -> retrieve(() -> getBlob(attributes, req), b -> b.position(req.bodyAsBytes(), intParam(req, ":length"))));
         get(format("%s/binary/stream", baseUrl), JSON, (req, res) -> getBlob(attributes, req).getBinaryStream());
-        get(format("%s/binary/stream/:pos/:len", baseUrl), JSON, (req, res) -> retrieve(() -> getBlob(attributes, req), c -> c.getBinaryStream(intParam(req, ":pos"), intParam(req, ":len")), InputStreamProxy::new, "stream", req.url()));
-        post(format("%s/bytes/:bytes", baseUrl), JSON, (req, res) -> retrieve(() -> getBlob(attributes, req), b -> b.setBytes(intParam(req, ":pos"), req.bodyAsBytes())));
-        post(format("%s/bytes/:bytes/:offset/:len", baseUrl), JSON, (req, res) -> retrieve(() -> getBlob(attributes, req), b -> b.setBytes(intParam(req, ":pos"), req.bodyAsBytes())));
-        get(format("%s/binary/stream/:pos", baseUrl), JSON, (req, res) -> retrieve(() -> getBlob(attributes, req), c -> c.setBinaryStream(intParam(req, ":pos")), OutputStreamProxy::new, "stream", req.url()));
+        get(format("%s/binary/stream/:pos/:len", baseUrl), JSON, (req, res) -> getBlob(attributes, req).getBinaryStream(longParam(req, ":pos"), intParam(req, ":len")));
+        post(format("%s/bytes/:pos", baseUrl), JSON, (req, res) -> retrieve(() -> getBlob(attributes, req), b -> b.setBytes(intParam(req, ":pos"), objectMapper.readValue(req.bodyAsBytes(), byte[].class))));
+        post(format("%s/bytes/:offset/:len", baseUrl), JSON, (req, res) -> retrieve(() -> getBlob(attributes, req), b -> b.setBytes(intParam(req, ":pos"), objectMapper.readValue(req.bodyAsBytes(), byte[].class))));
+        post(format("%s/binary/stream/:pos", baseUrl), JSON, (req, res) -> retrieve(() -> getBlob(attributes, req), c -> c.setBinaryStream(intParam(req, ":pos")), OutputStreamProxy::new, "stream", parentUrl(req.url())));
         delete(baseUrl, JSON, (req, res) -> accept(() -> getBlob(attributes, req), b -> {
             Long len = longArg(req, ":len");
             if (len == null) {
@@ -33,8 +33,8 @@ public class BlobController extends BaseController {
             }
         }));
 
-        new InputStreamController(attributes, objectMapper, baseUrl + "/stream/*");
-        new OutputStreamController(attributes, objectMapper, baseUrl + "/stream/*");
+        new InputStreamController(attributes, objectMapper, baseUrl + "/binary/stream/:stream");
+        new OutputStreamController(attributes, objectMapper, baseUrl + "/binary/stream/:stream");
     }
 
     private Blob getBlob(Map<String, Object> attributes, Request req) {

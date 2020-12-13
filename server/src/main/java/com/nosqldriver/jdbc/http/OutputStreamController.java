@@ -12,8 +12,12 @@ import static spark.Spark.put;
 public class OutputStreamController extends BaseController {
     protected OutputStreamController(Map<String, Object> attributes, ObjectMapper objectMapper, String baseUrl) {
         super(attributes, objectMapper);
-        put(baseUrl, JSON, (req, res) -> accept(() -> getOutputStream(attributes, req), os -> os.write(objectMapper.readValue(req.body(), int.class))));
-        post(baseUrl, JSON, (req, res) -> accept(() -> getOutputStream(attributes, req), OutputStream::flush));
+        put(baseUrl, JSON, (req, res) ->
+                accept(
+                        () -> getOutputStream(attributes, req),
+                        os -> os.write(objectMapper.readValue(req.body(), int.class)))
+        );
+        post(baseUrl + "/flush", JSON, (req, res) -> accept(() -> getOutputStream(attributes, req), OutputStream::flush));
     }
 
     private OutputStream getOutputStream(Map<String, Object> attributes, Request req) {
