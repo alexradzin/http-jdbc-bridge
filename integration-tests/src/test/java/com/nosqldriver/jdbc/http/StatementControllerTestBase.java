@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_PLACEHOLDER;
 
 public abstract class StatementControllerTestBase<T extends Statement> extends ControllerTestBase {
@@ -150,13 +151,14 @@ public abstract class StatementControllerTestBase<T extends Statement> extends C
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void selectEmptyTableWithAllTypes(String nativeUrl) throws SQLException, IOException {
-        selectEmptyTableWithAllTypes(nativeUrl, "select * from test_all_types");
+        selectEmptyTableWithAllTypes(nativeUrl, "select * from test_all_types", null);
     }
 
-    protected void selectEmptyTableWithAllTypes(String nativeUrl, String query, ThrowingConsumer<T, SQLException>... setters) throws SQLException, IOException {
+    protected void selectEmptyTableWithAllTypes(String nativeUrl, String query, String update, ThrowingConsumer<T, SQLException>... setters) throws SQLException, IOException {
         select(nativeUrl,
                 new String[] {sqlScript(db(nativeUrl), "create.table.all-types.sql")},
                 query,
+                update,
                 new String[] {"drop table test_all_types"},
                 setters);
     }
@@ -165,14 +167,27 @@ public abstract class StatementControllerTestBase<T extends Statement> extends C
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void selectTableWithAllTypes(String nativeUrl) throws SQLException, IOException {
-        selectTableWithAllTypes(nativeUrl, "select * from test_all_types");
+        selectTableWithAllTypes(nativeUrl, "select * from test_all_types", null);
     }
 
-    protected void selectTableWithAllTypes(String nativeUrl, String query, ThrowingConsumer<T, SQLException> ... setters) throws SQLException {
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void selectTableWithAllTypesAndUpdate(String nativeUrl) throws SQLException, IOException {
+        Collection<Map<String, Object>> result = selectTableWithAllTypes(nativeUrl, "select * from test_all_types", "update test_all_types set i = 5");
+        if (result != null) {
+            assertEquals(1, result.size());
+            Map<String, Object> row = result.iterator().next();
+            assertEquals(5, ((Number)row.getOrDefault("i", row.get("I"))).intValue());
+        }
+    }
+
+
+    protected Collection<Map<String, Object>> selectTableWithAllTypes(String nativeUrl, String query, String update, ThrowingConsumer<T, SQLException> ... setters) throws SQLException {
         String db = db(nativeUrl);
-        select(nativeUrl,
+        return select(nativeUrl,
                 Stream.of("create.table.all-types.sql", "insert.all-types.sql").map(f -> sqlScript(db, f)).toArray(String[]::new),
                 query,
+                update,
                 new String[] {"drop table test_all_types"},
                 setters);
     }
@@ -181,7 +196,7 @@ public abstract class StatementControllerTestBase<T extends Statement> extends C
         return conn.createStatement();
     }
 
-    private void select(String nativeUrl, String[] before, String query, String[] after, ThrowingConsumer<T, SQLException>... setters) throws SQLException {
+    private Collection<Map<String, Object>> select(String nativeUrl, String[] before, String query, String update, String[] after, ThrowingConsumer<T, SQLException>... setters) throws SQLException {
         Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
         Connection nativeConn = DriverManager.getConnection(nativeUrl);
         try {
@@ -189,6 +204,15 @@ public abstract class StatementControllerTestBase<T extends Statement> extends C
                 nativeConn.createStatement().execute(sql);
             }
             executeQueries(nativeUrl, nativeConn, httpConn, query, setters);
+            if (update != null) {
+                try {
+                    executeUpdate(httpConn, update);
+                    return executeQueries(nativeUrl, nativeConn, httpConn, query, setters); // query again after update, so validate that update worked
+                } catch (SQLException e) {
+                    assertTrue(e.getMessage().startsWith("Invalid argument in JDBC call"));
+                }
+            }
+            return null;
         } finally {
             for (String sql : after) {
                 nativeConn.createStatement().execute(sql);
@@ -206,7 +230,7 @@ public abstract class StatementControllerTestBase<T extends Statement> extends C
 
 
     @SafeVarargs
-    private void executeQueries(String nativeUrl, Connection nativeConn, Connection httpConn, String query, ThrowingConsumer<T, SQLException>... setters) throws SQLException {
+    private Collection<Map<String, Object>> executeQueries(String nativeUrl, Connection nativeConn, Connection httpConn, String query, ThrowingConsumer<T, SQLException>... setters) throws SQLException {
         ResultSet nativeRs = null;
         SQLException nativeEx = null;
         ResultSet httpRs = null;
@@ -226,11 +250,12 @@ public abstract class StatementControllerTestBase<T extends Statement> extends C
             if (nativeRs != null) {
                 assertNotNull(httpRs);
                 assertNull(httpEx);
-                assertResultSet(nativeUrl, nativeRs, httpRs, query, Integer.MAX_VALUE);
+                return assertResultSet(nativeUrl, nativeRs, httpRs, query, Integer.MAX_VALUE);
             } else {
                 assertNull(httpRs);
                 assertNotNull(httpEx);
                 assertEquals(nativeEx.getMessage(), httpEx.getMessage());
+                return null;
             }
         } finally {
             if (nativeRs != null) {
@@ -245,6 +270,7 @@ public abstract class StatementControllerTestBase<T extends Statement> extends C
 
 
     protected abstract ResultSet executeQuery(Connection conn, String query, ThrowingConsumer<T, SQLException>... setters) throws SQLException;
+    protected abstract int executeUpdate(Connection conn, String update) throws SQLException;
 
     protected void runSetters(T object, ThrowingConsumer<T, SQLException>... setters) throws SQLException {
         for (ThrowingConsumer<T, SQLException> setter : setters) {

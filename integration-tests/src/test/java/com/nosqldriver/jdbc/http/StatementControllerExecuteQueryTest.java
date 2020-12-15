@@ -15,4 +15,9 @@ public class StatementControllerExecuteQueryTest extends StatementControllerTest
         runSetters(statement, setters);
         return statement.executeQuery(query);
     }
+
+    @Override
+    protected int executeUpdate(Connection conn, String update) throws SQLException {
+        return conn.createStatement().executeUpdate(update);
+    }
 }

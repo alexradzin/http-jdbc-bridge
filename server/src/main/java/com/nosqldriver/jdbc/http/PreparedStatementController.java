@@ -28,9 +28,8 @@ public class PreparedStatementController extends StatementController {
     protected PreparedStatementController(Map<String, Object> attributes, ObjectMapper objectMapper) {
         super(attributes, objectMapper, baseUrl);
         get(format("%s/query", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), PreparedStatement::executeQuery, ResultSetProxy::new, "resultset", req.url()));
-        get(format("%s/update", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), PreparedStatement::executeUpdate, ResultSetProxy::new, "resultset", req.url()));
-        get(format("%s/execute", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), PreparedStatement::execute, ResultSetProxy::new, "resultset", req.url()));
-
+        get(format("%s/update", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), PreparedStatement::executeUpdate));
+        get(format("%s/execute", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), PreparedStatement::execute));
         get(format("%s/:resultset/metadata", baseUrl), JSON, (req, res) -> retrieve2(() -> getStatement(attributes, req), PreparedStatement::getMetaData, TransportableResultSetMetaData::new, "metadata", req.url()));
         get(format("%s/:resultset/parametermetadata", baseUrl), JSON, (req, res) -> retrieve2(() -> getStatement(attributes, req), PreparedStatement::getParameterMetaData, TransportableParameterMetaData::new, "metadata", req.url()));
 

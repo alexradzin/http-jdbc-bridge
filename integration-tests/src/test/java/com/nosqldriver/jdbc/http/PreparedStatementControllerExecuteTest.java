@@ -31,6 +31,12 @@ public class PreparedStatementControllerExecuteTest extends StatementControllerT
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void selectTableWithIndexedArgumentsWithAllTypes(String nativeUrl) throws SQLException, IOException {
-        selectTableWithAllTypes(nativeUrl, "select * from test_all_types where i=?", preparedStatement -> preparedStatement.setInt(1, 12345));
+        selectTableWithAllTypes(nativeUrl, "select * from test_all_types where i=?", null, preparedStatement -> preparedStatement.setInt(1, 12345));
+    }
+
+    @Override
+    protected int executeUpdate(Connection conn, String update) throws SQLException {
+        PreparedStatement ps = conn.prepareStatement(update);
+        return ps.executeUpdate();
     }
 }

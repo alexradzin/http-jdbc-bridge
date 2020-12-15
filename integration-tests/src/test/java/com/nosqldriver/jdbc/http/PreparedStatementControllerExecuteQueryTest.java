@@ -3,7 +3,6 @@ package com.nosqldriver.jdbc.http;
 import com.nosqldriver.util.function.ThrowingConsumer;
 import org.junit.jupiter.params.ParameterizedTest;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -27,7 +26,13 @@ public class PreparedStatementControllerExecuteQueryTest extends StatementContro
 
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
-    void selectTableWithIndexedArgumentsWithAllTypes(String nativeUrl) throws SQLException, IOException {
-        selectTableWithAllTypes(nativeUrl, "select * from test_all_types where i=?", preparedStatement -> preparedStatement.setInt(1, 12345));
+    void selectTableWithIndexedArgumentsWithAllTypes(String nativeUrl) throws SQLException {
+        selectTableWithAllTypes(nativeUrl, "select * from test_all_types where i=?", null, preparedStatement -> preparedStatement.setInt(1, 12345));
+    }
+
+    @Override
+    protected int executeUpdate(Connection conn, String update) throws SQLException {
+        PreparedStatement ps = conn.prepareStatement(update);
+        return ps.executeUpdate();
     }
 }

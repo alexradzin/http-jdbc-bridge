@@ -9,10 +9,12 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static java.lang.String.format;
@@ -100,14 +102,17 @@ public class AssertUtils {
     }
 
 
-    public static void assertResultSet(String nativeUrl, ResultSet expected, ResultSet actual, String message, int limit) throws SQLException {
+    public static Collection<Map<String, Object>> assertResultSet(String nativeUrl, ResultSet expected, ResultSet actual, String message, int limit) throws SQLException {
         if (expected == null) {
             assertNull(actual);
-            return;
+            return null;
         }
+        Collection<Map<String, Object>> result = new ArrayList<>();
         assertResultSetMetaData(expected.getMetaData(), actual.getMetaData(), message);
-        ResultSetMetaData md = expected.getMetaData();
-        int n = md.getColumnCount();
+        ResultSetMetaData emd = expected.getMetaData();
+        ResultSetMetaData amd = actual.getMetaData();
+        int n = emd.getColumnCount();
+        assertEquals(emd.getColumnCount(), amd.getColumnCount());
 
         int row = 0;
         boolean checkExtraRows = true;
@@ -115,18 +120,23 @@ public class AssertUtils {
         assertResultSetNavigationState(nativeUrl, expected, actual);
         while (next(expected, actual)) {
             assertResultSetNavigationState(nativeUrl, expected, actual);
+            Map<String, Object> rowData = new LinkedHashMap<>();
             for (int i = 1; i <= n; i++) {
-                for (ThrowingBiFunction<ResultSet, Integer, ?, SQLException> getter : typedGettersByIndex.getOrDefault(md.getColumnType(i), Collections.singleton(ResultSet::getObject))) {
-                    assertValues(getter.apply(expected, i), getter.apply(actual, i), format("%s:column#%d:%s", message, i, md.getColumnName(i)));
+                for (ThrowingBiFunction<ResultSet, Integer, ?, SQLException> getter : typedGettersByIndex.getOrDefault(emd.getColumnType(i), Collections.singleton(ResultSet::getObject))) {
+                    assertValues(getter.apply(expected, i), getter.apply(actual, i), format("%s:column#%d:%s", message, i, emd.getColumnName(i)));
                 }
-                for (ThrowingBiFunction<ResultSet, String, ?, SQLException> getter : typedGettersByLabel.getOrDefault(md.getColumnType(i), Collections.singleton(ResultSet::getObject))) {
-                    int type = md.getColumnType(i);
+                for (ThrowingBiFunction<ResultSet, String, ?, SQLException> getter : typedGettersByLabel.getOrDefault(emd.getColumnType(i), Collections.singleton(ResultSet::getObject))) {
+                    int type = emd.getColumnType(i);
                     if (nativeUrl.startsWith("jdbc:derby") && (type == Types.BLOB || type == Types.CLOB)) {
                         continue; // patch for derby that does not allow to retrieve blobs and clobs more than once. The first time they were retrieved by index.
                     }
-                    assertValues(getter.apply(expected, md.getColumnLabel(i)), getter.apply(actual, md.getColumnLabel(i)), format("%s:column#%s", message, md.getColumnLabel(i)));
+                    String label = emd.getColumnLabel(i);
+                    Object actualValue = getter.apply(actual, label);
+                    assertValues(getter.apply(expected, emd.getColumnLabel(i)), actualValue, format("%s:column#%s", message, emd.getColumnLabel(i)));
+                    rowData.put(label, actualValue);
                 }
              }
+            result.add(rowData);
             row++;
             if (row > limit) {
                 checkExtraRows = false;
@@ -139,6 +149,8 @@ public class AssertUtils {
             assertFalse(expected.next(), format("%s:expected result set has extra rows", message));
             assertFalse(actual.next(), format("%s:actual result set has extra rows", message));
         }
+
+        return result;
     }
 
 
