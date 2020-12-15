@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_PLACEHOLDER;
 
-public abstract class StatementControllerTestBase<T extends Statement> extends ControllerTestBase {
+public abstract class StatementControllerTestBase<T extends Statement, R extends Number> extends ControllerTestBase {
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void getters(String nativeUrl) throws SQLException {
@@ -270,7 +270,7 @@ public abstract class StatementControllerTestBase<T extends Statement> extends C
 
 
     protected abstract ResultSet executeQuery(Connection conn, String query, ThrowingConsumer<T, SQLException>... setters) throws SQLException;
-    protected abstract int executeUpdate(Connection conn, String update) throws SQLException;
+    protected abstract R executeUpdate(Connection conn, String update) throws SQLException;
 
     protected void runSetters(T object, ThrowingConsumer<T, SQLException>... setters) throws SQLException {
         for (ThrowingConsumer<T, SQLException> setter : setters) {

@@ -3,6 +3,7 @@ package com.nosqldriver.jdbc.http;
 import org.junit.jupiter.params.ParameterizedTest;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.sql.Clob;
 import java.sql.Connection;
@@ -81,8 +82,10 @@ public class ClobControllerTest extends ControllerTestBase {
             os.flush();
             os.close();
 
-            String xml2 = new String(httpClob.getAsciiStream().readAllBytes());
-            assertEquals(xml, xml2);
+            try (InputStream in = httpClob.getAsciiStream()) {
+                String xml2 = new String(in.readAllBytes());
+                assertEquals(xml, xml2);
+            }
         } catch (SQLException e) {
             if (!(e instanceof SQLFeatureNotSupportedException || e.getMessage().contains("Feature not supported"))) {
                 throw e;

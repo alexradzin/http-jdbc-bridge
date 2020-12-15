@@ -13,7 +13,7 @@ import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.stream.IntStream;
 
 import static com.nosqldriver.jdbc.http.Util.encode;
 import static java.lang.String.format;
@@ -296,7 +296,7 @@ public class StatementProxy extends WrapperProxy implements Statement {
 
     @Override
     public long executeLargeUpdate(String sql, int[] columnIndexes) throws SQLException {
-        String columnIndexesStr = columnIndexes == null ? null : Stream.of(columnIndexes).map(String::valueOf).collect(Collectors.joining(","));
+        String columnIndexesStr = IntStream.of(columnIndexes).mapToObj(i -> ""+i).collect(Collectors.joining(","));
         return connector.post(format("%s/large/update?indexes=%s", entityUrl, columnIndexesStr), sql, Long.class);
     }
 

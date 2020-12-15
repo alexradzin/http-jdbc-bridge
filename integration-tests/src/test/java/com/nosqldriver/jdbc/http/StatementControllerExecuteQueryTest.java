@@ -7,7 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-public class StatementControllerExecuteQueryTest extends StatementControllerTestBase<Statement> {
+public class StatementControllerExecuteQueryTest extends StatementControllerTestBase<Statement, Integer> {
     @SafeVarargs
     @Override
     protected final ResultSet executeQuery(Connection conn, String query, ThrowingConsumer<Statement, SQLException>... setters) throws SQLException {
@@ -17,7 +17,7 @@ public class StatementControllerExecuteQueryTest extends StatementControllerTest
     }
 
     @Override
-    protected int executeUpdate(Connection conn, String update) throws SQLException {
+    protected Integer executeUpdate(Connection conn, String update) throws SQLException {
         return conn.createStatement().executeUpdate(update);
     }
 }

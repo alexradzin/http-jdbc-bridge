@@ -3,6 +3,7 @@ package com.nosqldriver.jdbc.http;
 import org.junit.jupiter.params.ParameterizedTest;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.sql.Blob;
 import java.sql.Connection;
@@ -83,7 +84,9 @@ class BlobControllerTest extends ControllerTestBase {
             os.flush();
             os.close();
 
-            assertArrayEquals(xml, httpBlob.getBinaryStream().readAllBytes());
+            try(InputStream in = httpBlob.getBinaryStream()) {
+                assertArrayEquals(xml, in.readAllBytes());
+            }
             assertArrayEquals(xml, httpBlob.getBinaryStream(1, xml.length).readAllBytes());
             assertArrayEquals("hello".getBytes(), httpBlob.getBinaryStream(2, xml.length - 3).readAllBytes());
         } catch (SQLFeatureNotSupportedException e) {

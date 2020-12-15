@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_PLACEHOLDER;
 
 
-public class PreparedStatementControllerExecuteTest extends StatementControllerTestBase<PreparedStatement> {
+public class PreparedStatementControllerExecuteTest extends StatementControllerTestBase<PreparedStatement, Integer> {
     @Override
     protected Statement createStatement(Connection conn, String db) throws SQLException {
         return conn.prepareStatement(getCheckConnectivityQuery(db));
@@ -35,7 +35,7 @@ public class PreparedStatementControllerExecuteTest extends StatementControllerT
     }
 
     @Override
-    protected int executeUpdate(Connection conn, String update) throws SQLException {
+    protected Integer executeUpdate(Connection conn, String update) throws SQLException {
         PreparedStatement ps = conn.prepareStatement(update);
         return ps.executeUpdate();
     }
