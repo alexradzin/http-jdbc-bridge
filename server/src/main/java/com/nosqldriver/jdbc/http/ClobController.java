@@ -35,10 +35,9 @@ public class ClobController extends BaseController {
             return retrieve(() -> getClob(attributes, req), b -> b.setString(intParam(req, ":one"), objectMapper.readValue(req.body(), String.class), intParam(req, ":two"), intParam(req, ":length")));
         });
 
-
         post(format("%s/character/stream/:pos", baseUrl), JSON, (req, res) -> retrieve(() -> getClob(attributes, req), c -> c.setCharacterStream(intParam(req, ":pos")), WriterProxy::new, "writer", req.url()));
         delete(baseUrl, JSON, (req, res) -> accept(() -> getClob(attributes, req), b -> {
-            Long len = longArg(req, ":len");
+            Long len = objectMapper.readValue(req.bodyAsBytes(), Long.class);
             if (len == null) {
                 b.free();
             } else {
