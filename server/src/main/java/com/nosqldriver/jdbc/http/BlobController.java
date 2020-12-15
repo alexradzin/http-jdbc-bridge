@@ -24,7 +24,7 @@ public class BlobController extends BaseController {
         post(format("%s/bytes/:offset/:len", baseUrl), JSON, (req, res) -> retrieve(() -> getBlob(attributes, req), b -> b.setBytes(intParam(req, ":pos"), objectMapper.readValue(req.bodyAsBytes(), byte[].class))));
         post(format("%s/binary/stream/:pos", baseUrl), JSON, (req, res) -> retrieve(() -> getBlob(attributes, req), c -> c.setBinaryStream(intParam(req, ":pos")), OutputStreamProxy::new, "stream", parentUrl(req.url())));
         delete(baseUrl, JSON, (req, res) -> accept(() -> getBlob(attributes, req), b -> {
-            Long len = longArg(req, ":len");
+            Long len = objectMapper.readValue(req.bodyAsBytes(), Long.class);
             if (len == null) {
                 b.free();
             } else {

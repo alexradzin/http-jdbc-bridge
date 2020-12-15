@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_PLACEHOLDER;
 
 class BlobControllerTest extends ControllerTestBase {
@@ -113,6 +114,39 @@ class BlobControllerTest extends ControllerTestBase {
             assertArrayEquals(xml, httpBlob.getBinaryStream(2, xml.length).readAllBytes());
         } catch (SQLFeatureNotSupportedException e) {
             // ignore. Unsupported...
+        }
+    }
+
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void free(String nativeUrl) throws SQLException {
+        create(nativeUrl);
+        if (nativeBlob == null) {
+            return;
+        }
+        bytes(nativeUrl);
+        httpBlob.free();
+        assertThrows(SQLException.class, () -> httpBlob.getBytes(1, 8)); // already closed
+    }
+
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void truncate(String nativeUrl) throws SQLException {
+        create(nativeUrl);
+        if (nativeBlob == null) {
+            return;
+        }
+        bytes(nativeUrl);
+        try {
+            httpBlob.truncate(6);
+            try {
+                assertEquals("<hello", new String(httpBlob.getBytes(1, 8)));
+            } catch (SQLException e) {
+                // only derby allows getting bytes after truncation
+                // all others throw SQLException because the blob is already closed
+            }
+        } catch (SQLFeatureNotSupportedException e) {
+            // h2 does not support truncate
         }
     }
 }
