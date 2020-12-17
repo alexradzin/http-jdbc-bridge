@@ -42,12 +42,16 @@ public class BlobProxy extends EntityProxy implements Blob {
 
     @Override
     public long position(byte[] pattern, long start) throws SQLException {
-        return connector.post(format("%s/position/%d", entityUrl, start), pattern, Long.class);
+        return positionImpl(pattern, start);
     }
 
     @Override
     public long position(Blob pattern, long start) throws SQLException {
-        return position(pattern.getBytes(0, (int)pattern.length()), start);
+        return pattern instanceof BlobProxy ? positionImpl(pattern, start) : position(pattern.getBytes(1, (int)pattern.length()), start);
+    }
+
+    private long positionImpl(Object pattern, long start) throws SQLException {
+        return connector.post(format("%s/position/%d", entityUrl, start), pattern, Long.class);
     }
 
     @Override
