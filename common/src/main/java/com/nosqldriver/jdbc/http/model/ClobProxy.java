@@ -20,16 +20,17 @@ public class ClobProxy extends EntityProxy implements NClob {
     @JsonCreator
     public ClobProxy(@JsonProperty("entityUrl") String entityUrl) {
         super(entityUrl);
+        length = -1;
     }
 
     public ClobProxy(String entityUrl, Clob clob) throws SQLException {
         super(entityUrl);
-        this.length = clob.length();
+        length = clob.length();
     }
 
     @Override
     public long length() throws SQLException {
-        return length;
+        return length < 0 ? connector.get(format("%s/length", entityUrl), Long.class) : length;
     }
 
     @Override
@@ -51,21 +52,25 @@ public class ClobProxy extends EntityProxy implements NClob {
 
     @Override
     public long position(String searchstr, long start) throws SQLException {
-        return connector.post(format("%s/position/%d", entityUrl, start), searchstr, Long.class);
+        return positionImpl(searchstr, start);
     }
 
     @Override
     public long position(Clob searchstr, long start) throws SQLException {
-        return position(searchstr.getSubString(0, (int)searchstr.length()), start);
+        return searchstr instanceof ClobProxy ? positionImpl(searchstr, start) : position(searchstr.getSubString(1, (int)searchstr.length()), start);
+    }
+
+    private long positionImpl(Object searchstr, long start) throws SQLException {
+        return connector.post(format("%s/position/%d", entityUrl, start), searchstr, Long.class);
     }
 
     @Override
-    public int setString(long pos, String str) throws SQLException {
+    public int setString(long pos, String str) {
         return connector.post(format("%s/%d", entityUrl, pos), str, Integer.class);
     }
 
     @Override
-    public int setString(long pos, String str, int offset, int len) throws SQLException {
+    public int setString(long pos, String str, int offset, int len) {
         return connector.post(format("%s/%d/%d/%d", entityUrl, pos, offset, len), str, Integer.class);
     }
 

@@ -14,7 +14,7 @@ public class WriterController extends BaseController {
     protected WriterController(Map<String, Object> attributes, ObjectMapper objectMapper, String baseUrl) {
         super(attributes, objectMapper);
         put(format("%s/:off/:len", baseUrl), JSON, (req, res) -> accept(() -> getWriter(attributes, req), writer -> writer.write(objectMapper.readValue(req.bodyAsBytes(), char[].class), intParam(req, ":off"), intParam(req, ":len"))));
-        post(baseUrl, JSON, (req, res) -> accept(() -> getWriter(attributes, req), Writer::flush));
+        post(baseUrl + "/flush", JSON, (req, res) -> accept(() -> getWriter(attributes, req), Writer::flush));
     }
 
     private Writer getWriter(Map<String, Object> attributes, Request req) {

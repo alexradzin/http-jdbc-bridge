@@ -1,10 +1,13 @@
 package com.nosqldriver.jdbc.http;
 
+import com.nosqldriver.util.function.ThrowingFunction;
 import org.junit.jupiter.params.ParameterizedTest;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
+import java.io.Writer;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -64,6 +67,38 @@ public class ClobControllerTest extends ControllerTestBase {
         httpClob.setString(1, xml);
         assertEquals(xml, httpClob.getSubString(1, xml.length()));
         assertEquals("hello", httpClob.getSubString(2, xml.length() - 3));
+        assertEquals(xml.length(), httpClob.length());
+    }
+
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void string2(String nativeUrl) throws SQLException {
+        create(nativeUrl);
+        if (nativeClob == null) {
+            return;
+        }
+
+        String xml = "<hello/>";
+        httpClob.setString(1, xml, 1, 5);
+        assertEquals("hello", httpClob.getSubString(1, 5));
+    }
+
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void position(String nativeUrl) throws SQLException {
+        create(nativeUrl);
+        if (nativeClob == null) {
+            return;
+        }
+        if ("jdbc:h2:mem:test".equals(nativeUrl)) {
+            return; // H2 does not support this feature
+        }
+
+        String xml = "<hello/>";
+        httpClob.setString(1, xml);
+        assertEquals(1, httpClob.position(xml, 1));
+        assertEquals(2, httpClob.position("hello", 1));
+        assertEquals(1, httpClob.position(httpClob, 1));
     }
 
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
@@ -85,6 +120,45 @@ public class ClobControllerTest extends ControllerTestBase {
             try (InputStream in = httpClob.getAsciiStream()) {
                 String xml2 = new String(in.readAllBytes());
                 assertEquals(xml, xml2);
+            }
+        } catch (SQLException e) {
+            if (!(e instanceof SQLFeatureNotSupportedException || e.getMessage().contains("Feature not supported"))) {
+                throw e;
+            }
+            // ignore. Unsupported...
+        }
+    }
+
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void characterStream(String nativeUrl) throws SQLException, IOException {
+        characterStream(nativeUrl, "<hello/>", Clob::getCharacterStream);
+    }
+
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void characterStream1(String nativeUrl) throws SQLException, IOException {
+        characterStream(nativeUrl, "bye", clob -> clob.getCharacterStream(1, "bye".length()));
+    }
+
+    private void characterStream(String nativeUrl, String in, ThrowingFunction<Clob, Reader, SQLException> characterStreamGetter) throws SQLException, IOException {
+        create(nativeUrl);
+        if (nativeClob == null) {
+            return;
+        }
+
+        try {
+            httpClob.setString(1, in);
+            Writer writer = httpClob.setCharacterStream(1);
+            writer.write(in.toCharArray());
+            writer.flush();
+            writer.close();
+
+            try (Reader reader = characterStreamGetter.apply(httpClob)) {
+                char[] out = new char[in.length()];
+                assertEquals(out.length, reader.read(out));
+                String xml2 = new String(out);
+                assertEquals(in, xml2);
             }
         } catch (SQLException e) {
             if (!(e instanceof SQLFeatureNotSupportedException || e.getMessage().contains("Feature not supported"))) {

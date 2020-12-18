@@ -1,6 +1,9 @@
 package com.nosqldriver.jdbc.http;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
+import com.nosqldriver.jdbc.http.model.BlobProxy;
 import com.nosqldriver.jdbc.http.model.InputStreamProxy;
 import com.nosqldriver.jdbc.http.model.ReaderProxy;
 import com.nosqldriver.jdbc.http.model.WriterProxy;
@@ -19,23 +22,35 @@ public class ClobController extends BaseController {
         super(attributes, objectMapper);
         get(format("%s/substring/:pos/:length", baseUrl), JSON, (req, res) -> retrieve(() -> getClob(attributes, req), b -> b.getSubString(intParam(req, ":pos"), intParam(req, ":length"))));
         get(format("%s/ascii/stream", baseUrl), JSON, (req, res) -> retrieve(() -> getClob(attributes, req), Clob::getAsciiStream, InputStreamProxy::new, "stream", req.url()));
-        get(format("%s/character/stream", baseUrl), JSON, (req, res) -> retrieve(() -> getClob(attributes, req), Clob::getCharacterStream, ReaderProxy::new, "reader", req.url()));
-        get(format("%s/character/stream/:pos/:length", baseUrl), JSON, (req, res) -> retrieve(() -> getClob(attributes, req), c -> c.getCharacterStream(intParam(req, ":pos"), intParam(req, ":length")), ReaderProxy::new, "reader", req.url()));
-        post(format("%s/position/:start", baseUrl), JSON, (req, res) -> retrieve(() -> getClob(attributes, req), b -> b.position(req.body(), intParam(req, ":start"))));
-        post(format("%s/:pos", baseUrl), JSON, (req, res) -> retrieve(() -> getClob(attributes, req), b -> b.setString(intParam(req, ":pos"), objectMapper.readValue(req.body(), String.class))));
+        get(format("%s/character/stream", baseUrl), JSON, (req, res) -> retrieve(() -> getClob(attributes, req), Clob::getCharacterStream, ReaderProxy::new, "stream", req.url()));
+        get(format("%s/character/stream/:pos/:length", baseUrl), JSON, (req, res) -> retrieve(() -> getClob(attributes, req), c -> c.getCharacterStream(intParam(req, ":pos"), intParam(req, ":length")), ReaderProxy::new, "stream", parentUrl(parentUrl(req.url()))));
 
-//        post(format("%s/:pos/:offset/:length", baseUrl), JSON, (req, res) -> retrieve(() -> getClob(attributes, req), b -> b.setString(intParam(req, ":pos"), objectMapper.readValue(req.body(), String.class), intParam(req, ":offset"), intParam(req, ":length"))));
-//        post(format("%s/ascii/stream/:pos", baseUrl), JSON, (req, res) -> retrieve(() -> getClob(attributes, req), c -> c.setAsciiStream(intParam(req, ":pos")), InputStreamProxy::new, "stream", req.url()));
-
-        post(format("%s/:one/:two/:pos", baseUrl), JSON, (req, res) -> {
-            String type = stringParam(req, ":one");
-            if ("ascii".equals(type)) {
-                return retrieve(() -> getClob(attributes, req), c -> c.setAsciiStream(intParam(req, ":pos")), InputStreamProxy::new, "stream", parentUrl(req.url()));
+        post(format("%s/position/:start", baseUrl), JSON, (req, res) -> {
+            byte[] content = req.bodyAsBytes();
+            JsonNode node = objectMapper.readTree(content);
+            if (JsonNodeType.OBJECT.equals(node.getNodeType())) {
+                String[] refUrlParts = objectMapper.readValue(content, BlobProxy.class).getEntityUrl().split("/");
+                String id = refUrlParts[refUrlParts.length - 1];
+                Clob pattern = getEntity(attributes, "clob", id);
+                return retrieve(() -> getClob(attributes, req), b -> b.position(pattern, intParam(req, ":start")));
             }
-            return retrieve(() -> getClob(attributes, req), b -> b.setString(intParam(req, ":one"), objectMapper.readValue(req.body(), String.class), intParam(req, ":two"), intParam(req, ":length")));
+            return retrieve(() -> getClob(attributes, req), b -> b.position(objectMapper.readValue(req.body(), String.class), intParam(req, ":start")));
         });
 
-        post(format("%s/character/stream/:pos", baseUrl), JSON, (req, res) -> retrieve(() -> getClob(attributes, req), c -> c.setCharacterStream(intParam(req, ":pos")), WriterProxy::new, "writer", req.url()));
+        post(format("%s/:pos", baseUrl), JSON, (req, res) -> retrieve(() -> getClob(attributes, req), b -> b.setString(intParam(req, ":pos"), objectMapper.readValue(req.body(), String.class))));
+        get(format("%s/length", baseUrl), JSON, (req, res) -> retrieve(() -> getClob(attributes, req), Clob::length));
+
+        post(format("%s/:one/:two/:three", baseUrl), JSON, (req, res) -> {
+            String type = stringParam(req, ":one");
+            if ("ascii".equals(type)) {
+                return retrieve(() -> getClob(attributes, req), c -> c.setAsciiStream(intParam(req, ":three")), InputStreamProxy::new, "stream", parentUrl(req.url()));
+            }
+            if ("character".equals(type)) {
+                return retrieve(() -> getClob(attributes, req), c -> c.setCharacterStream(intParam(req, ":three")), WriterProxy::new, "stream", parentUrl(req.url()));
+            }
+            return retrieve(() -> getClob(attributes, req), b -> b.setString(intParam(req, ":one"), objectMapper.readValue(req.body(), String.class), intParam(req, ":two"), intParam(req, ":three")));
+        });
+
         delete(baseUrl, JSON, (req, res) -> accept(() -> getClob(attributes, req), b -> {
             Long len = objectMapper.readValue(req.bodyAsBytes(), Long.class);
             if (len == null) {
