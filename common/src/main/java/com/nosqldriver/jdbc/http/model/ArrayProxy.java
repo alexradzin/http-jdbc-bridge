@@ -12,8 +12,8 @@ import java.util.Map;
 import static java.lang.String.format;
 
 public class ArrayProxy extends EntityProxy implements Array {
-    private String baseTypeName;
-    private int baseType;
+    private String baseTypeName = null;
+    private int baseType = 0;
 
     @JsonCreator
     public ArrayProxy(@JsonProperty("entityUrl") String entityUrl) {
@@ -28,33 +28,33 @@ public class ArrayProxy extends EntityProxy implements Array {
 
     @Override
     public String getBaseTypeName() throws SQLException {
-        return baseTypeName;
+        return baseTypeName == null ? connector.get(format("%s/basetypename", entityUrl), String.class) : baseTypeName;
     }
 
     @Override
     public int getBaseType() throws SQLException {
-        return baseType;
+        return baseTypeName == null ? connector.get(format("%s/basetype", entityUrl), Integer.class) : baseType;
     }
 
     @Override
     @JsonIgnore
     public Object getArray() throws SQLException {
-        return connector.get(format("%s/array", entityUrl), Object.class);
+        return connector.get(format("%s/array", entityUrl), Object[].class);
     }
 
     @Override
     public Object getArray(Map<String, Class<?>> map) throws SQLException {
-        return connector.post(format("%s/array", entityUrl), map, Object.class);
+        return connector.post(format("%s/array", entityUrl), map, Object[].class);
     }
 
     @Override
     public Object getArray(long index, int count) throws SQLException {
-        return connector.get(format("%s/array/%d/%d", entityUrl, index, count), Object.class);
+        return connector.get(format("%s/array/%d/%d", entityUrl, index, count), Object[].class);
     }
 
     @Override
     public Object getArray(long index, int count, Map<String, Class<?>> map) throws SQLException {
-        return connector.post(format("%s/array/%d/%d", entityUrl, index, count), map, Object.class);
+        return connector.post(format("%s/array/%d/%d", entityUrl, index, count), map, Object[].class);
     }
 
     @Override
@@ -70,12 +70,12 @@ public class ArrayProxy extends EntityProxy implements Array {
 
     @Override
     public ResultSet getResultSet(long index, int count) throws SQLException {
-        return connector.get(format("%s/resultset/%d/%d", entityUrl, index, count), ResultSetProxy.class);
+        return connector.get(format("%s/resultset?index=%d&count=%d", entityUrl, index, count), ResultSetProxy.class);
     }
 
     @Override
     public ResultSet getResultSet(long index, int count, Map<String, Class<?>> map) throws SQLException {
-        return connector.post(format("%s/resultset/%d/%d", entityUrl, index, count), map, ResultSetProxy.class);
+        return connector.post(format("%s/resultset?index=%d&count=%d", entityUrl, index, count), map, ResultSetProxy.class);
     }
 
     @Override

@@ -51,7 +51,7 @@ class BlobControllerTest extends ControllerTestBase {
 
         if (nativeEx == null) {
             if (nativeBlob == null) {
-                assertNull(nativeBlob);
+                assertNull(httpBlob);
             } else {
                 assertNotNull(httpBlob);
             }

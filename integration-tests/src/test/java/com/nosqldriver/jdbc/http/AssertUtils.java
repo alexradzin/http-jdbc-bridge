@@ -1,5 +1,6 @@
 package com.nosqldriver.jdbc.http;
 
+import com.nosqldriver.util.function.ThrowingBiConsumer;
 import com.nosqldriver.util.function.ThrowingBiFunction;
 import com.nosqldriver.util.function.ThrowingConsumer;
 import com.nosqldriver.util.function.ThrowingFunction;
@@ -218,9 +219,14 @@ public class AssertUtils {
         return obj != null && floatingTypes.contains(obj.getClass());
     }
 
-    public static <T> void assertCall(ThrowingFunction<T, ?, SQLException> f, T nativeObj, T httpObj, String message) {
-        Object nativeRes = null;
-        Object httpRes = null;
+
+    public static <T, U> void assertCall(ThrowingFunction<T, U, SQLException> f, T nativeObj, T httpObj, String message) throws SQLException {
+        assertCall(f, nativeObj, httpObj, message, (e, a) -> {});
+    }
+
+    public static <T, U> void assertCall(ThrowingFunction<T, U, SQLException> f, T nativeObj, T httpObj, String message, ThrowingBiConsumer<U, U, SQLException> assertor) throws SQLException {
+        U nativeRes = null;
+        U httpRes = null;
         SQLException nativeEx = null;
         SQLException httpEx = null;
 
@@ -239,6 +245,7 @@ public class AssertUtils {
                 assertNull(httpRes, message);
             } else {
                 assertNotNull(httpRes, message);
+                assertor.accept(nativeRes, httpRes);
             }
         } else {
             assertNotNull(httpEx, message);
@@ -267,7 +274,7 @@ public class AssertUtils {
         }
     }
 
-    public static <T> void assertGettersAndSetters(Collection<Map.Entry<String, Map.Entry<ThrowingFunction<T, ?, SQLException>, ThrowingConsumer<T, SQLException>>>> functions, T nativeObj, T httpObj) {
+    public static <T> void assertGettersAndSetters(Collection<Map.Entry<String, Map.Entry<ThrowingFunction<T, ?, SQLException>, ThrowingConsumer<T, SQLException>>>> functions, T nativeObj, T httpObj) throws SQLException {
         for (Map.Entry<String, Map.Entry<ThrowingFunction<T, ?, SQLException>, ThrowingConsumer<T, SQLException>>> function : functions) {
             String name = function.getKey();
             ThrowingFunction<T, ?, SQLException> getter = function.getValue().getKey();
