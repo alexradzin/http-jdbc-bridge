@@ -2,6 +2,8 @@ package com.nosqldriver.jdbc.http;
 
 import org.junit.jupiter.params.ParameterizedTest;
 
+import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.dom.DOMSource;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,6 +13,7 @@ import java.io.Writer;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLXML;
 
 import static java.lang.String.format;
@@ -18,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_PLACEHOLDER;
 
@@ -119,4 +123,14 @@ public class SQLXMLControllerTest extends ControllerTestBase {
         assertArrayEquals(xml, xml2);
     }
 
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void getSourceSetResult(String nativeUrl) throws SQLException, IOException {
+        create(nativeUrl);
+        if (nativeSQLXML == null) {
+            return;
+        }
+        assertThrows(SQLFeatureNotSupportedException.class, () -> httpSQLXML.getSource(DOMSource.class));
+        assertThrows(SQLFeatureNotSupportedException.class, () -> httpSQLXML.setResult(DOMResult.class));
+    }
 }
