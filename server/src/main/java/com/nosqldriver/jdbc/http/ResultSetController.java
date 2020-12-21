@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nosqldriver.jdbc.http.model.ArrayProxy;
 import com.nosqldriver.jdbc.http.model.BlobProxy;
 import com.nosqldriver.jdbc.http.model.ClobProxy;
+import com.nosqldriver.jdbc.http.model.ConnectionProxy;
 import com.nosqldriver.jdbc.http.model.ParameterValue;
 import com.nosqldriver.jdbc.http.model.RowData;
 import com.nosqldriver.jdbc.http.model.TransportableResultSetMetaData;
@@ -114,6 +115,9 @@ public class ResultSetController extends BaseController {
                 updateByIndex.get(typeName).accept(rs, index, parameterValue.getValue());
             }
         }));
+
+        get(format("%s/wrapper/:class", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), w -> w.isWrapperFor(Class.forName(req.params(":class")))));
+        get(format("%s/unwrap/:class", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), w -> w.unwrap(Class.forName(req.params(":class"))), ConnectionProxy::new, "resultset", parentUrl(req.url())));
 
         if (withComplexTypes) {
             new ArrayController(attributes, objectMapper, format("%s/array", baseUrl));

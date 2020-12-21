@@ -25,6 +25,7 @@ import static java.sql.Statement.CLOSE_ALL_RESULTS;
 import static java.sql.Statement.CLOSE_CURRENT_RESULT;
 import static java.sql.Statement.KEEP_CURRENT_RESULT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -181,6 +182,23 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
         }
     }
 
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void wrap(String nativeUrl) throws SQLException {
+        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
+        Connection nativeConn = DriverManager.getConnection(nativeUrl);
+        String db = db(nativeUrl);
+        Statement httpStatement = createStatement(httpConn, db);
+        Statement nativeStatement = createStatement(nativeConn, db);
+
+        assertTrue(nativeStatement.isWrapperFor(Statement.class));
+        assertFalse(nativeStatement.isWrapperFor(String.class));
+        assertNotNull(nativeStatement.unwrap(Statement.class));
+
+        assertTrue(httpStatement.isWrapperFor(Statement.class));
+        assertFalse(httpStatement.isWrapperFor(String.class));
+        assertNotNull(httpStatement.unwrap(Statement.class));
+    }
 
     protected Collection<Map<String, Object>> selectTableWithAllTypes(String nativeUrl, String query, String update, ThrowingConsumer<T, SQLException> ... setters) throws SQLException {
         String db = db(nativeUrl);

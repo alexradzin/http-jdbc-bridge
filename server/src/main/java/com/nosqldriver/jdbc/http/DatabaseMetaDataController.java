@@ -1,6 +1,7 @@
 package com.nosqldriver.jdbc.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nosqldriver.jdbc.http.model.ConnectionProxy;
 import com.nosqldriver.jdbc.http.model.ResultSetProxy;
 import spark.Request;
 
@@ -83,6 +84,9 @@ public class DatabaseMetaDataController extends BaseController {
                 "procedure/columns/:columns", "function/columns/:columns", "pseudo/columns/:columns",
                 "column/privileges/:privileges", "crossreference/:crossreference", "best/row/identifier/:identifier")
                 .forEach(entity -> new ResultSetController(attributes, objectMapper, format(subUrl, entity), false));
+
+        get(format("%s/wrapper/:class", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), w -> w.isWrapperFor(Class.forName(req.params(":class")))));
+        get(format("%s/unwrap/:class", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), w -> w.unwrap(Class.forName(req.params(":class"))), ConnectionProxy::new, "metadata", parentUrl(req.url())));
     }
 
     private DatabaseMetaData getMetadata(Map<String, Object> attributes, Request req) {

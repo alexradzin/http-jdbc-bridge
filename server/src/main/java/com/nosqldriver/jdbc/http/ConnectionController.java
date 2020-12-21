@@ -5,6 +5,7 @@ import com.nosqldriver.jdbc.http.model.ArrayProxy;
 import com.nosqldriver.jdbc.http.model.BlobProxy;
 import com.nosqldriver.jdbc.http.model.CallableStatementProxy;
 import com.nosqldriver.jdbc.http.model.ClobProxy;
+import com.nosqldriver.jdbc.http.model.ConnectionProxy;
 import com.nosqldriver.jdbc.http.model.PreparedStatementProxy;
 import com.nosqldriver.jdbc.http.model.SQLXMLProxy;
 import com.nosqldriver.jdbc.http.model.StatementProxy;
@@ -162,6 +163,9 @@ public class ConnectionController extends BaseController {
         post("/connection/:connection/networktimeout", JSON, (req, res) -> accept(() -> getConnection(attributes, req), connection -> connection.setNetworkTimeout(executor, Integer.parseInt(req.body()))));
         get("/connection/:connection/networktimeout", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), Connection::getNetworkTimeout));
         post("/connection/:connection/abort", JSON, (req, res) -> accept(() -> getConnection(attributes, req), connection -> connection.abort(executor)));
+
+        get("/connection/:connection/wrapper/:class", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), c -> c.isWrapperFor(Class.forName(req.params(":class")))));
+        get("/connection/:connection/unwrap/:class", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), c -> c.unwrap(Class.forName(req.params(":class"))), ConnectionProxy::new, "connection", parentUrl(req.url())));
 
         new DatabaseMetaDataController(attributes, objectMapper);
         new StatementController(attributes, objectMapper, "/connection/:connection/statement/:statement");

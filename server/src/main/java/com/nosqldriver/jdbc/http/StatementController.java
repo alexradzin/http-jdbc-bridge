@@ -2,6 +2,7 @@ package com.nosqldriver.jdbc.http;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nosqldriver.jdbc.http.model.ConnectionProxy;
 import com.nosqldriver.jdbc.http.model.ResultSetProxy;
 import com.nosqldriver.jdbc.http.model.TransportableSQLWarning;
 import com.nosqldriver.util.function.ThrowingBiFunction;
@@ -89,6 +90,9 @@ public class StatementController extends BaseController {
         post(format("%s/enquote/identifier/:always", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), statement -> statement.enquoteIdentifier(req.body(), Boolean.parseBoolean(req.params("always")))));
         get(format("%s/simple/identifier/:identifier", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), statement -> statement.isSimpleIdentifier(stringParam(req, ":identifier"))));
         post(format("%s/enquote/nchar/literal", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), statement -> statement.enquoteNCharLiteral(req.body())));
+
+        get(format("%s/wrapper/:class", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), c -> c.isWrapperFor(Class.forName(req.params(":class")))));
+        get(format("%s/unwrap/:class", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), c -> c.unwrap(Class.forName(req.params(":class"))), ConnectionProxy::new, "statement", parentUrl(req.url())));
 
         new ResultSetController(attributes, objectMapper, baseUrl + "/resultset/:resultset", true);
     }

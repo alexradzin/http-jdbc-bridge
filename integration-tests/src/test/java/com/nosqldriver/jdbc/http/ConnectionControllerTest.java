@@ -28,6 +28,9 @@ import static java.sql.ResultSet.TYPE_SCROLL_INSENSITIVE;
 import static java.sql.ResultSet.TYPE_SCROLL_SENSITIVE;
 import static java.sql.Statement.NO_GENERATED_KEYS;
 import static java.sql.Statement.RETURN_GENERATED_KEYS;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_PLACEHOLDER;
 
 public class ConnectionControllerTest extends ControllerTestBase {
@@ -211,5 +214,20 @@ public class ConnectionControllerTest extends ControllerTestBase {
             ThrowingConsumer<Connection, SQLException> f = function.getValue();
             assertCall(f, nativeConn, httpConn, name);
         }
+    }
+
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void wrap(String nativeUrl) throws SQLException {
+        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
+        Connection nativeConn = DriverManager.getConnection(nativeUrl);
+
+        assertTrue(nativeConn.isWrapperFor(Connection.class));
+        assertFalse(nativeConn.isWrapperFor(String.class));
+        assertNotNull(nativeConn.unwrap(Connection.class));
+
+        assertTrue(httpConn.isWrapperFor(Connection.class));
+        assertFalse(httpConn.isWrapperFor(String.class));
+        assertNotNull(httpConn.unwrap(Connection.class));
     }
 }

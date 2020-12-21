@@ -19,8 +19,10 @@ import java.util.Map.Entry;
 import static com.nosqldriver.jdbc.http.AssertUtils.assertCall;
 import static java.lang.String.format;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_PLACEHOLDER;
 
 public class DatabaseMetaDataControllerTest extends ControllerTestBase {
@@ -310,6 +312,25 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
             ThrowingFunction<DatabaseMetaData, ResultSet, SQLException> f = getter.getValue();
             assertResultSets(nativeUrl, nativeMd, httpMd, f, name, 100);
         }
+    }
+
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void wrap(String nativeUrl) throws SQLException {
+        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
+        Connection nativeConn = DriverManager.getConnection(nativeUrl);
+        String db = db(nativeUrl);
+        DatabaseMetaData httpMd = httpConn.getMetaData();
+        DatabaseMetaData nativeMd = nativeConn.getMetaData();
+
+
+        assertTrue(nativeMd.isWrapperFor(DatabaseMetaData.class));
+        assertFalse(nativeMd.isWrapperFor(String.class));
+        assertNotNull(nativeMd.unwrap(DatabaseMetaData.class));
+
+        assertTrue(httpMd.isWrapperFor(DatabaseMetaData.class));
+        assertFalse(httpMd.isWrapperFor(String.class));
+        assertNotNull(httpMd.unwrap(DatabaseMetaData.class));
     }
 
 
