@@ -103,7 +103,18 @@ public class AssertUtils {
     }
 
 
-    public static Collection<Map<String, Object>> assertResultSet(String nativeUrl, ResultSet expected, ResultSet actual, String message, int limit) throws SQLException {
+    /**
+     *
+     * @param nativeUrl
+     * @param expected
+     * @param actual
+     * @param message
+     * @param limit
+     * @param advanced - exists for performance reasons
+     * @return
+     * @throws SQLException
+     */
+    public static Collection<Map<String, Object>> assertResultSet(String nativeUrl, ResultSet expected, ResultSet actual, String message, int limit, boolean advanced) throws SQLException {
         if (expected == null) {
             assertNull(actual);
             return null;
@@ -114,6 +125,10 @@ public class AssertUtils {
         ResultSetMetaData amd = actual.getMetaData();
         int n = emd.getColumnCount();
         assertEquals(emd.getColumnCount(), amd.getColumnCount());
+
+        assertEquals(expected.getFetchDirection(), actual.getFetchDirection());
+        assertEquals(expected.getType(), actual.getType());
+        assertEquals(expected.getConcurrency(), actual.getConcurrency());
 
         int row = 0;
         boolean checkExtraRows = true;
@@ -132,9 +147,17 @@ public class AssertUtils {
                         continue; // patch for derby that does not allow to retrieve blobs and clobs more than once. The first time they were retrieved by index.
                     }
                     String label = emd.getColumnLabel(i);
+                    assertEquals(expected.findColumn(label), actual.findColumn(label));
                     Object actualValue = getter.apply(actual, label);
                     assertValues(getter.apply(expected, emd.getColumnLabel(i)), actualValue, format("%s:column#%s", message, emd.getColumnLabel(i)));
                     rowData.put(label, actualValue);
+
+                    if (advanced) {
+                        assertCall(ResultSet::rowUpdated, expected, actual, "rowUpdated");
+                        assertCall(ResultSet::rowInserted, expected, actual, "rowInserted");
+                        assertCall(ResultSet::rowDeleted, expected, actual, "rowDeleted");
+                        assertCall(ResultSet::wasNull, expected, actual, "wasNull");
+                    }
                 }
              }
             result.add(rowData);
@@ -151,6 +174,9 @@ public class AssertUtils {
             assertFalse(actual.next(), format("%s:actual result set has extra rows", message));
         }
 
+        if (advanced) {
+            assertResultSetNavigation(expected, actual);
+        }
         return result;
     }
 
@@ -171,6 +197,23 @@ public class AssertUtils {
         assertEquals(expected.isFirst(), actual.isFirst());
         assertEquals(expected.isLast(), actual.isLast());
         assertEquals(expected.isAfterLast(), actual.isAfterLast());
+    }
+
+    private static void assertResultSetNavigation(ResultSet expected, ResultSet actual) throws SQLException {
+        assertCall(ResultSet::first, expected, actual, "first");
+        assertCall(ResultSet::last, expected, actual, "last");
+        assertCall(ResultSet::previous, expected, actual, "previous");
+        assertCall(rs -> {return rs.absolute(1);}, expected, actual, "absolute(1)");
+        assertCall(rs -> {return rs.relative(1);}, expected, actual, "relative(1)");
+
+        assertCall(rs -> {
+            rs.beforeFirst();
+            return rs.isBeforeFirst();
+        }, expected, actual, "beforeFirst");
+        assertCall(rs -> {
+            rs.afterLast();
+            return rs.isAfterLast();
+        }, expected, actual, "beforeFirst");
     }
 
     public static void assertResultSetMetaData(ResultSetMetaData expected, ResultSetMetaData actual, String message) throws SQLException {

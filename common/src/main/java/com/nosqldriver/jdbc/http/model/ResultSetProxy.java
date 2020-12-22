@@ -84,9 +84,7 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public boolean next() throws SQLException {
-        rowData = connector.get(format("%s/nextrow", entityUrl), RowData.class);
-        wasNull = false;
-        return rowData.isMoved();
+        return move(format("%s/nextrow", entityUrl));
     }
 
     @Override
@@ -346,30 +344,22 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public void beforeFirst() throws SQLException {
-        rowData = null;
-        wasNull = false;
-        connector.post(format("%s/before/first", entityUrl), null, Void.class);
+        moveOutside(format("%s/before/first", entityUrl));
     }
 
     @Override
     public void afterLast() throws SQLException {
-        rowData = null;
-        wasNull = false;
-        connector.post(format("%s/after/last", entityUrl), null, Void.class);
+        moveOutside(format("%s/after/last", entityUrl));
     }
 
     @Override
     public boolean first() throws SQLException {
-        rowData = connector.get(format("%s/firstrow", entityUrl), RowData.class);
-        wasNull = false;
-        return rowData.isMoved();
+        return move(format("%s/firstrow", entityUrl));
     }
 
     @Override
     public boolean last() throws SQLException {
-        rowData = connector.get(format("%s/lastrow", entityUrl), RowData.class);
-        wasNull = false;
-        return rowData.isMoved();
+        return move(format("%s/lastrow", entityUrl));
     }
 
     @Override
@@ -380,23 +370,17 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public boolean absolute(int row) throws SQLException {
-        rowData = connector.get(format("%s/absolute/%d", entityUrl, row), RowData.class);
-        wasNull = false;
-        return rowData.isMoved();
+        return move(format("%s/absoluterow/%d", entityUrl, row));
     }
 
     @Override
     public boolean relative(int rows) throws SQLException {
-        rowData = connector.get(format("%s/relative/%d", entityUrl, rows), RowData.class);
-        wasNull = false;
-        return rowData.isMoved();
+        return move(format("%s/relativerow/%d", entityUrl, rows));
     }
 
     @Override
     public boolean previous() throws SQLException {
-        rowData = connector.get(format("%s/previousrow", entityUrl), RowData.class);
-        wasNull = false;
-        return rowData.isMoved();
+        return move(format("%s/previousrow", entityUrl));
     }
 
     @Override
@@ -1105,5 +1089,17 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException(e);
         }
+    }
+
+    private boolean move(String url) throws SQLException {
+        rowData = connector.get(url, RowData.class);
+        wasNull = false;
+        return rowData.isMoved();
+    }
+
+    public void moveOutside(String url) throws SQLException {
+        rowData = null;
+        wasNull = false;
+        connector.post(url, null, Void.class);
     }
 }

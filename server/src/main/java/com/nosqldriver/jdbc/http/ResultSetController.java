@@ -77,8 +77,8 @@ public class ResultSetController extends BaseController {
         get(format("%s/previousrow", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, ResultSet::previous)));
         get(format("%s/firstrow", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, ResultSet::first)));
         get(format("%s/lastrow", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, ResultSet::last)));
-        get(format("%s/absolute/:row", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, r -> r.absolute(intParam(req, "row")))));
-        get(format("%s/relative/:row", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, r -> r.relative(intParam(req, "row")))));
+        get(format("%s/absoluterow/:row", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, r -> r.absolute(intParam(req, "row")))));
+        get(format("%s/relativerow/:row", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, r -> r.relative(intParam(req, "row")))));
 
 
         get(format("%s/fetch/size", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), ResultSet::getFetchSize));
@@ -100,6 +100,7 @@ public class ResultSetController extends BaseController {
         delete(format("%s/row", baseUrl), JSON, (req, res) -> accept(() -> getResultSet(attributes, req), ResultSet::deleteRow));
 
         get(format("%s/wasnull", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), ResultSet::wasNull));
+        get(format("%s/column/label/:label", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> rs.findColumn(req.params(":label"))));
 
         mapGetters(attributes, baseUrl, "index", getterByIndex, req -> intParam(req, ":index"));
         mapGetters(attributes, baseUrl, "label", getterByLabel, req -> req.params(":label"));

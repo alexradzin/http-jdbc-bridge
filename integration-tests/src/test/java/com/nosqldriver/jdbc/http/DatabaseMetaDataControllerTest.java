@@ -350,7 +350,7 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
             httpEx = e;
         }
         if (nativeEx == null) {
-            AssertUtils.assertResultSet(nativeUrl, nativeRes, httpRes, message, limit);
+            AssertUtils.assertResultSet(nativeUrl, nativeRes, httpRes, message, limit, false);
         } else {
             assertNotNull(httpEx);
             assertEquals(nativeEx.getMessage(), httpEx.getMessage());

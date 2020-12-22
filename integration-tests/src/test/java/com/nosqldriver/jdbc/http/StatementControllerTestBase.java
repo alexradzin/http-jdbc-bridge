@@ -268,7 +268,7 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
             if (nativeRs != null) {
                 assertNotNull(httpRs);
                 assertNull(httpEx);
-                return assertResultSet(nativeUrl, nativeRs, httpRs, query, Integer.MAX_VALUE);
+                return assertResultSet(nativeUrl, nativeRs, httpRs, query, Integer.MAX_VALUE, true);
             } else {
                 assertNull(httpRs);
                 assertNotNull(httpEx);
