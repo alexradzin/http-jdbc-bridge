@@ -5,6 +5,7 @@ create table test_all_types
    si smallint,
    bi bigint,
    dcml numeric,
+   f float4,
    r real,
    t time,
    ttz time,
