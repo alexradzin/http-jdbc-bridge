@@ -13,6 +13,7 @@ import java.sql.Statement;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -161,6 +162,7 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
                 query,
                 update,
                 new String[] {"drop table test_all_types"},
+                Collections.emptyList(),
                 setters);
     }
 
@@ -168,13 +170,13 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void selectTableWithAllTypes(String nativeUrl) throws SQLException, IOException {
-        selectTableWithAllTypes(nativeUrl, "select * from test_all_types", null);
+        selectTableWithAllTypes(nativeUrl, "select * from test_all_types", null, Collections.emptyList());
     }
 
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void selectTableWithAllTypesAndUpdate(String nativeUrl) throws SQLException, IOException {
-        Collection<Map<String, Object>> result = selectTableWithAllTypes(nativeUrl, "select * from test_all_types", "update test_all_types set i = 5");
+        Collection<Map<String, Object>> result = selectTableWithAllTypes(nativeUrl, "select * from test_all_types", "update test_all_types set i = 5", Collections.emptyList());
         if (result != null) {
             assertEquals(1, result.size());
             Map<String, Object> row = result.iterator().next();
@@ -200,13 +202,14 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
         assertNotNull(httpStatement.unwrap(Statement.class));
     }
 
-    protected Collection<Map<String, Object>> selectTableWithAllTypes(String nativeUrl, String query, String update, ThrowingConsumer<T, SQLException> ... setters) throws SQLException {
+    protected Collection<Map<String, Object>> selectTableWithAllTypes(String nativeUrl, String query, String update, Collection<AssertUtils.ResultSetAssertMode> mode, ThrowingConsumer<T, SQLException> ... setters) throws SQLException {
         String db = db(nativeUrl);
         return select(nativeUrl,
                 Stream.of("create.table.all-types.sql", "insert.all-types.sql").map(f -> sqlScript(db, f)).toArray(String[]::new),
                 query,
                 update,
                 new String[] {"drop table test_all_types"},
+                mode,
                 setters);
     }
 
@@ -214,18 +217,18 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
         return conn.createStatement();
     }
 
-    private Collection<Map<String, Object>> select(String nativeUrl, String[] before, String query, String update, String[] after, ThrowingConsumer<T, SQLException>... setters) throws SQLException {
+    private Collection<Map<String, Object>> select(String nativeUrl, String[] before, String query, String update, String[] after, Collection<AssertUtils.ResultSetAssertMode> mode, ThrowingConsumer<T, SQLException>... setters) throws SQLException {
         Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
         Connection nativeConn = DriverManager.getConnection(nativeUrl);
         try {
             for (String sql : before) {
                 nativeConn.createStatement().execute(sql);
             }
-            executeQueries(nativeUrl, nativeConn, httpConn, query, setters);
+            executeQueries(nativeUrl, nativeConn, httpConn, query, mode, setters);
             if (update != null) {
                 try {
                     executeUpdate(httpConn, update);
-                    return executeQueries(nativeUrl, nativeConn, httpConn, query, setters); // query again after update, so validate that update worked
+                    return executeQueries(nativeUrl, nativeConn, httpConn, query, mode, setters); // query again after update, so validate that update worked
                 } catch (SQLException e) {
                     assertTrue(e.getMessage().startsWith("Invalid argument in JDBC call"));
                 }
@@ -234,6 +237,12 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
         } finally {
             for (String sql : after) {
                 nativeConn.createStatement().execute(sql);
+                if (nativeUrl.contains("hsqldb")) {
+                    try {
+                        Thread.sleep(1000L);
+                    } catch (InterruptedException e) {
+                    }
+                }
             }
         }
     }
@@ -248,15 +257,17 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
 
 
     @SafeVarargs
-    private Collection<Map<String, Object>> executeQueries(String nativeUrl, Connection nativeConn, Connection httpConn, String query, ThrowingConsumer<T, SQLException>... setters) throws SQLException {
+    private Collection<Map<String, Object>> executeQueries(String nativeUrl, Connection nativeConn, Connection httpConn, String query,
+                                                           Collection<AssertUtils.ResultSetAssertMode> mode,
+                                                           ThrowingConsumer<T, SQLException>... setters) throws SQLException {
         ResultSet nativeRs = null;
-        SQLException nativeEx = null;
+        Exception nativeEx = null;
         ResultSet httpRs = null;
         SQLException httpEx = null;
         try {
             try {
                 nativeRs = executeQuery(nativeConn, query, setters);
-            } catch (SQLException e) {
+            } catch (SQLException | RuntimeException e) {
                 nativeEx = e;
             }
             try {
@@ -268,7 +279,7 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
             if (nativeRs != null) {
                 assertNotNull(httpRs);
                 assertNull(httpEx);
-                return assertResultSet(nativeUrl, nativeRs, httpRs, query, Integer.MAX_VALUE, true);
+                return assertResultSet(nativeUrl, nativeRs, httpRs, query, Integer.MAX_VALUE, mode);
             } else {
                 assertNull(httpRs);
                 assertNotNull(httpEx);

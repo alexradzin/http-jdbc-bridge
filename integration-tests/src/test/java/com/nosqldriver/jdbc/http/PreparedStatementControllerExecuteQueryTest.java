@@ -8,6 +8,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collections;
 
 import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_PLACEHOLDER;
 
@@ -27,7 +28,7 @@ public class PreparedStatementControllerExecuteQueryTest extends StatementContro
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void selectTableWithIndexedArgumentsWithAllTypes(String nativeUrl) throws SQLException {
-        selectTableWithAllTypes(nativeUrl, "select * from test_all_types where i=?", null, preparedStatement -> preparedStatement.setInt(1, 12345));
+        selectTableWithAllTypes(nativeUrl, "select * from test_all_types where i=?", null, Collections.emptyList(), preparedStatement -> preparedStatement.setInt(1, 12345));
     }
 
     @Override

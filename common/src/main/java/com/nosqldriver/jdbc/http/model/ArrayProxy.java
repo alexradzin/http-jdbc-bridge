@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.io.Serializable;
 import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -11,17 +12,17 @@ import java.util.Map;
 
 import static java.lang.String.format;
 
-public class ArrayProxy extends EntityProxy implements Array {
+public class ArrayProxy extends EntityProxy implements Array, Serializable {
     private String baseTypeName = null;
     private int baseType = 0;
 
     @JsonCreator
     public ArrayProxy(@JsonProperty("entityUrl") String entityUrl) {
-        super(entityUrl);
+        super(entityUrl, Array.class);
     }
 
     public ArrayProxy(String entityUrl, Array array) throws SQLException {
-        super(entityUrl);
+        super(entityUrl, Array.class);
         this.baseTypeName = array.getBaseTypeName();
         this.baseType = array.getBaseType();
     }

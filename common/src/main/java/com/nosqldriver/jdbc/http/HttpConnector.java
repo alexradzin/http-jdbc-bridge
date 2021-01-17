@@ -1,6 +1,7 @@
 package com.nosqldriver.jdbc.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nosqldriver.jdbc.http.json.ObjectMapperFactory;
 import com.nosqldriver.jdbc.http.model.TransportableException;
 
 import java.io.IOException;
@@ -17,7 +18,8 @@ import static com.nosqldriver.jdbc.http.Util.toByteArray;
 import static java.lang.String.format;
 
 public class HttpConnector {
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = ObjectMapperFactory.createObjectMapper();
+
     public <T> T get(String url, Class<T> clazz) {
         try {
             HttpURLConnection httpConnection = (HttpURLConnection) new URL(url).openConnection();

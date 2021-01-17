@@ -19,12 +19,12 @@ public class ClobProxy extends EntityProxy implements NClob {
 
     @JsonCreator
     public ClobProxy(@JsonProperty("entityUrl") String entityUrl) {
-        super(entityUrl);
+        super(entityUrl, NClob.class);
         length = -1;
     }
 
     public ClobProxy(String entityUrl, Clob clob) throws SQLException {
-        super(entityUrl);
+        super(entityUrl, NClob.class);
         length = clob.length();
     }
 

@@ -73,12 +73,12 @@ public class ResultSetController extends BaseController {
         get(format("%s/is/last", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), ResultSet::isLast));
 
         ///////// navigation with cache
-        get(format("%s/nextrow", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, ResultSet::next)));
-        get(format("%s/previousrow", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, ResultSet::previous)));
-        get(format("%s/firstrow", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, ResultSet::first)));
-        get(format("%s/lastrow", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, ResultSet::last)));
-        get(format("%s/absoluterow/:row", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, r -> r.absolute(intParam(req, "row")))));
-        get(format("%s/relativerow/:row", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, r -> r.relative(intParam(req, "row")))));
+        get(format("%s/nextrow", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, ResultSet::next, req.url())));
+        get(format("%s/previousrow", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, ResultSet::previous, req.url())));
+        get(format("%s/firstrow", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, ResultSet::first, req.url())));
+        get(format("%s/lastrow", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, ResultSet::last, req.url())));
+        get(format("%s/absoluterow/:row", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, r -> r.absolute(intParam(req, "row")), req.url())));
+        get(format("%s/relativerow/:row", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> move(rs, r -> r.relative(intParam(req, "row")), req.url())));
 
 
         get(format("%s/fetch/size", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), ResultSet::getFetchSize));
@@ -121,10 +121,10 @@ public class ResultSetController extends BaseController {
         get(format("%s/unwrap/:class", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), w -> w.unwrap(Class.forName(req.params(":class"))), ConnectionProxy::new, "resultset", parentUrl(req.url())));
 
         if (withComplexTypes) {
-            new ArrayController(attributes, objectMapper, format("%s/array", baseUrl));
-            new BlobController(attributes, objectMapper, format("%s/blob", baseUrl));
-            new ClobController(attributes, objectMapper, format("%s/clob", baseUrl));
-            new ClobController(attributes, objectMapper, format("%s/nclob", baseUrl));
+            new ArrayController(attributes, objectMapper, format("%s/array/:array", baseUrl));
+            new BlobController(attributes, objectMapper, format("%s/blob/:blob", baseUrl));
+            new ClobController(attributes, objectMapper, format("%s/clob/:clob", baseUrl));
+            new ClobController(attributes, objectMapper, format("%s/nclob/:nclob", baseUrl));
         }
     }
 
@@ -259,7 +259,7 @@ public class ResultSetController extends BaseController {
         getterByType.put(Types.INTEGER, ResultSet::getInt);
         getterByType.put(Types.BIGINT, ResultSet::getLong);
         getterByType.put(Types.BOOLEAN, ResultSet::getBoolean);
-        getterByType.put(Types.BIT, ResultSet::getBoolean);
+        getterByType.put(Types.BIT, ResultSet::getByte);
         getterByType.put(Types.FLOAT, ResultSet::getFloat);
         getterByType.put(Types.DOUBLE, ResultSet::getDouble);
         getterByType.put(Types.DATE, ResultSet::getDate);
@@ -286,18 +286,31 @@ public class ResultSetController extends BaseController {
         return Optional.ofNullable(map.get(key)).orElseThrow(() -> exceptionFactory.apply(key));
     }
 
-    private Object[] readRow(ResultSet rs) throws SQLException {
+    private Object[] readRow(ResultSet rs, String rsUrl) throws Exception {
         ResultSetMetaData md = rs.getMetaData();
         int n = md.getColumnCount();
         Object[] row = new Object[n];
         for (int i = 0; i < n; i++) {
             int column = i + 1;
-            row[i] = getterByType.getOrDefault(md.getColumnType(column), ResultSet::getObject).apply(rs, column);
+            Object value;
+            ThrowingBiFunction<ResultSet, Integer, ?, SQLException> getter = getterByType.get(md.getColumnType(column));
+            if (getter != null) {
+                try {
+                    value = getter.apply(rs, column);
+                } catch (SQLException e) {
+                    value = rs.getObject(column);
+                }
+            } else {
+                value = rs.getObject(column);
+            }
+            String type = md.getColumnTypeName(column);
+            ThrowingBiFunction<String, Object, Object, Exception> transformer = transformers.get(type);
+            row[i] = value == null || transformer == null ? value : entityToProxy(value, transformer, type.toLowerCase(), format("%s/%d", rsUrl, column));
         }
         return row;
     }
 
-    public RowData move(ResultSet rs, ThrowingFunction<ResultSet, Boolean, SQLException> move) throws Exception {
-        return move.apply(rs) ? new RowData(true, readRow(rs)) : new RowData(false, null);
+    public RowData move(ResultSet rs, ThrowingFunction<ResultSet, Boolean, SQLException> move, String url) throws Exception {
+        return move.apply(rs) ? new RowData(true, readRow(rs, parentUrl(url))) : new RowData(false, null);
     }
 }

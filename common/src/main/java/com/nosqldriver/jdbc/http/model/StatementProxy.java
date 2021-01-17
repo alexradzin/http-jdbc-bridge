@@ -23,7 +23,11 @@ public class StatementProxy extends WrapperProxy implements Statement {
 
     @JsonCreator
     public StatementProxy(@JsonProperty("entityUrl") String entityUrl) {
-        super(entityUrl);
+        this(entityUrl, Statement.class);
+    }
+
+    protected StatementProxy(String entityUrl, Class<?> clazz) {
+        super(entityUrl, clazz);
     }
 
     @Override

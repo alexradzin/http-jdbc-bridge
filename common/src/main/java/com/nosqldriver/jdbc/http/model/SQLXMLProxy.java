@@ -19,7 +19,7 @@ import static java.lang.String.format;
 public class SQLXMLProxy extends EntityProxy implements SQLXML {
     @JsonCreator
     public SQLXMLProxy(@JsonProperty("entityUrl") String entityUrl) {
-        super(entityUrl);
+        super(entityUrl, SQLXML.class);
     }
 
     @Override

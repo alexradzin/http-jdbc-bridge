@@ -14,6 +14,7 @@ import java.sql.Types;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map.Entry;
 
 import static com.nosqldriver.jdbc.http.AssertUtils.assertCall;
@@ -350,7 +351,7 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
             httpEx = e;
         }
         if (nativeEx == null) {
-            AssertUtils.assertResultSet(nativeUrl, nativeRes, httpRes, message, limit, false);
+            AssertUtils.assertResultSet(nativeUrl, nativeRes, httpRes, message, limit, Collections.emptyList());
         } else {
             assertNotNull(httpEx);
             assertEquals(nativeEx.getMessage(), httpEx.getMessage());

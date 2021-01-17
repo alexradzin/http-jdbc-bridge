@@ -5,15 +5,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.nosqldriver.jdbc.http.HttpConnector;
 
 import java.sql.SQLException;
+import java.util.Arrays;
 
-abstract class EntityProxy {
+public abstract class EntityProxy {
     @JsonProperty
     protected final String entityUrl;
+    @JsonProperty
+    protected final Class<?> clazz;
     @JsonIgnore
     protected final HttpConnector connector = new HttpConnector();
 
-    protected EntityProxy(String entityUrl) {
+    protected EntityProxy(String entityUrl, Class<?> clazz) {
         this.entityUrl = entityUrl;
+        this.clazz = clazz;
     }
 
     // setters are translated to HTTP PUT request although by the book PATCH should be used.

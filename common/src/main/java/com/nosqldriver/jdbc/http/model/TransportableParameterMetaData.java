@@ -15,12 +15,12 @@ public class TransportableParameterMetaData extends WrapperProxy implements Para
 
     @JsonCreator
     public TransportableParameterMetaData(@JsonProperty("entityUrl") String entityUrl, @JsonProperty("parameters") List<OneParameterMetaData> parameters) {
-        super(entityUrl);
+        super(entityUrl, ParameterMetaData.class);
         this.parameters = parameters;
     }
 
     public TransportableParameterMetaData(String entityUrl, ParameterMetaData md) throws SQLException {
-        super(entityUrl);
+        super(entityUrl, ParameterMetaData.class);
         parameters = getParameters(md);
     }
 
