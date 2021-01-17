@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import com.nosqldriver.jdbc.http.json.ObjectMapperFactory;
 import net.sourceforge.htmlunit.corejs.javascript.Undefined;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -32,7 +33,7 @@ abstract class ControllerTestBase {
             ).collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue));
     protected String testName;
     protected final WebClient webClient = new WebClient();
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper objectMapper = ObjectMapperFactory.createObjectMapper();
 
 
     @BeforeAll
@@ -45,7 +46,7 @@ abstract class ControllerTestBase {
         }
         Spark.staticFiles.location("/");
         Spark.port(8080);
-        new DriverController(new HashMap<>(), new ObjectMapper());
+        new DriverController(new HashMap<>(), objectMapper);
         Spark.awaitInitialization();
     }
 

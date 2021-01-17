@@ -159,11 +159,11 @@ public class TransportableDatabaseMetaData extends WrapperProxy implements Datab
 
     @JsonCreator
     public TransportableDatabaseMetaData(@JsonProperty("entityUrl") String entityUrl) {
-        super(entityUrl);
+        super(entityUrl, DatabaseMetaData.class);
     }
 
     public TransportableDatabaseMetaData(String entityUrl, DatabaseMetaData md) throws SQLException {
-        super(entityUrl);
+        super(entityUrl, DatabaseMetaData.class);
         this.allProceduresAreCallable = md.allProceduresAreCallable();
         this.allTablesAreSelectable = md.allTablesAreSelectable();
         this.url = md.getURL();

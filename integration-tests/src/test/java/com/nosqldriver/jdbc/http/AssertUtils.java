@@ -4,102 +4,148 @@ import com.nosqldriver.util.function.ThrowingBiConsumer;
 import com.nosqldriver.util.function.ThrowingBiFunction;
 import com.nosqldriver.util.function.ThrowingConsumer;
 import com.nosqldriver.util.function.ThrowingFunction;
+import org.junit.jupiter.api.Assertions;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
+import java.sql.Blob;
+import java.sql.Clob;
+import java.sql.NClob;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
+import static com.nosqldriver.util.function.Pair.pair;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singleton;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AssertUtils {
+    enum ResultSetAssertMode {
+        CHECK_STATE, CALL_ALL_GETTERS, RANGE_EXCEPTION_MESSAGE,;
+    }
     private static final Collection<Class<?>> integerTypes = new HashSet<>(asList(Byte.class, Short.class, Integer.class, Long.class));
     private static final Collection<Class<?>> floatingTypes = new HashSet<>(asList(Float.class, Double.class, BigDecimal.class));
-    private static final Map<Integer, Collection<ThrowingBiFunction<ResultSet, Integer, ?, SQLException>>> typedGettersByIndex = new HashMap<>();
+    private static final Map<Integer, Collection<Entry<String, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>>>> typedGettersByIndex = new HashMap<>();
     static {
-        typedGettersByIndex.put(Types.BIT, asList(ResultSet::getBoolean, ResultSet::getObject));
-        typedGettersByIndex.put(Types.TINYINT, asList(ResultSet::getByte, ResultSet::getShort, ResultSet::getInt, ResultSet::getLong));
-        typedGettersByIndex.put(Types.SMALLINT, asList(ResultSet::getShort, ResultSet::getInt, ResultSet::getLong));
-        typedGettersByIndex.put(Types.INTEGER, asList(ResultSet::getInt, ResultSet::getLong));
-        typedGettersByIndex.put(Types.BIGINT, asList(ResultSet::getLong));
-        typedGettersByIndex.put(Types.FLOAT, asList(ResultSet::getFloat, ResultSet::getDouble));
-        typedGettersByIndex.put(Types.REAL, asList(ResultSet::getFloat, ResultSet::getDouble));
-        typedGettersByIndex.put(Types.DOUBLE, asList(ResultSet::getFloat, ResultSet::getDouble));
-        typedGettersByIndex.put(Types.NUMERIC, asList(ResultSet::getFloat, ResultSet::getDouble));
-        typedGettersByIndex.put(Types.DECIMAL, asList(ResultSet::getFloat, ResultSet::getDouble, ResultSet::getBigDecimal));
-        typedGettersByIndex.put(Types.CHAR, asList((rs, i) -> {String s = rs.getString(i); return s == null ? null : s.length() > 0 ? s.substring(0, 1) : "";}));
-        typedGettersByIndex.put(Types.VARCHAR, asList(ResultSet::getString));
-        typedGettersByIndex.put(Types.LONGVARCHAR, asList(ResultSet::getString));
-        typedGettersByIndex.put(Types.DATE, asList(ResultSet::getDate));
-        typedGettersByIndex.put(Types.TIME, asList(ResultSet::getTime));
-        typedGettersByIndex.put(Types.TIME_WITH_TIMEZONE, asList(ResultSet::getTime));
-        typedGettersByIndex.put(Types.TIMESTAMP, asList(ResultSet::getTimestamp));
-        typedGettersByIndex.put(Types.TIMESTAMP_WITH_TIMEZONE, asList(ResultSet::getTimestamp));
+        typedGettersByIndex.put(Types.BIT, asList(pair("getBoolean", ResultSet::getBoolean), pair("getObject", ResultSet::getObject)));
+        typedGettersByIndex.put(Types.TINYINT, asList(pair("getByte", ResultSet::getByte), pair("getShort", ResultSet::getShort), pair("getInt", ResultSet::getInt), pair("getLong", ResultSet::getLong)));
+        typedGettersByIndex.put(Types.SMALLINT, asList(pair("getShort", ResultSet::getShort), pair("getInt", ResultSet::getInt), pair("getLong", ResultSet::getLong)));
+        typedGettersByIndex.put(Types.INTEGER, asList(pair("getInt", ResultSet::getInt), pair("getLong", ResultSet::getLong)));
+        typedGettersByIndex.put(Types.BIGINT, asList(pair("getLong", ResultSet::getLong)));
+        typedGettersByIndex.put(Types.FLOAT, asList(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble)));
+        typedGettersByIndex.put(Types.REAL, asList(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble)));
+        typedGettersByIndex.put(Types.DOUBLE, asList(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble)));
+        typedGettersByIndex.put(Types.NUMERIC, asList(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble)));
+        typedGettersByIndex.put(Types.DECIMAL, asList(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble), pair("getBigDecimal", ResultSet::getBigDecimal)));
+        typedGettersByIndex.put(Types.CHAR, asList(pair("getString[0]", (rs, i) -> {String s = rs.getString(i); return s == null ? null : s.length() > 0 ? s.substring(0, 1) : "";})));
+        typedGettersByIndex.put(Types.VARCHAR, asList(pair("getString", ResultSet::getString)));
+        typedGettersByIndex.put(Types.LONGVARCHAR, asList(pair("getString", ResultSet::getString)));
+        typedGettersByIndex.put(Types.DATE, asList(pair("getDate", ResultSet::getDate)));
+        typedGettersByIndex.put(Types.TIME, asList(pair("getTime", ResultSet::getTime)));
+        typedGettersByIndex.put(Types.TIME_WITH_TIMEZONE, asList(pair("getTime", ResultSet::getTime)));
+        typedGettersByIndex.put(Types.TIMESTAMP, asList(pair("getTimestamp", ResultSet::getTimestamp)));
+        typedGettersByIndex.put(Types.TIMESTAMP_WITH_TIMEZONE, asList(pair("getTimestamp", ResultSet::getTimestamp)));
         //getters.put(Types.BINARY, ResultSet::getObject);
         //getters.put(Types.VARBINARY, ResultSet::getInt);
         //getters.put(Types.LONGVARBINARY, ResultSet::getInt);
-        typedGettersByIndex.put(Types.NULL, asList(ResultSet::getObject));
+        typedGettersByIndex.put(Types.NULL, asList(pair("getObject", ResultSet::getObject)));
         //getters.put(Types.OTHER, ResultSet::getObject);
         //getters.put(Types.JAVA_OBJECT, ResultSet::getObject);
         //getters.put(Types.DISTINCT, ResultSet::getInt);
         //getters.put(Types.STRUCT, ResultSet::getInt);
-        typedGettersByIndex.put(Types.ARRAY, asList(ResultSet::getArray));
-        typedGettersByIndex.put(Types.BLOB, asList(ResultSet::getBlob));
-        typedGettersByIndex.put(Types.CLOB, asList(ResultSet::getClob));
-        typedGettersByIndex.put(Types.REF, asList(ResultSet::getRef));
+        typedGettersByIndex.put(Types.ARRAY, asList(pair("getArray", ResultSet::getArray)));
+        typedGettersByIndex.put(Types.BLOB, asList(pair("getBlob", ResultSet::getBlob)));
+        typedGettersByIndex.put(Types.CLOB, asList(pair("getClob", ResultSet::getClob)));
+        typedGettersByIndex.put(Types.REF, asList(pair("getRef", ResultSet::getRef)));
         //getters.put(Types.DATALINK, ResultSet::getObject);
-        typedGettersByIndex.put(Types.BOOLEAN, asList(ResultSet::getBoolean));
-        typedGettersByIndex.put(Types.ROWID, asList(ResultSet::getRowId));
+        typedGettersByIndex.put(Types.BOOLEAN, asList(pair("getBoolean", ResultSet::getBoolean)));
+        typedGettersByIndex.put(Types.ROWID, asList(pair("getRowId", ResultSet::getRowId)));
     }
 
-    private static final Map<Integer, Collection<ThrowingBiFunction<ResultSet, String, ?, SQLException>>> typedGettersByLabel = new HashMap<>();
+    private static final Collection<Entry<String, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>>> allGettersByIndex = Arrays.asList(
+            pair("getBoolean", ResultSet::getBoolean),
+            pair("getByte", ResultSet::getByte), pair("getShort", ResultSet::getShort), pair("getInt", ResultSet::getInt), pair("getString", ResultSet::getLong),
+            pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble), pair("getBigDecimal", ResultSet::getBigDecimal),
+            pair("getString", ResultSet::getString), //returns different string representation for H2: Time
+            pair("getNString", ResultSet::getNString), // throws not supported excetion in some drivers
+            pair("getDate", ResultSet::getDate), pair("getTime", ResultSet::getTime), pair("getTimestamp", ResultSet::getTimestamp),
+            pair("getArray", ResultSet::getArray),
+            pair("getBlob", ResultSet::getBlob),
+            //pair("getClob", ResultSet::getClob)
+            pair("getRef", ResultSet::getRef), pair("getRowId", ResultSet::getRowId)
+            //pair("getAsciiStream", ResultSet::getAsciiStream), pair("getBinaryStream", ResultSet::getBinaryStream), pair("getCharacterStream", ResultSet::getCharacterStream), pair("getNCharacterStream", ResultSet::getNCharacterStream), pair("getUnicodeStream", ResultSet::getUnicodeStream)
+    );
+
+    private static final Collection<Entry<String, ThrowingBiFunction<ResultSet, String, ?, SQLException>>> allGettersByLabel = Arrays.asList(
+            pair("getBoolean", ResultSet::getBoolean),
+            pair("getByte", ResultSet::getByte), pair("getShort", ResultSet::getShort), pair("getInt", ResultSet::getInt), pair("getString", ResultSet::getLong),
+            pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble), pair("getBigDecimal", ResultSet::getBigDecimal),
+            pair("getString", ResultSet::getString), //returns different string representation for H2: Time
+            pair("getNString", ResultSet::getNString), // throws not supported excetion in some drivers
+            pair("getDate", ResultSet::getDate), pair("getTime", ResultSet::getTime), pair("getTimestamp", ResultSet::getTimestamp),
+            pair("getArray", ResultSet::getArray),
+            pair("getBlob", ResultSet::getBlob),
+            //pair("getClob", ResultSet::getClob) // TODO: or blob, or clob. LOB value cannot be retrieved twice
+            pair("getRef", ResultSet::getRef), pair("getRowId", ResultSet::getRowId)
+            //pair("getAsciiStream", ResultSet::getAsciiStream), pair("getBinaryStream", ResultSet::getBinaryStream), pair("getCharacterStream", ResultSet::getCharacterStream), pair("getNCharacterStream", ResultSet::getNCharacterStream), pair("getUnicodeStream", ResultSet::getUnicodeStream)
+    );
+
+    private static final Map<Integer, Collection<Entry<String, ThrowingBiFunction<ResultSet, String, ?, SQLException>>>> typedGettersByLabel = new HashMap<>();
     static {
-        typedGettersByLabel.put(Types.BIT, asList(ResultSet::getBoolean, ResultSet::getObject));
-        typedGettersByLabel.put(Types.TINYINT, asList(ResultSet::getByte, ResultSet::getShort, ResultSet::getInt, ResultSet::getLong));
-        typedGettersByLabel.put(Types.SMALLINT, asList(ResultSet::getShort, ResultSet::getInt, ResultSet::getLong));
-        typedGettersByLabel.put(Types.INTEGER, asList(ResultSet::getInt, ResultSet::getLong));
-        typedGettersByLabel.put(Types.BIGINT, asList(ResultSet::getLong));
-        typedGettersByLabel.put(Types.FLOAT, asList(ResultSet::getFloat, ResultSet::getDouble));
-        typedGettersByLabel.put(Types.REAL, asList(ResultSet::getFloat, ResultSet::getDouble));
-        typedGettersByLabel.put(Types.DOUBLE, asList(ResultSet::getFloat, ResultSet::getDouble));
-        typedGettersByLabel.put(Types.NUMERIC, asList(ResultSet::getFloat, ResultSet::getDouble));
-        typedGettersByLabel.put(Types.DECIMAL, asList(ResultSet::getFloat, ResultSet::getDouble, ResultSet::getBigDecimal));
-        typedGettersByLabel.put(Types.CHAR, asList((rs, i) -> {String s = rs.getString(i); return s == null ? null : s.length() > 0 ? s.substring(0, 1) : "";}));
-        typedGettersByLabel.put(Types.VARCHAR, asList(ResultSet::getString));
-        typedGettersByLabel.put(Types.LONGVARCHAR, asList(ResultSet::getString));
-        typedGettersByLabel.put(Types.DATE, asList(ResultSet::getDate));
-        typedGettersByLabel.put(Types.TIME, asList(ResultSet::getTime));
-        typedGettersByLabel.put(Types.TIME_WITH_TIMEZONE, asList(ResultSet::getTime));
-        typedGettersByLabel.put(Types.TIMESTAMP, asList(ResultSet::getTimestamp));
-        typedGettersByLabel.put(Types.TIMESTAMP_WITH_TIMEZONE, asList(ResultSet::getTimestamp));
+        typedGettersByLabel.put(Types.BIT, asList(pair("getBoolean", ResultSet::getBoolean), pair("getObject", ResultSet::getObject)));
+        typedGettersByLabel.put(Types.TINYINT, asList(pair("getByte", ResultSet::getByte), pair("getShort", ResultSet::getShort), pair("getInt", ResultSet::getInt), pair("getLong", ResultSet::getLong)));
+        typedGettersByLabel.put(Types.SMALLINT, asList(pair("getShort", ResultSet::getShort), pair("getInt", ResultSet::getInt), pair("getLong", ResultSet::getLong)));
+        typedGettersByLabel.put(Types.INTEGER, asList(pair("getInt", ResultSet::getInt), pair("getLong", ResultSet::getLong)));
+        typedGettersByLabel.put(Types.BIGINT, asList(pair("getLong", ResultSet::getLong)));
+        typedGettersByLabel.put(Types.FLOAT, asList(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble)));
+        typedGettersByLabel.put(Types.REAL, asList(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble)));
+        typedGettersByLabel.put(Types.DOUBLE, asList(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble)));
+        typedGettersByLabel.put(Types.NUMERIC, asList(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble)));
+        typedGettersByLabel.put(Types.DECIMAL, asList(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble), pair("getBigDecimal", ResultSet::getBigDecimal)));
+        typedGettersByLabel.put(Types.CHAR, asList(pair("getString[0]", (rs, i) -> {String s = rs.getString(i); return s == null ? null : s.length() > 0 ? s.substring(0, 1) : "";})));
+        typedGettersByLabel.put(Types.VARCHAR, asList(pair("getString", ResultSet::getString)));
+        typedGettersByLabel.put(Types.LONGVARCHAR, asList(pair("getString", ResultSet::getString)));
+        typedGettersByLabel.put(Types.DATE, asList(pair("getDate", ResultSet::getDate)));
+        typedGettersByLabel.put(Types.TIME, asList(pair("getTime", ResultSet::getTime)));
+        typedGettersByLabel.put(Types.TIME_WITH_TIMEZONE, asList(pair("getTime", ResultSet::getTime)));
+        typedGettersByLabel.put(Types.TIMESTAMP, asList(pair("getTimestamp", ResultSet::getTimestamp)));
+        typedGettersByLabel.put(Types.TIMESTAMP_WITH_TIMEZONE, asList(pair("getTimestamp", ResultSet::getTimestamp)));
         //getters.put(Types.BINARY, ResultSet::getObject);
         //getters.put(Types.VARBINARY, ResultSet::getInt);
         //getters.put(Types.LONGVARBINARY, ResultSet::getInt);
-        typedGettersByLabel.put(Types.NULL, asList(ResultSet::getObject));
+        typedGettersByLabel.put(Types.NULL, asList(pair("getObject", ResultSet::getObject)));
         //getters.put(Types.OTHER, ResultSet::getObject);
         //getters.put(Types.JAVA_OBJECT, ResultSet::getObject);
         //getters.put(Types.DISTINCT, ResultSet::getInt);
         //getters.put(Types.STRUCT, ResultSet::getInt);
-        typedGettersByLabel.put(Types.ARRAY, asList(ResultSet::getArray));
-        typedGettersByLabel.put(Types.BLOB, asList(ResultSet::getBlob));
-        typedGettersByLabel.put(Types.CLOB, asList(ResultSet::getClob));
-        typedGettersByLabel.put(Types.REF, asList(ResultSet::getRef));
+        typedGettersByLabel.put(Types.ARRAY, asList(pair("getArray", ResultSet::getArray)));
+        typedGettersByLabel.put(Types.BLOB, asList(pair("getBlob", ResultSet::getBlob)));
+        typedGettersByLabel.put(Types.CLOB, asList(pair("getClob", ResultSet::getClob)));
+        typedGettersByLabel.put(Types.REF, asList(pair("getRef", ResultSet::getRef)));
         //getters.put(Types.DATALINK, ResultSet::getObject);
-        typedGettersByLabel.put(Types.BOOLEAN, asList(ResultSet::getBoolean));
-        typedGettersByLabel.put(Types.ROWID, asList(ResultSet::getRowId));
+        typedGettersByLabel.put(Types.BOOLEAN, asList(pair("getBoolean", ResultSet::getBoolean)));
+        typedGettersByLabel.put(Types.ROWID, asList(pair("getRowId", ResultSet::getRowId)));
     }
 
 
@@ -110,11 +156,11 @@ public class AssertUtils {
      * @param actual
      * @param message
      * @param limit
-     * @param advanced - exists for performance reasons
+     * @param mode - exists for performance reasons
      * @return
      * @throws SQLException
      */
-    public static Collection<Map<String, Object>> assertResultSet(String nativeUrl, ResultSet expected, ResultSet actual, String message, int limit, boolean advanced) throws SQLException {
+    public static Collection<Map<String, Object>> assertResultSet(String nativeUrl, ResultSet expected, ResultSet actual, String message, int limit, Collection<ResultSetAssertMode> mode) throws SQLException {
         if (expected == null) {
             assertNull(actual);
             return null;
@@ -130,6 +176,10 @@ public class AssertUtils {
         assertEquals(expected.getType(), actual.getType());
         assertEquals(expected.getConcurrency(), actual.getConcurrency());
 
+        ThrowingBiConsumer<SQLException, SQLException, SQLException> exceptionAssertor = mode.contains(ResultSetAssertMode.RANGE_EXCEPTION_MESSAGE) ?
+                (e, a) -> assertTrue(a.getMessage().contains("is outside of valid range") || a.getMessage().startsWith("Cannot")) :
+                (e, a) -> assertEquals(e.getMessage(), a.getMessage(), message);
+
         int row = 0;
         boolean checkExtraRows = true;
 
@@ -138,21 +188,42 @@ public class AssertUtils {
             assertResultSetNavigationState(nativeUrl, expected, actual);
             Map<String, Object> rowData = new LinkedHashMap<>();
             for (int i = 1; i <= n; i++) {
-                for (ThrowingBiFunction<ResultSet, Integer, ?, SQLException> getter : typedGettersByIndex.getOrDefault(emd.getColumnType(i), Collections.singleton(ResultSet::getObject))) {
-                    assertValues(getter.apply(expected, i), getter.apply(actual, i), format("%s:column#%d:%s", message, i, emd.getColumnName(i)));
+                int columnType = emd.getColumnType(i);
+
+                final Collection<Entry<String, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>>> gettersByIndex;
+                final Collection<Entry<String, ThrowingBiFunction<ResultSet, String, ?, SQLException>>> gettersByLabel;
+                if (mode.contains(ResultSetAssertMode.CALL_ALL_GETTERS)) {
+                    gettersByIndex = allGettersByIndex;
+                    gettersByLabel = allGettersByLabel;
+                } else {
+                    gettersByIndex = typedGettersByIndex.getOrDefault(columnType, singleton(pair("getObject", ResultSet::getObject)));
+                    gettersByLabel = typedGettersByLabel.getOrDefault(columnType, singleton(pair("getObject", ResultSet::getObject)));
                 }
-                for (ThrowingBiFunction<ResultSet, String, ?, SQLException> getter : typedGettersByLabel.getOrDefault(emd.getColumnType(i), Collections.singleton(ResultSet::getObject))) {
+
+                for (Entry<String, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>> getter : gettersByIndex) {
+                    //assertValues(getter.apply(expected, i), getter.apply(actual, i), format("%s:column#%d:%s", message, i, emd.getColumnName(i)));
+                    String errorMessage = format("%s:%s(%d):%s:%s", message, getter.getKey(), i, emd.getColumnName(i), emd.getColumnTypeName(i));
+                    int j = i;
+                    System.out.println("cccccccccccccccccccccccc=" + j + ", " + emd.getColumnName(j) + ", " + getter.getKey());
+                    assertCall(rs -> getter.getValue().apply(rs, j), expected, actual, errorMessage, (e, a) -> assertValues(e, a, errorMessage), exceptionAssertor);
+                }
+
+                for (Entry<String, ThrowingBiFunction<ResultSet, String, ?, SQLException>> getter : gettersByLabel) {
                     int type = emd.getColumnType(i);
                     if (nativeUrl.startsWith("jdbc:derby") && (type == Types.BLOB || type == Types.CLOB)) {
                         continue; // patch for derby that does not allow to retrieve blobs and clobs more than once. The first time they were retrieved by index.
                     }
                     String label = emd.getColumnLabel(i);
                     assertEquals(expected.findColumn(label), actual.findColumn(label));
-                    Object actualValue = getter.apply(actual, label);
-                    assertValues(getter.apply(expected, emd.getColumnLabel(i)), actualValue, format("%s:column#%s", message, emd.getColumnLabel(i)));
+//                    Object actualValue = getter.apply(actual, label);
+//                    assertValues(getter.apply(expected, label), actualValue, format("%s:column#%s", message, emd.getColumnLabel(i)));
+
+                    String errorMessage = format("%s:%s(%s):%s", message, getter.getKey(), emd.getColumnLabel(i), emd.getColumnTypeName(i));
+                    Object actualValue = assertCall(rs -> getter.getValue().apply(rs, label), expected, actual, errorMessage, (e, a) -> assertValues(e, a, errorMessage), exceptionAssertor);
+
                     rowData.put(label, actualValue);
 
-                    if (advanced) {
+                    if (mode.contains(ResultSetAssertMode.CHECK_STATE)) {
                         assertCall(ResultSet::rowUpdated, expected, actual, "rowUpdated");
                         assertCall(ResultSet::rowInserted, expected, actual, "rowInserted");
                         assertCall(ResultSet::rowDeleted, expected, actual, "rowDeleted");
@@ -174,7 +245,7 @@ public class AssertUtils {
             assertFalse(actual.next(), format("%s:actual result set has extra rows", message));
         }
 
-        if (advanced) {
+        if (mode.contains(ResultSetAssertMode.CHECK_STATE)) {
             assertResultSetNavigation(expected, actual);
         }
         return result;
@@ -244,30 +315,95 @@ public class AssertUtils {
         }
     }
 
-    public static void assertValues(Object expected, Object actual, String message) {
+    public static void assertValues(Object expected, Object actual, String message) throws SQLException {
         if (isInteger(expected) && isInteger(actual)) {
             assertEquals(((Number)expected).longValue(), ((Number)actual).longValue(), message);
         } else if (isFloating(expected) && isFloating(actual)) {
             assertEquals(((Number)expected).doubleValue(), ((Number)actual).doubleValue(), 0.001, message);
+        } else if (isArray(expected) && isArray(actual)) {
+            assertArrayEquals(expected, actual, message);
+        } else if(expected instanceof java.sql.Array && actual instanceof java.sql.Array) {
+            assertArrayEquals((java.sql.Array)expected, (java.sql.Array)actual, message);
+        } else if (expected instanceof InputStream && actual instanceof InputStream) {
+            try {
+                Assertions.assertArrayEquals(((InputStream) expected).readAllBytes(), ((InputStream) actual).readAllBytes());
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
+        } else if (expected instanceof Reader && actual instanceof Reader) {
+            assertEquals(readAll((Reader)expected), readAll((Reader)actual));
+        } else if (expected instanceof Blob && actual instanceof Blob) {
+            //Assertions.assertArrayEquals(getBytes((Blob)expected), getBytes((Blob)actual));
+            assertCall(o -> getBytes((Blob)o), expected, actual, "blob", Assertions::assertArrayEquals, (e1, e2) -> {});
+        } else if (expected instanceof Clob && actual instanceof Clob) {
+            assertEquals(getString((Clob)expected), getString((Clob)actual));
+        } else if (expected instanceof NClob && actual instanceof NClob) {
+            assertEquals(getString((NClob)expected), getString((NClob)actual));
         } else {
             assertEquals(expected, actual, message);
         }
+    }
+
+    private static String readAll(Reader reader) {
+        return reader == null ? null : new BufferedReader(reader).lines().collect(Collectors.joining(System.lineSeparator()));
     }
 
     public static boolean isInteger(Object obj) {
         return obj != null && integerTypes.contains(obj.getClass());
     }
 
+    private static byte[] getBytes(Blob blob) throws SQLException {
+        return blob.getBytes(1, (int)blob.length());
+    }
+
+    private static String getString(Clob clob) throws SQLException {
+        return clob.getSubString(1, (int)clob.length());
+    }
+
+    private static String getString(NClob clob) throws SQLException {
+        return clob.getSubString(1, (int)clob.length());
+    }
+
     public static boolean isFloating(Object obj) {
         return obj != null && floatingTypes.contains(obj.getClass());
     }
 
-
-    public static <T, U> void assertCall(ThrowingFunction<T, U, SQLException> f, T nativeObj, T httpObj, String message) throws SQLException {
-        assertCall(f, nativeObj, httpObj, message, (e, a) -> {});
+    public static boolean isArray(Object obj) {
+        return obj != null && obj.getClass().isArray();
     }
 
-    public static <T, U> void assertCall(ThrowingFunction<T, U, SQLException> f, T nativeObj, T httpObj, String message, ThrowingBiConsumer<U, U, SQLException> assertor) throws SQLException {
+    public static void assertArrayEquals(java.sql.Array expected, java.sql.Array actual, String message) {
+        try {
+            assertArrayEquals(expected.getArray(), actual.getArray(), message);
+        } catch (SQLException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public static void assertArrayEquals(Object expected, Object actual, String message) throws SQLException {
+        if (expected == actual) {
+            return;
+        }
+        if (expected == null) {
+            assertNull(actual);
+        } else {
+            assertNotNull(actual);
+        }
+
+        int nExp = Array.getLength(expected);
+        int nAct = Array.getLength(actual);
+        assertEquals(nExp, nAct);
+
+        for (int i = 0; i < nExp; i++) {
+            assertValues(Array.get(expected, i), Array.get(actual, i), message + " #" + i);
+        }
+    }
+
+    public static <T, U> void assertCall(ThrowingFunction<T, U, SQLException> f, T nativeObj, T httpObj, String message) throws SQLException {
+        assertCall(f, nativeObj, httpObj, message, (e, a) -> {}, (e, a) -> assertEquals(e.getMessage(), a.getMessage(), message));
+    }
+
+    public static <T, U> U assertCall(ThrowingFunction<T, U, SQLException> f, T nativeObj, T httpObj, String message, ThrowingBiConsumer<U, U, SQLException> resultAssertor, ThrowingBiConsumer<SQLException, SQLException, SQLException> exceptionAssertor) throws SQLException {
         U nativeRes = null;
         U httpRes = null;
         SQLException nativeEx = null;
@@ -288,12 +424,17 @@ public class AssertUtils {
                 assertNull(httpRes, message);
             } else {
                 assertNotNull(httpRes, message);
-                assertor.accept(nativeRes, httpRes);
+                resultAssertor.accept(nativeRes, httpRes);
             }
-        } else {
+        } else if (!(nativeEx instanceof SQLFeatureNotSupportedException)) { // some getters throw SQLFeatureNotSupportedException while we can handle it at client side, so we ignore this case
+//            if (httpEx == null) {
+//                f.apply(httpObj);
+//            }
             assertNotNull(httpEx, message);
-            assertEquals(nativeEx.getMessage(), httpEx.getMessage(), message);
+            //assertEquals(nativeEx.getMessage(), httpEx.getMessage(), message);
+            exceptionAssertor.accept(nativeEx, httpEx);
         }
+        return httpRes;
     }
 
     public static <T> void assertCall(ThrowingConsumer<T, SQLException> f, T nativeObj, T httpObj, String message) {
@@ -317,8 +458,8 @@ public class AssertUtils {
         }
     }
 
-    public static <T> void assertGettersAndSetters(Collection<Map.Entry<String, Map.Entry<ThrowingFunction<T, ?, SQLException>, ThrowingConsumer<T, SQLException>>>> functions, T nativeObj, T httpObj) throws SQLException {
-        for (Map.Entry<String, Map.Entry<ThrowingFunction<T, ?, SQLException>, ThrowingConsumer<T, SQLException>>> function : functions) {
+    public static <T> void assertGettersAndSetters(Collection<Entry<String, Entry<ThrowingFunction<T, ?, SQLException>, ThrowingConsumer<T, SQLException>>>> functions, T nativeObj, T httpObj) throws SQLException {
+        for (Entry<String, Entry<ThrowingFunction<T, ?, SQLException>, ThrowingConsumer<T, SQLException>>> function : functions) {
             String name = function.getKey();
             ThrowingFunction<T, ?, SQLException> getter = function.getValue().getKey();
             ThrowingConsumer<T, SQLException> setter = function.getValue().getValue();

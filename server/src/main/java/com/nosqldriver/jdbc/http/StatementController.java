@@ -9,6 +9,7 @@ import com.nosqldriver.util.function.ThrowingBiFunction;
 import com.nosqldriver.util.function.ThrowingFunction;
 import spark.Request;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
@@ -26,7 +27,7 @@ public class StatementController extends BaseController {
         String[] urlParts = baseUrl.split("/");
         prefix = urlParts[urlParts.length - 2];
 
-        post(format("%s/query", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), statement -> statement.executeQuery(objectMapper.readValue(req.body(), String.class)), ResultSetProxy::new, "resultset", req.url()));
+        post(format("%s/query", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), statement -> statement.executeQuery(objectMapper.readValue(req.body(), String.class)), resultSetProxyFactory, "resultset", req.url()));
         post(format("%s/execute", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), statement -> exec(req, statement::execute, statement::execute, statement::execute, statement::execute)));
         post(format("%s/update", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), statement -> exec(req, statement::executeUpdate, statement::executeUpdate, statement::executeUpdate, statement::executeUpdate)));
         post(format("%s/large/update", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), statement -> exec(req, statement::executeLargeUpdate, statement::executeLargeUpdate, statement::executeLargeUpdate, statement::executeLargeUpdate)));
@@ -53,7 +54,7 @@ public class StatementController extends BaseController {
 
         post(format("%s/cursorname", baseUrl), JSON, (req, res) -> accept(() -> getStatement(attributes, req), statement -> statement.setCursorName(req.body())));
 
-        get(format("%s/resultset", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), Statement::getResultSet, ResultSetProxy::new, "resultset", req.url()));
+        get(format("%s/resultset", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), Statement::getResultSet, resultSetProxyFactory, "resultset", req.url()));
 
         get(format("%s/updatecount", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), Statement::getUpdateCount));
         get(format("%s/large/updatecount", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), Statement::getLargeUpdateCount));
@@ -77,7 +78,7 @@ public class StatementController extends BaseController {
         post(format("%s/large/batch", baseUrl), JSON, (req, res) -> accept(() -> getStatement(attributes, req), Statement::executeLargeBatch));
         delete(format("%s/batch", baseUrl), JSON, (req, res) -> accept(() -> getStatement(attributes, req), Statement::clearBatch));
 
-        get(format("%s/generatedkeys", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), Statement::getGeneratedKeys, ResultSetProxy::new, "resultset", req.url()));
+        get(format("%s/generatedkeys", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), Statement::getGeneratedKeys, resultSetProxyFactory, "resultset", req.url()));
         get(format("%s/closed", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), Statement::isClosed));
 
         post(format("%s/closeoncompletion", baseUrl), JSON, (req, res) -> accept(() -> getStatement(attributes, req), Statement::closeOnCompletion));
@@ -92,6 +93,7 @@ public class StatementController extends BaseController {
         post(format("%s/enquote/nchar/literal", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), statement -> statement.enquoteNCharLiteral(req.body())));
 
         get(format("%s/wrapper/:class", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), c -> c.isWrapperFor(Class.forName(req.params(":class")))));
+        //TODO: get proxy class from req.params(":class")
         get(format("%s/unwrap/:class", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), c -> c.unwrap(Class.forName(req.params(":class"))), ConnectionProxy::new, "statement", parentUrl(req.url())));
 
         new ResultSetController(attributes, objectMapper, baseUrl + "/resultset/:resultset", true);

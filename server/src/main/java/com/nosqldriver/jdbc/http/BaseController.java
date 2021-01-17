@@ -1,15 +1,27 @@
 package com.nosqldriver.jdbc.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nosqldriver.jdbc.http.model.ConnectionProperties;
+import com.nosqldriver.jdbc.http.model.ResultSetProxy;
 import com.nosqldriver.util.function.ThrowingBiFunction;
 import com.nosqldriver.util.function.ThrowingConsumer;
 import com.nosqldriver.util.function.ThrowingFunction;
 import com.nosqldriver.util.function.ThrowingSupplier;
 import spark.Request;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.sql.Connection;
+import java.sql.ResultSet;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static java.lang.String.format;
 
@@ -17,6 +29,8 @@ abstract class BaseController {
     protected final String JSON = "application/json";
     private final Map<String, Object> attributes;
     protected final ObjectMapper objectMapper;
+    private final Map<String, ConnectionProperties> connectionPropertiesCache = new ConcurrentHashMap<>();
+    private static final ConnectionProperties defaultConnectionProperties = new ConnectionProperties(System.getProperties());
 
     protected BaseController(Map<String, Object> attributes, ObjectMapper objectMapper) {
         this.attributes = attributes;
@@ -33,9 +47,13 @@ abstract class BaseController {
         if (entity == null) {
             return "null";
         }
+        return objectMapper.writeValueAsString(entityToProxy(entity, proxyFactory, prefix, url));
+    }
+
+    protected <T> T entityToProxy(T entity, ThrowingBiFunction<String, T, T, Exception> proxyFactory, String prefix, String url) throws Exception {
         int entityId = System.identityHashCode(entity);
         attributes.put(prefix + "@" + entityId, entity);
-        return objectMapper.writeValueAsString(proxyFactory.apply(format("%s/%s/%d", parentUrl(url), prefix, entityId), entity));
+        return proxyFactory.apply(format("%s/%s/%d", parentUrl(url), prefix, entityId), entity);
     }
 
     protected String parentUrl(String url) {
@@ -131,4 +149,42 @@ abstract class BaseController {
         }
         return str.split(",");
     }
+
+    protected ThrowingFunction<String, ResultSet, Exception> resultSetProxyFactory = new ThrowingFunction<>() {
+        private final Pattern connectionPattern = Pattern.compile("/connection/(\\d+)/");
+
+        @Override
+        public ResultSet apply(String rsUrl) throws Exception {
+            String path = new URL(rsUrl).getPath();
+            Matcher m = connectionPattern.matcher(path);
+            if (!m.find()) {
+                throw new IllegalStateException("Cannot find connection path in url " + rsUrl);
+            }
+            String connectionId = format("connection@%s", m.group(1));
+            String jdbcUrl = ((Connection) attributes.computeIfAbsent(connectionId, s -> {
+                throw new IllegalStateException(format("Connection %s not found", connectionId));
+            })).getMetaData().getURL();
+
+            String db = jdbcUrl.split(":")[1];
+
+            ConnectionProperties connectionProperties = connectionPropertiesCache.computeIfAbsent(db, new Function<>() {
+                @Override
+                public ConnectionProperties apply(String db) {
+                    InputStream in = getClass().getResourceAsStream(format("/conf/%s.properties", db));
+                    if (in == null) {
+                        return defaultConnectionProperties;
+                    }
+                    Properties props = new Properties();
+                    try {
+                        props.load(in);
+                    } catch (IOException e) {
+                        throw new IllegalStateException(e);
+                    }
+                    return new ConnectionProperties(props);
+                }
+            });
+
+            return new ResultSetProxy(rsUrl, connectionProperties);
+        }
+    };
 }

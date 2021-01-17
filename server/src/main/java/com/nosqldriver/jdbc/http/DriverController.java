@@ -2,6 +2,7 @@ package com.nosqldriver.jdbc.http;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nosqldriver.jdbc.http.json.ObjectMapperFactory;
 import com.nosqldriver.jdbc.http.model.ConnectionInfo;
 import com.nosqldriver.jdbc.http.model.ConnectionProxy;
 import com.nosqldriver.jdbc.http.model.TransportableException;
@@ -130,7 +131,7 @@ public class DriverController extends BaseController {
         }
 
         Map<String, Object> attributes = new HashMap<>();
-        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectMapper objectMapper = ObjectMapperFactory.createObjectMapper();
         new DriverController(attributes, objectMapper);
         System.out.println("ready");
     }

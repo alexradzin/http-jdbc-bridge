@@ -19,7 +19,7 @@ public class TransportableResultSetMetaData extends WrapperProxy implements Resu
 
     @JsonCreator
     public TransportableResultSetMetaData(@JsonProperty("entityUrl") String entityUrl, @JsonProperty("columns") List<ColumnMetaData> columns) {
-        super(entityUrl);
+        super(entityUrl, ResultSetMetaData.class);
         this.columns = columns;
         int i = 1;
         for(ColumnMetaData column : columns) {
@@ -29,7 +29,7 @@ public class TransportableResultSetMetaData extends WrapperProxy implements Resu
     }
 
     public TransportableResultSetMetaData(String entityUrl, ResultSetMetaData md) throws SQLException {
-        super(entityUrl);
+        super(entityUrl, ResultSetMetaData.class);
         this.columns = getColumns(md);
     }
 

@@ -32,7 +32,7 @@ import static java.lang.String.format;
 public class ConnectionProxy extends WrapperProxy implements Connection {
     @JsonCreator
     public ConnectionProxy(@JsonProperty("entityUrl") String entityUrl) {
-        super(entityUrl);
+        super(entityUrl, Connection.class);
     }
 
     @Override

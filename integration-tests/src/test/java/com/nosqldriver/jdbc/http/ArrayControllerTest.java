@@ -60,7 +60,7 @@ public class ArrayControllerTest extends ControllerTestBase {
 
         @Override
         public void accept(ResultSet expected, ResultSet actual) throws SQLException {
-            AssertUtils.assertResultSet(nativeUrl, expected, actual, message, limit, false);
+            AssertUtils.assertResultSet(nativeUrl, expected, actual, message, limit, Collections.emptyList());
         }
     }
 
@@ -182,7 +182,7 @@ public class ArrayControllerTest extends ControllerTestBase {
         }
 
         for (ThrowingFunction<Array, T, SQLException> function : functions) {
-            assertCall(function, nativeArray, httpArray, comment, assertor);
+            assertCall(function, nativeArray, httpArray, comment, assertor, (e, a) -> assertEquals(e.getMessage(), a.getMessage()));
         }
     }
 }

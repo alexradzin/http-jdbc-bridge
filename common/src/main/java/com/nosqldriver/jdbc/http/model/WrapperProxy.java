@@ -7,8 +7,8 @@ import static com.nosqldriver.jdbc.http.Util.pathParameter;
 import static java.lang.String.format;
 
 abstract class WrapperProxy extends EntityProxy implements Wrapper {
-    protected WrapperProxy(String entityUrl) {
-        super(entityUrl);
+    protected WrapperProxy(String entityUrl, Class<?> clazz) {
+        super(entityUrl, clazz);
     }
 
     @Override

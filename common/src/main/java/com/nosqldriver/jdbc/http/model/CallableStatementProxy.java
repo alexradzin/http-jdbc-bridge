@@ -25,7 +25,7 @@ import java.util.Map;
 public class CallableStatementProxy extends PreparedStatementProxy implements CallableStatement {
     @JsonCreator
     public CallableStatementProxy(@JsonProperty("entityUrl") String entityUrl) {
-        super(entityUrl);
+        super(entityUrl, CallableStatement.class);
     }
 
     @Override

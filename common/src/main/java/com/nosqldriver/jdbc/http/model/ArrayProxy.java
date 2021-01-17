@@ -17,11 +17,11 @@ public class ArrayProxy extends EntityProxy implements Array {
 
     @JsonCreator
     public ArrayProxy(@JsonProperty("entityUrl") String entityUrl) {
-        super(entityUrl);
+        super(entityUrl, Array.class);
     }
 
     public ArrayProxy(String entityUrl, Array array) throws SQLException {
-        super(entityUrl);
+        super(entityUrl, Array.class);
         this.baseTypeName = array.getBaseTypeName();
         this.baseType = array.getBaseType();
     }

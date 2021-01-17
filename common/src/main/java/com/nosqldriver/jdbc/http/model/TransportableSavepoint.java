@@ -42,7 +42,7 @@ public class TransportableSavepoint extends EntityProxy implements Savepoint {
 
     @JsonCreator
     public TransportableSavepoint(@JsonProperty("entityUrl") String entityUrl, @JsonProperty("savepointId") int savepointId, @JsonProperty("savepointName") String savepointName) {
-        super(entityUrl);
+        super(entityUrl, Savepoint.class);
         this.savepointId = savepointId;
         this.savepointName = savepointName;
     }

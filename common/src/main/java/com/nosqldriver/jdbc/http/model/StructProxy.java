@@ -15,7 +15,7 @@ public class StructProxy extends EntityProxy implements Struct {
 
     @JsonCreator
     public StructProxy(@JsonProperty("entityUrl") String entityUrl) {
-        super(entityUrl);
+        super(entityUrl, Struct.class);
     }
 
     public StructProxy(String entityUrl, Struct struct) throws SQLException {
@@ -23,7 +23,7 @@ public class StructProxy extends EntityProxy implements Struct {
     }
 
     public StructProxy(String entityUrl, String sqlTypeName, Object[] attributes) {
-        super(entityUrl);
+        super(entityUrl, Struct.class);
         this.sqlTypeName = sqlTypeName;
         this.attributes = attributes;
     }

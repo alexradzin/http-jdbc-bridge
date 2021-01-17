@@ -31,7 +31,11 @@ import static java.lang.String.format;
 public class PreparedStatementProxy extends StatementProxy implements PreparedStatement {
     @JsonCreator
     public PreparedStatementProxy(@JsonProperty("entityUrl") String entityUrl) {
-        super(entityUrl);
+        this(entityUrl, PreparedStatement.class);
+    }
+
+    protected PreparedStatementProxy(String entityUrl, Class<?> clazz) {
+        super(entityUrl, clazz);
     }
 
     @Override
