@@ -19,7 +19,10 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.sql.Timestamp;
 import java.sql.Types;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -335,10 +338,18 @@ public class AssertUtils {
         } else if (expected instanceof Blob && actual instanceof Blob) {
             //Assertions.assertArrayEquals(getBytes((Blob)expected), getBytes((Blob)actual));
             assertCall(o -> getBytes((Blob)o), expected, actual, "blob", Assertions::assertArrayEquals, (e1, e2) -> {});
+        } else if (expected instanceof NClob && actual instanceof NClob) {
+            assertEquals(getString((NClob) expected), getString((NClob) actual));
         } else if (expected instanceof Clob && actual instanceof Clob) {
             assertEquals(getString((Clob)expected), getString((Clob)actual));
-        } else if (expected instanceof NClob && actual instanceof NClob) {
-            assertEquals(getString((NClob)expected), getString((NClob)actual));
+        } else if (!(expected instanceof Timestamp) && actual instanceof Timestamp) {
+            assertNotNull(expected);
+            String expStr = expected.toString();
+            try {
+                assertEquals(new SimpleDateFormat("yyyy-MM-dd HH:mm:ssX").parse(expStr).getTime(), ((Timestamp) actual).getTime());
+            } catch (ParseException e) {
+                throw new IllegalArgumentException(e);
+            }
         } else {
             assertEquals(expected, actual, message);
         }

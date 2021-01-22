@@ -26,9 +26,11 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -63,52 +65,38 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     private static final Map<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, ? extends Object, SQLException>> generalCastors;
 
     static {
-//        Map<Class<?>, Function<Object, byte[]>> toBytes =
-//                Stream.of(
-//                        new SimpleEntry<Class<?>, Function<Object, byte[]>>(Boolean.class, o -> ByteBuffer.allocate(1).put((byte)((boolean)o ? 1 : 0)).array()),
-//                        new SimpleEntry<Class<?>, Function<Object, byte[]>>(String.class, o -> ((String)o).getBytes()),
-//                        new SimpleEntry<Class<?>, Function<Object, byte[]>>(Float.class, i -> ByteBuffer.allocate(4).putFloat(((Number) i).floatValue()).array()),
-//                        new SimpleEntry<Class<?>, Function<Object, byte[]>>(Double.class, i -> ByteBuffer.allocate(8).putDouble(((Number) i).doubleValue()).array()),
-//                        new SimpleEntry<Class<?>, Function<Object, byte[]>>(Character.class, i -> ByteBuffer.allocate(2).putChar(((Character) i)).array()),
-//                        new SimpleEntry<Class<?>, Function<Object, byte[]>>(Byte.class, i -> ByteBuffer.allocate(1).put(((Number) i).byteValue()).array()),
-//                        new SimpleEntry<Class<?>, Function<Object, byte[]>>(Short.class, i -> ByteBuffer.allocate(2).putShort(((Number) i).shortValue()).array()),
-//                        new SimpleEntry<Class<?>, Function<Object, byte[]>>(Integer.class, i -> ByteBuffer.allocate(4).putInt(((Number) i).intValue()).array()),
-//                        new SimpleEntry<Class<?>, Function<Object, byte[]>>(Long.class, i -> ByteBuffer.allocate(8).putLong(((Number) i).longValue()).array())
-//                ).collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue));
-
-
         Map<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, ? extends Object, SQLException>> map = new HashMap<>();
         for (SimpleEntry<Class<?>, ? extends ThrowingTriFunction<Object, Class<?>, Class<?>, ? extends Object, SQLException>> classSimpleEntry : Arrays.asList(
-                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, Boolean, SQLException>>(Boolean.class, (o, f, t) -> {
-                    if (o == null) {
-                        return false;
-                    }
-                    if (o instanceof Boolean) {
-                        return (boolean)o;
-                    }
-                    if (o instanceof Number) {
-                        return ((Number)o).longValue() != 0;
-                    }
-                    if (o instanceof String) {
-                        return true;
-                    }
-                    throw new SQLException(format("Cannot convert %s to BOOLEAN", o));
-                }),
-                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, Boolean, SQLException>>(boolean.class, (o, f, t) -> {
-                    if (o == null) {
-                        return false;
-                    }
-                    if (o instanceof Boolean) {
-                        return (boolean)o;
-                    }
-                    if (o instanceof Number) {
-                        return ((Number)o).longValue() != 0;
-                    }
-                    if (o instanceof String) {
-                        return true;
-                    }
-                    throw new SQLException(format("Cannot convert %s to BOOLEAN", o));
-                }),
+//                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, Boolean, SQLException>>(Boolean.class, (o, f, t) -> {
+//                    if (o == null) {
+//                        return false;
+//                    }
+//                    if (o instanceof Boolean) {
+//                        return (boolean)o;
+//                    }
+//                    if (o instanceof Number) {
+//                        return ((Number)o).longValue() != 0;
+//                    }
+//                    if (o instanceof String) {
+//                        return true;
+//                    }
+//                    throw new SQLException(format("Cannot convert %s to BOOLEAN", o));
+//                }),
+//                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, Boolean, SQLException>>(boolean.class, (o, f, t) -> {
+//                    if (o == null) {
+//                        return false;
+//                    }
+//                    if (o instanceof Boolean) {
+//                        return (boolean)o;
+//                    }
+//                    if (o instanceof Number) {
+//                        return ((Number)o).longValue() != 0;
+//                    }
+//                    if (o instanceof String) {
+//                        return true;
+//                    }
+//                    throw new SQLException(format("Cannot convert %s to BOOLEAN", o));
+//                }),
 
 
                 new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, Byte, SQLException>>(Byte.class, new NumericCastor<>(e -> inRange(e, Byte.MIN_VALUE, Byte.MAX_VALUE), e -> (byte)Math.round(((Number) e).doubleValue()), b -> (byte)(b ? 1 : 0), Byte.class)),
@@ -125,7 +113,7 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
                 new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, Float, SQLException>>(float.class, new NumericCastor<>(e -> inRange(e, -Float.MAX_VALUE, Float.MAX_VALUE), e -> ((Number) e).floatValue(), f -> (f ? 1.f : 0.f), float.class)),
                 new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, Double, SQLException>>(Double.class, new NumericCastor<>(e -> inRange(e, -Double.MAX_VALUE, Double.MAX_VALUE), e -> ((Number) e).doubleValue(), f -> (f ? 1. : 0.), Double.class)),
                 new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, Double, SQLException>>(double.class, new NumericCastor<>(e -> inRange(e, -Double.MAX_VALUE, Double.MAX_VALUE), e -> ((Number) e).doubleValue(), f -> (f ? 1. : 0.), double.class)),
-                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, ? extends Array, SQLException>>(Array.class, (obj, f, t) -> new ProxyFactory<>(ArrayProxy.class, o -> o instanceof Array ? (Array)o : new TransportableArray(null, 0, new Object[]{o})).apply(obj)),
+                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, ? extends Array, SQLException>>(Array.class, (obj, f, t) -> new ProxyFactory<>(ArrayProxy.class, o -> o == null || o instanceof Array ? (Array)o : new TransportableArray(null, 0, new Object[]{o})).apply(obj)),
 
                 new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, ? extends Time, SQLException>>(Time.class, (obj, f, t) -> {
                     if (obj instanceof Time) {
@@ -189,7 +177,23 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
                         return new Timestamp(cTimestamp.getTimeInMillis());
                     }
                     throw new SQLException(format("Cannot cast %s to timestamp", obj));
-                })
+                })//,
+//                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, String, SQLException>>(String.class, (obj, f, t) -> {
+//                    if (obj == null) {
+//                        return null;
+//                    }
+//                    if (obj instanceof Array) {
+//                        Object a = ((Array)obj).getArray();
+//                        int n = java.lang.reflect.Array.getLength(a);
+//                        List<Object> list = new ArrayList<>(n);
+//                        for (int i = 0; i < n; i++) {
+//                            list.add(java.lang.reflect.Array.get(a, i));
+//                        }
+//                        return list.toString();
+//                    }
+//
+//                    return obj.toString();
+//                })
 
 //                new SimpleEntry<Class<?>, ThrowingFunction<Object, Blob, SQLException>>(Blob.class, new ProxyFactory<>(Blob.class, o -> new TransportableBlob(toBytes.get(o.getClass()).apply(o))))
 //                new SimpleEntry<Class<?>, ThrowingFunction<Object, Clob, SQLException>>(Clob.class, new ProxyFactory<>(Clob.class, o -> new TransportableClob(o == null ? null : o instanceof Boolean ? toBooleanString((boolean)o) : o.toString()))),
@@ -281,6 +285,9 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
         casters.put(Blob.class, (o, f, t) -> connectionProperties.asBlob(o, f));
         casters.put(Clob.class, (o, f, t) -> connectionProperties.asClob(o, f));
         casters.put(NClob.class, (o, f, t) -> connectionProperties.asNClob(o, f));
+        casters.put(Timestamp.class, (o, f, t) -> connectionProperties.asTimestamp(o, f));
+        casters.put(Boolean.class, (o, f, t) -> connectionProperties.asBoolean(o));
+        casters.put(boolean.class, (o, f, t) -> connectionProperties.asBoolean(o));
     }
 
     @Override
@@ -1434,19 +1441,30 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @SuppressWarnings("unchecked")
     public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
         connectionProperties.throwIfUnsupported("getObject");
-        return rowData == null ? connector.get(format("%s/object/index/%d/%s", entityUrl, columnIndex, type), type) : cast(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), type, getTypeNameOfColumn(columnIndex));
+        return rowData == null ? connector.get(format("%s/object/index/%d/%s", entityUrl, columnIndex, type), type) : cast(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), type, columnIndex);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
         connectionProperties.throwIfUnsupported("getObject");
-        return rowData == null ? connector.get(format("%s/object/label/%s/%s", entityUrl, columnLabel, type), type) : cast(rowData.getRow()[getIndex(columnLabel)], getClassOfColumn(columnLabel), type, getTypeNameOfColumn(columnLabel));
+        return rowData == null ? connector.get(format("%s/object/label/%s/%s", entityUrl, columnLabel, type), type) : cast(rowData.getRow()[getIndex(columnLabel)], getClassOfColumn(columnLabel), type, getDataOfColumnIndex(columnLabel));
     }
 
     public ResultSetProxy withStatement(Statement statement) {
         this.statement = statement;
         return this;
+    }
+
+    private int getDataOfColumnIndex(String columnLabel) throws SQLException {
+        ResultSetMetaData md = getMetaData();
+        int n = md.getColumnCount();
+        for (int i = 1; i <= n; i++) {
+            if (columnLabel.equals(md.getColumnLabel(i))) {
+                return i;
+            }
+        }
+        throw new SQLException(format("Column %s does not exist", columnLabel));
     }
 
     private <T> T getDataOfColumn(String columnLabel, ThrowingBiFunction<ResultSetMetaData, Integer, T, SQLException> getter) throws SQLException {
@@ -1490,14 +1508,15 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
         connectionProperties.throwIfUnsupported("get" + clazz.getSimpleName());
         return rowData == null || columnIndex == null ?
                 connector.get(format("%s/%s/%s/%s", entityUrl, typeName, markerName, columnMarker), clazz) :
-                cast(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), clazz, getTypeNameOfColumn(columnIndex));
+                cast(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), clazz, columnIndex);
     }
 
     private Integer getIndex(String columnLabel) throws SQLException {
         return ((TransportableResultSetMetaData)getMetaData()).getIndex(columnLabel);
     }
 
-    private <T> T cast(Object obj, Class<?> from, Class<T> to, String typeName) throws SQLException {
+    private <T> T cast(Object obj, Class<?> from, Class<T> to, int columnIndex) throws SQLException {
+        String typeName = getTypeNameOfColumn(columnIndex);
         wasNull = false;
         if (obj != null && to.isAssignableFrom(obj.getClass())) {
             return (T)obj;
@@ -1523,6 +1542,18 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
                 }
                 if (obj instanceof Boolean) {
                     return (T)(toBooleanString((boolean)obj));
+                }
+                if (obj instanceof Timestamp) {
+                    return (T)connectionProperties.asString((Timestamp)obj, getMetaData().getColumnType(columnIndex));
+                }
+                if (obj instanceof Array) {
+                    Object a = ((Array)obj).getArray();
+                    int n = java.lang.reflect.Array.getLength(a);
+                    List<Object> list = new ArrayList<>(n);
+                    for (int i = 0; i < n; i++) {
+                        list.add(java.lang.reflect.Array.get(a, i));
+                    }
+                    return (T)list.toString();
                 }
                 return (T)obj.toString();
             }
