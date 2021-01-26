@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.nosqldriver.util.function.ThrowingBiFunction;
-import com.nosqldriver.util.function.ThrowingTriFunction;
+import com.nosqldriver.util.function.ThrowingFunction;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -62,142 +62,26 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
         throw new IllegalArgumentException(format("Value '%s' is outside of valid range for type %s", o, BigDecimal.class));
     };
 
-    private static final Map<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, ? extends Object, SQLException>> generalCastors;
+    private static final Map<Class<?>, ThrowingFunction<CastorArg, ? extends Object, SQLException>> generalCastors;
 
     static {
-        Map<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, ? extends Object, SQLException>> map = new HashMap<>();
-        for (SimpleEntry<Class<?>, ? extends ThrowingTriFunction<Object, Class<?>, Class<?>, ? extends Object, SQLException>> classSimpleEntry : Arrays.asList(
-//                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, Boolean, SQLException>>(Boolean.class, (o, f, t) -> {
-//                    if (o == null) {
-//                        return false;
-//                    }
-//                    if (o instanceof Boolean) {
-//                        return (boolean)o;
-//                    }
-//                    if (o instanceof Number) {
-//                        return ((Number)o).longValue() != 0;
-//                    }
-//                    if (o instanceof String) {
-//                        return true;
-//                    }
-//                    throw new SQLException(format("Cannot convert %s to BOOLEAN", o));
-//                }),
-//                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, Boolean, SQLException>>(boolean.class, (o, f, t) -> {
-//                    if (o == null) {
-//                        return false;
-//                    }
-//                    if (o instanceof Boolean) {
-//                        return (boolean)o;
-//                    }
-//                    if (o instanceof Number) {
-//                        return ((Number)o).longValue() != 0;
-//                    }
-//                    if (o instanceof String) {
-//                        return true;
-//                    }
-//                    throw new SQLException(format("Cannot convert %s to BOOLEAN", o));
-//                }),
+        Map<Class<?>, ThrowingFunction<CastorArg, ? extends Object, SQLException>> map = new HashMap<>();
+        for (SimpleEntry<Class<?>, ? extends ThrowingFunction<CastorArg, ? extends Object, SQLException>> classSimpleEntry : Arrays.asList(
+                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Byte, SQLException>>(Byte.class, new NumericCastor<>(e -> inRange(e, Byte.MIN_VALUE, Byte.MAX_VALUE), e -> (byte)Math.round(((Number) e).doubleValue()), b -> (byte)(b ? 1 : 0), Byte.class)),
+                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Byte, SQLException>>(byte.class, new NumericCastor<>(e -> inRange(e, Byte.MIN_VALUE, Byte.MAX_VALUE), e -> (byte)Math.round(((Number) e).doubleValue()), b -> (byte)(b ? 1 : 0), byte.class)),
+                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Short, SQLException>>(Short.class, new NumericCastor<>(e -> inRange(e, Short.MIN_VALUE, Short.MAX_VALUE), e -> (short)Math.round(((Number) e).doubleValue()), s -> (short)(s ? 1 : 0), Short.class)),
+                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Short, SQLException>>(short.class, new NumericCastor<>(e -> inRange(e, Short.MIN_VALUE, Short.MAX_VALUE), e -> (short)Math.round(((Number) e).doubleValue()), s -> (short)(s ? 1 : 0), short.class)),
+                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Integer, SQLException>>(Integer.class, new NumericCastor<>(e -> inRange(e, Integer.MIN_VALUE, Integer.MAX_VALUE), e -> (int)Math.round(((Number) e).doubleValue()), i -> (i ? 1 : 0), Integer.class)),
+                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Integer, SQLException>>(int.class, new NumericCastor<>(e -> inRange(e, Integer.MIN_VALUE, Integer.MAX_VALUE), e -> (int)Math.round(((Number) e).doubleValue()), i -> (i ? 1 : 0), int.class)),
 
-
-                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, Byte, SQLException>>(Byte.class, new NumericCastor<>(e -> inRange(e, Byte.MIN_VALUE, Byte.MAX_VALUE), e -> (byte)Math.round(((Number) e).doubleValue()), b -> (byte)(b ? 1 : 0), Byte.class)),
-                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, Byte, SQLException>>(byte.class, new NumericCastor<>(e -> inRange(e, Byte.MIN_VALUE, Byte.MAX_VALUE), e -> (byte)Math.round(((Number) e).doubleValue()), b -> (byte)(b ? 1 : 0), byte.class)),
-                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, Short, SQLException>>(Short.class, new NumericCastor<>(e -> inRange(e, Short.MIN_VALUE, Short.MAX_VALUE), e -> (short)Math.round(((Number) e).doubleValue()), s -> (short)(s ? 1 : 0), Short.class)),
-                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, Short, SQLException>>(short.class, new NumericCastor<>(e -> inRange(e, Short.MIN_VALUE, Short.MAX_VALUE), e -> (short)Math.round(((Number) e).doubleValue()), s -> (short)(s ? 1 : 0), short.class)),
-                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, Integer, SQLException>>(Integer.class, new NumericCastor<>(e -> inRange(e, Integer.MIN_VALUE, Integer.MAX_VALUE), e -> (int)Math.round(((Number) e).doubleValue()), i -> (i ? 1 : 0), Integer.class)),
-                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, Integer, SQLException>>(int.class, new NumericCastor<>(e -> inRange(e, Integer.MIN_VALUE, Integer.MAX_VALUE), e -> (int)Math.round(((Number) e).doubleValue()), i -> (i ? 1 : 0), int.class)),
-
-                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, Long, SQLException>>(Long.class, new NumericCastor<>(e -> inRange(e, Long.MIN_VALUE, Long.MAX_VALUE), e -> Math.round(((Number) e).doubleValue()), i -> (i ? 1L : 0L), Long.class)),
-                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, Long, SQLException>>(long.class, new NumericCastor<>(e -> inRange(e, Long.MIN_VALUE, Long.MAX_VALUE), e -> Math.round(((Number) e).doubleValue()), i -> (i ? 1L : 0L), long.class)),
-                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, Object, SQLException>>(BigDecimal.class, (e, f, t) -> e == null ? null : Optional.ofNullable(bigDecimalCasters.get(e.getClass())).orElse(bigDecimalUnacceptable).apply(e)),
-                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, Float, SQLException>>(Float.class, new NumericCastor<>(e -> inRange(e, -Float.MAX_VALUE, Float.MAX_VALUE), e -> ((Number) e).floatValue(), f -> (f ? 1.f : 0.f), Float.class)),
-                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, Float, SQLException>>(float.class, new NumericCastor<>(e -> inRange(e, -Float.MAX_VALUE, Float.MAX_VALUE), e -> ((Number) e).floatValue(), f -> (f ? 1.f : 0.f), float.class)),
-                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, Double, SQLException>>(Double.class, new NumericCastor<>(e -> inRange(e, -Double.MAX_VALUE, Double.MAX_VALUE), e -> ((Number) e).doubleValue(), f -> (f ? 1. : 0.), Double.class)),
-                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, Double, SQLException>>(double.class, new NumericCastor<>(e -> inRange(e, -Double.MAX_VALUE, Double.MAX_VALUE), e -> ((Number) e).doubleValue(), f -> (f ? 1. : 0.), double.class)),
-                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, ? extends Array, SQLException>>(Array.class, (obj, f, t) -> new ProxyFactory<>(ArrayProxy.class, o -> o == null || o instanceof Array ? (Array)o : new TransportableArray(null, 0, new Object[]{o})).apply(obj)),
-
-                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, ? extends Time, SQLException>>(Time.class, (obj, f, t) -> {
-                    if (obj instanceof Time) {
-                        return (Time)obj;
-                    }
-                    if (obj instanceof Timestamp) {
-                        Calendar c = Calendar.getInstance();
-                        c.setTimeInMillis(((Timestamp)obj).getTime());
-                        Calendar cTime = Calendar.getInstance();
-                        cTime.set(Calendar.YEAR, 1970);
-                        cTime.set(Calendar.MONTH, Calendar.JANUARY);
-                        cTime.set(Calendar.DAY_OF_MONTH, 1);
-                        cTime.set(Calendar.HOUR_OF_DAY, c.get(Calendar.HOUR_OF_DAY));
-                        cTime.set(Calendar.MINUTE, c.get(Calendar.MINUTE));
-                        cTime.set(Calendar.SECOND, c.get(Calendar.SECOND));
-                        cTime.set(Calendar.MILLISECOND, c.get(Calendar.MILLISECOND));
-                        return new Time(cTime.getTimeInMillis());
-                    }
-                    throw new SQLException(format("Cannot cast %s to time", obj));
-                }),
-
-                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, ? extends Date, SQLException>>(Date.class, (obj, f, t) -> {
-                    if (obj instanceof Date) {
-                        return (Date)obj;
-                    }
-//                    if (obj instanceof Time) {
-//                        return new Date(((Time) obj).getTime());
-//                    }
-                    if (obj instanceof Timestamp) {
-                        Timestamp ts = (Timestamp)obj;
-                        Calendar c = Calendar.getInstance();
-                        c.setTimeInMillis(ts.getTime());
-                        Calendar cDate = Calendar.getInstance();
-                        cDate.set(Calendar.YEAR, c.get(Calendar.YEAR));
-                        cDate.set(Calendar.MONTH, c.get(Calendar.MONTH));
-                        cDate.set(Calendar.DAY_OF_MONTH, c.get(Calendar.DAY_OF_MONTH));
-                        cDate.set(Calendar.HOUR_OF_DAY, 0);
-                        cDate.set(Calendar.MINUTE, 0);
-                        cDate.set(Calendar.SECOND, 0);
-                        cDate.set(Calendar.MILLISECOND, 0);
-                        return new Date(cDate.getTimeInMillis());
-                    }
-                    throw new SQLException(format("Cannot cast %s to date", obj));
-                }),
-
-                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, ? extends Timestamp, SQLException>>(Timestamp.class, (obj, f, t) -> {
-                    if (obj instanceof Timestamp) {
-                        return (Timestamp)obj;
-                    }
-                    if (obj instanceof Date) {
-                        return new Timestamp(((Date)obj).getTime());
-                    }
-                    if (obj instanceof Time) {
-                        Calendar c = Calendar.getInstance();
-                        c.setTimeInMillis(((Time)obj).getTime());
-                        Calendar cTimestamp = Calendar.getInstance();
-                        cTimestamp.set(Calendar.HOUR_OF_DAY, c.get(Calendar.HOUR_OF_DAY));
-                        cTimestamp.set(Calendar.MINUTE, c.get(Calendar.MINUTE));
-                        cTimestamp.set(Calendar.SECOND, c.get(Calendar.SECOND));
-                        cTimestamp.set(Calendar.MILLISECOND, c.get(Calendar.MILLISECOND));
-                        return new Timestamp(cTimestamp.getTimeInMillis());
-                    }
-                    throw new SQLException(format("Cannot cast %s to timestamp", obj));
-                })//,
-//                new SimpleEntry<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, String, SQLException>>(String.class, (obj, f, t) -> {
-//                    if (obj == null) {
-//                        return null;
-//                    }
-//                    if (obj instanceof Array) {
-//                        Object a = ((Array)obj).getArray();
-//                        int n = java.lang.reflect.Array.getLength(a);
-//                        List<Object> list = new ArrayList<>(n);
-//                        for (int i = 0; i < n; i++) {
-//                            list.add(java.lang.reflect.Array.get(a, i));
-//                        }
-//                        return list.toString();
-//                    }
-//
-//                    return obj.toString();
-//                })
-
-//                new SimpleEntry<Class<?>, ThrowingFunction<Object, Blob, SQLException>>(Blob.class, new ProxyFactory<>(Blob.class, o -> new TransportableBlob(toBytes.get(o.getClass()).apply(o))))
-//                new SimpleEntry<Class<?>, ThrowingFunction<Object, Clob, SQLException>>(Clob.class, new ProxyFactory<>(Clob.class, o -> new TransportableClob(o == null ? null : o instanceof Boolean ? toBooleanString((boolean)o) : o.toString()))),
-//                new SimpleEntry<Class<?>, ThrowingFunction<Object, NClob, SQLException>>(NClob.class, new ProxyFactory<>(NClob.class, o -> new TransportableClob(o == null ? null : o instanceof Boolean ? toBooleanString((boolean)o) : o.toString())))
+                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Long, SQLException>>(Long.class, new NumericCastor<>(e -> inRange(e, Long.MIN_VALUE, Long.MAX_VALUE), e -> Math.round(((Number) e).doubleValue()), i -> (i ? 1L : 0L), Long.class)),
+                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Long, SQLException>>(long.class, new NumericCastor<>(e -> inRange(e, Long.MIN_VALUE, Long.MAX_VALUE), e -> Math.round(((Number) e).doubleValue()), i -> (i ? 1L : 0L), long.class)),
+                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Object, SQLException>>(BigDecimal.class, arg -> arg.getObj() == null ? null : Optional.ofNullable(bigDecimalCasters.get(arg.getObj().getClass())).orElse(bigDecimalUnacceptable).apply(arg.getObj())),
+                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Float, SQLException>>(Float.class, new NumericCastor<>(e -> inRange(e, -Float.MAX_VALUE, Float.MAX_VALUE), e -> ((Number) e).floatValue(), f -> (f ? 1.f : 0.f), Float.class)),
+                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Float, SQLException>>(float.class, new NumericCastor<>(e -> inRange(e, -Float.MAX_VALUE, Float.MAX_VALUE), e -> ((Number) e).floatValue(), f -> (f ? 1.f : 0.f), float.class)),
+                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Double, SQLException>>(Double.class, new NumericCastor<>(e -> inRange(e, -Double.MAX_VALUE, Double.MAX_VALUE), e -> ((Number) e).doubleValue(), f -> (f ? 1. : 0.), Double.class)),
+                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Double, SQLException>>(double.class, new NumericCastor<>(e -> inRange(e, -Double.MAX_VALUE, Double.MAX_VALUE), e -> ((Number) e).doubleValue(), f -> (f ? 1. : 0.), double.class)),
+                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, ? extends Array, SQLException>>(Array.class, arg -> new ProxyFactory<>(ArrayProxy.class, o -> o == null || o instanceof Array ? (Array)o : new TransportableArray(null, 0, new Object[]{o})).apply(arg.getObj()))
         )) {
             if (map.put(classSimpleEntry.getKey(), classSimpleEntry.getValue()) != null) {
                 throw new IllegalStateException("Duplicate key");
@@ -206,9 +90,39 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
         generalCastors = map;
     }
 
-    private final Map<Class<?>, ThrowingTriFunction<Object, Class<?>, Class<?>, ? extends Object, SQLException>> casters;
+    private static class CastorArg {
+        private final Object obj;
+        private final Class<?> from;
+        private final Class<?> to;
+        private final int sqlType;
 
-    private static class NumericCastor<T> implements ThrowingTriFunction<Object, Class<?>, Class<?>, T, SQLException> {
+        public CastorArg(Object obj, Class<?> from, Class<?> to, int sqlType) {
+            this.obj = obj;
+            this.from = from;
+            this.to = to;
+            this.sqlType = sqlType;
+        }
+
+        public Object getObj() {
+            return obj;
+        }
+
+        public Class<?> getFrom() {
+            return from;
+        }
+
+        public Class<?> getTo() {
+            return to;
+        }
+
+        public int getSqlType() {
+            return sqlType;
+        }
+    }
+
+    private final Map<Class<?>, ThrowingFunction<CastorArg, ? extends Object, SQLException>> casters;
+
+    private static class NumericCastor<T> implements ThrowingFunction<CastorArg, T, SQLException> {
         private final Predicate<Object> checker;
         private final Function<Object, T> actualCastor;
         private final Function<Boolean, T> booleanCastor;
@@ -223,9 +137,10 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
 
         @Override
-        public T apply(Object o, Class<?> from, Class<?> to) throws SQLException {
+        public T apply(CastorArg arg) throws SQLException {
+            Object o = arg.getObj();
             if (o == null) {
-                return (T)defaultValues.get(to);
+                return (T)defaultValues.get(arg.getTo());
             }
             if (o instanceof Boolean) {
                 return booleanCastor.apply((Boolean)o);
@@ -282,12 +197,15 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
         casters.put(Short.class, new NumericCastor<>(e -> inRange(e, Short.MIN_VALUE, Short.MAX_VALUE), e -> (short)connectionProperties.toInteger(((Number) e).doubleValue()), b -> (short)(b ? 1 : 0), Short.class));
         casters.put(Integer.class, new NumericCastor<>(e -> inRange(e, Integer.MIN_VALUE, Integer.MAX_VALUE), e -> (int)connectionProperties.toInteger(((Number) e).doubleValue()), b -> (int)(b ? 1 : 0), Integer.class));
         casters.put(Long.class, new NumericCastor<>(e -> inRange(e, Long.MIN_VALUE, Long.MAX_VALUE), e -> connectionProperties.toInteger(((Number) e).doubleValue()), b -> (long)(b ? 1 : 0), Long.class));
-        casters.put(Blob.class, (o, f, t) -> connectionProperties.asBlob(o, f));
-        casters.put(Clob.class, (o, f, t) -> connectionProperties.asClob(o, f));
-        casters.put(NClob.class, (o, f, t) -> connectionProperties.asNClob(o, f));
-        casters.put(Timestamp.class, (o, f, t) -> connectionProperties.asTimestamp(o, f));
-        casters.put(Boolean.class, (o, f, t) -> connectionProperties.asBoolean(o));
-        casters.put(boolean.class, (o, f, t) -> connectionProperties.asBoolean(o));
+        casters.put(Blob.class, arg -> connectionProperties.asBlob(arg.getObj(), arg.getFrom()));
+        casters.put(Clob.class, arg -> connectionProperties.asClob(arg.getObj(), arg.getFrom()));
+        casters.put(NClob.class, arg -> connectionProperties.asNClob(arg.getObj(), arg.getFrom()));
+        casters.put(Date.class, arg -> connectionProperties.asDate(arg.getObj(), arg.getSqlType()));
+        casters.put(Time.class, arg -> connectionProperties.asTime(arg.getObj(), arg.getSqlType()));
+        casters.put(Timestamp.class, arg -> connectionProperties.asTimestamp(arg.getObj(), arg.getSqlType()));
+        casters.put(Boolean.class, arg -> connectionProperties.asBoolean(arg.getObj()));
+        casters.put(boolean.class, arg -> connectionProperties.asBoolean(arg.getObj()));
+        casters.put(Array.class, arg -> connectionProperties.asArray(arg.getObj()));
     }
 
     @Override
@@ -1521,12 +1439,13 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
         if (obj != null && to.isAssignableFrom(obj.getClass())) {
             return (T)obj;
         }
-        ThrowingTriFunction<Object, Class<?>, Class<?>, ?, SQLException> caster = casters.get(to);
+        ThrowingFunction<CastorArg, ?, SQLException> caster = casters.get(to);
         //noinspection unchecked
         //try {
             if (caster != null) {
                 try {
-                    return (T) caster.apply(obj, from, to);
+                    CastorArg arg = new CastorArg(obj, from, to, getMetaData().getColumnType(columnIndex));
+                    return (T) caster.apply(arg);
                 } catch (IllegalArgumentException e) {
                     throw new SQLException(e.getMessage());
                 }
@@ -1555,7 +1474,8 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
                     }
                     return (T)list.toString();
                 }
-                return (T)obj.toString();
+
+                return (T)connectionProperties.asString(obj);
             }
             //return objectMapper.readValue(obj instanceof String ? "\"" + obj + "\"" : "" + obj, clazz);
             return (T)obj;

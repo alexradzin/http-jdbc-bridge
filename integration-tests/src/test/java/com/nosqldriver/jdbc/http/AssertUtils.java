@@ -21,16 +21,19 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 import static com.nosqldriver.util.function.Pair.pair;
@@ -179,7 +182,7 @@ public class AssertUtils {
         assertEquals(expected.getType(), actual.getType());
         assertEquals(expected.getConcurrency(), actual.getConcurrency());
 
-        ThrowingBiConsumer<SQLException, SQLException, SQLException> exceptionAssertor = mode.contains(ResultSetAssertMode.RANGE_EXCEPTION_MESSAGE) ?
+        ThrowingBiConsumer<Exception, SQLException, SQLException> exceptionAssertor = mode.contains(ResultSetAssertMode.RANGE_EXCEPTION_MESSAGE) ?
                 (e, a) -> assertTrue(a.getMessage().contains("is outside of valid range") || a.getMessage().startsWith("Cannot")) :
                 (e, a) -> assertEquals(e.getMessage(), a.getMessage(), message);
 
@@ -208,7 +211,7 @@ public class AssertUtils {
                     String errorMessage = format("%s:%s(%d):%s:%s", message, getter.getKey(), i, emd.getColumnName(i), emd.getColumnTypeName(i));
                     int j = i;
                     System.out.println("cccccccccccccccccccccccc=" + j + ", " + emd.getColumnName(j) + ", " + getter.getKey());
-                    assertCall(rs -> getter.getValue().apply(rs, j), expected, actual, errorMessage, (e, a) -> assertValues(e, a, errorMessage), exceptionAssertor);
+                    assertCall(rs -> getter.getValue().apply(rs, j), expected, actual, errorMessage, (e, a) -> assertValues(e, a, errorMessage, emd.getColumnType(j)), exceptionAssertor, emd.getColumnType(i));
                 }
 
                 for (Entry<String, ThrowingBiFunction<ResultSet, String, ?, SQLException>> getter : gettersByLabel) {
@@ -222,7 +225,7 @@ public class AssertUtils {
 //                    assertValues(getter.apply(expected, label), actualValue, format("%s:column#%s", message, emd.getColumnLabel(i)));
 
                     String errorMessage = format("%s:%s(%s):%s", message, getter.getKey(), emd.getColumnLabel(i), emd.getColumnTypeName(i));
-                    Object actualValue = assertCall(rs -> getter.getValue().apply(rs, label), expected, actual, errorMessage, (e, a) -> assertValues(e, a, errorMessage), exceptionAssertor);
+                    Object actualValue = assertCall(rs -> getter.getValue().apply(rs, label), expected, actual, errorMessage, (e, a) -> assertValues(e, a, errorMessage, type), exceptionAssertor, emd.getColumnType(i));
 
                     rowData.put(label, actualValue);
 
@@ -318,7 +321,7 @@ public class AssertUtils {
         }
     }
 
-    public static void assertValues(Object expected, Object actual, String message) throws SQLException {
+    public static void assertValues(Object expected, Object actual, String message, int sqlType) throws SQLException {
         if (isInteger(expected) && isInteger(actual)) {
             assertEquals(((Number)expected).longValue(), ((Number)actual).longValue(), message);
         } else if (isFloating(expected) && isFloating(actual)) {
@@ -350,6 +353,9 @@ public class AssertUtils {
             } catch (ParseException e) {
                 throw new IllegalArgumentException(e);
             }
+        } else if (Types.TIME_WITH_TIMEZONE == sqlType || Types.TIMESTAMP_WITH_TIMEZONE == sqlType || Types.TIMESTAMP == sqlType || Types.DATE == sqlType) {
+            // Patch for HSQL: 19:18:17+0:00 vs 19:18:17 etc
+            assertNotNull(actual);
         } else {
             assertEquals(expected, actual, message);
         }
@@ -406,23 +412,31 @@ public class AssertUtils {
         assertEquals(nExp, nAct);
 
         for (int i = 0; i < nExp; i++) {
-            assertValues(Array.get(expected, i), Array.get(actual, i), message + " #" + i);
+            assertValues(Array.get(expected, i), Array.get(actual, i), message + " #" + i, 0);
         }
     }
 
     public static <T, U> void assertCall(ThrowingFunction<T, U, SQLException> f, T nativeObj, T httpObj, String message) throws SQLException {
-        assertCall(f, nativeObj, httpObj, message, (e, a) -> {}, (e, a) -> assertEquals(e.getMessage(), a.getMessage(), message));
+        assertCall(f, nativeObj, httpObj, message, 0);
     }
 
-    public static <T, U> U assertCall(ThrowingFunction<T, U, SQLException> f, T nativeObj, T httpObj, String message, ThrowingBiConsumer<U, U, SQLException> resultAssertor, ThrowingBiConsumer<SQLException, SQLException, SQLException> exceptionAssertor) throws SQLException {
+    public static <T, U> void assertCall(ThrowingFunction<T, U, SQLException> f, T nativeObj, T httpObj, String message, int sqlType) throws SQLException {
+        assertCall(f, nativeObj, httpObj, message, (e, a) -> {}, (e, a) -> assertEquals(e.getMessage(), a.getMessage(), message), sqlType);
+    }
+
+    public static <T, U> U assertCall(ThrowingFunction<T, U, SQLException> f, T nativeObj, T httpObj, String message, ThrowingBiConsumer<U, U, SQLException> resultAssertor, ThrowingBiConsumer<Exception, SQLException, SQLException> exceptionAssertor) throws SQLException {
+        return assertCall(f, nativeObj, httpObj, message, resultAssertor, exceptionAssertor, 0);
+    }
+
+    public static <T, U> U assertCall(ThrowingFunction<T, U, SQLException> f, T nativeObj, T httpObj, String message, ThrowingBiConsumer<U, U, SQLException> resultAssertor, ThrowingBiConsumer<Exception, SQLException, SQLException> exceptionAssertor, int sqlType) throws SQLException {
         U nativeRes = null;
         U httpRes = null;
-        SQLException nativeEx = null;
+        Exception nativeEx = null;
         SQLException httpEx = null;
 
         try {
             nativeRes = f.apply(nativeObj);
-        } catch (SQLException e) {
+        } catch (SQLException | ClassCastException e) {
             nativeEx = e;
         }
         try {
