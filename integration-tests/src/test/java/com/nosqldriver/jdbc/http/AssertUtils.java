@@ -21,19 +21,16 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 import static com.nosqldriver.util.function.Pair.pair;
@@ -183,7 +180,7 @@ public class AssertUtils {
         assertEquals(expected.getConcurrency(), actual.getConcurrency());
 
         ThrowingBiConsumer<Exception, SQLException, SQLException> exceptionAssertor = mode.contains(ResultSetAssertMode.RANGE_EXCEPTION_MESSAGE) ?
-                (e, a) -> assertTrue(a.getMessage().contains("is outside of valid range") || a.getMessage().startsWith("Cannot")) :
+                (e, a) -> assertTrue(a instanceof SQLFeatureNotSupportedException || a.getMessage().contains("is outside of valid range") || a.getMessage().startsWith("Cannot")) :
                 (e, a) -> assertEquals(e.getMessage(), a.getMessage(), message);
 
         int row = 0;
@@ -211,7 +208,7 @@ public class AssertUtils {
                     String errorMessage = format("%s:%s(%d):%s:%s", message, getter.getKey(), i, emd.getColumnName(i), emd.getColumnTypeName(i));
                     int j = i;
                     System.out.println("cccccccccccccccccccccccc=" + j + ", " + emd.getColumnName(j) + ", " + getter.getKey());
-                    assertCall(rs -> getter.getValue().apply(rs, j), expected, actual, errorMessage, (e, a) -> assertValues(e, a, errorMessage, emd.getColumnType(j)), exceptionAssertor, emd.getColumnType(i));
+                   assertCall(rs -> getter.getValue().apply(rs, j), expected, actual, errorMessage, (e, a) -> assertValues(nativeUrl, e, a, errorMessage, emd.getColumnType(j)), exceptionAssertor, emd.getColumnType(i));
                 }
 
                 for (Entry<String, ThrowingBiFunction<ResultSet, String, ?, SQLException>> getter : gettersByLabel) {
@@ -225,7 +222,7 @@ public class AssertUtils {
 //                    assertValues(getter.apply(expected, label), actualValue, format("%s:column#%s", message, emd.getColumnLabel(i)));
 
                     String errorMessage = format("%s:%s(%s):%s", message, getter.getKey(), emd.getColumnLabel(i), emd.getColumnTypeName(i));
-                    Object actualValue = assertCall(rs -> getter.getValue().apply(rs, label), expected, actual, errorMessage, (e, a) -> assertValues(e, a, errorMessage, type), exceptionAssertor, emd.getColumnType(i));
+                    Object actualValue = assertCall(rs -> getter.getValue().apply(rs, label), expected, actual, errorMessage, (e, a) -> assertValues(nativeUrl, e, a, errorMessage, type), exceptionAssertor, emd.getColumnType(i));
 
                     rowData.put(label, actualValue);
 
@@ -321,15 +318,15 @@ public class AssertUtils {
         }
     }
 
-    public static void assertValues(Object expected, Object actual, String message, int sqlType) throws SQLException {
+    public static void assertValues(String nativeUrl, Object expected, Object actual, String message, int sqlType) throws SQLException {
         if (isInteger(expected) && isInteger(actual)) {
             assertEquals(((Number)expected).longValue(), ((Number)actual).longValue(), message);
         } else if (isFloating(expected) && isFloating(actual)) {
             assertEquals(((Number)expected).doubleValue(), ((Number)actual).doubleValue(), 0.001, message);
         } else if (isArray(expected) && isArray(actual)) {
-            assertArrayEquals(expected, actual, message);
+            assertArrayEquals(nativeUrl, expected, actual, message);
         } else if(expected instanceof java.sql.Array && actual instanceof java.sql.Array) {
-            assertArrayEquals((java.sql.Array)expected, (java.sql.Array)actual, message);
+            assertSqlArrayEquals(nativeUrl, (java.sql.Array)expected, (java.sql.Array)actual, message);
         } else if (expected instanceof InputStream && actual instanceof InputStream) {
             try {
                 Assertions.assertArrayEquals(((InputStream) expected).readAllBytes(), ((InputStream) actual).readAllBytes());
@@ -340,7 +337,15 @@ public class AssertUtils {
             assertEquals(readAll((Reader)expected), readAll((Reader)actual));
         } else if (expected instanceof Blob && actual instanceof Blob) {
             //Assertions.assertArrayEquals(getBytes((Blob)expected), getBytes((Blob)actual));
-            assertCall(o -> getBytes((Blob)o), expected, actual, "blob", Assertions::assertArrayEquals, (e1, e2) -> {});
+            if (nativeUrl.contains("mysql") && (Types.TIME_WITH_TIMEZONE == sqlType || Types.TIMESTAMP_WITH_TIMEZONE == sqlType || Types.TIMESTAMP == sqlType || Types.DATE == sqlType || Types.TIME == sqlType)) {
+                if (expected == null) {
+                    assertNull(actual);
+                } else {
+                    assertNotNull(actual);
+                }
+            } else {
+                assertCall(o -> getBytes((Blob)o), expected, actual, "blob", Assertions::assertArrayEquals, (e1, e2) -> {});
+            }
         } else if (expected instanceof NClob && actual instanceof NClob) {
             assertEquals(getString((NClob) expected), getString((NClob) actual));
         } else if (expected instanceof Clob && actual instanceof Clob) {
@@ -355,6 +360,8 @@ public class AssertUtils {
             }
         } else if (Types.TIME_WITH_TIMEZONE == sqlType || Types.TIMESTAMP_WITH_TIMEZONE == sqlType || Types.TIMESTAMP == sqlType || Types.DATE == sqlType) {
             // Patch for HSQL: 19:18:17+0:00 vs 19:18:17 etc
+            assertNotNull(actual);
+        } else if (nativeUrl.contains("mysql") && (Types.TIME_WITH_TIMEZONE == sqlType || Types.TIMESTAMP_WITH_TIMEZONE == sqlType || Types.TIMESTAMP == sqlType || Types.DATE == sqlType || Types.TIME == sqlType)) {
             assertNotNull(actual);
         } else {
             assertEquals(expected, actual, message);
@@ -389,15 +396,15 @@ public class AssertUtils {
         return obj != null && obj.getClass().isArray();
     }
 
-    public static void assertArrayEquals(java.sql.Array expected, java.sql.Array actual, String message) {
+    public static void assertSqlArrayEquals(String nativeUrl, java.sql.Array expected, java.sql.Array actual, String message) {
         try {
-            assertArrayEquals(expected.getArray(), actual.getArray(), message);
+            assertArrayEquals(nativeUrl, expected.getArray(), actual.getArray(), message);
         } catch (SQLException e) {
             throw new IllegalStateException(e);
         }
     }
 
-    public static void assertArrayEquals(Object expected, Object actual, String message) throws SQLException {
+    public static void assertArrayEquals(String nativeUrl, Object expected, Object actual, String message) throws SQLException {
         if (expected == actual) {
             return;
         }
@@ -406,13 +413,12 @@ public class AssertUtils {
         } else {
             assertNotNull(actual);
         }
-
         int nExp = Array.getLength(expected);
         int nAct = Array.getLength(actual);
         assertEquals(nExp, nAct);
 
         for (int i = 0; i < nExp; i++) {
-            assertValues(Array.get(expected, i), Array.get(actual, i), message + " #" + i, 0);
+            assertValues(nativeUrl, Array.get(expected, i), Array.get(actual, i), message + " #" + i, 0);
         }
     }
 
@@ -436,7 +442,7 @@ public class AssertUtils {
 
         try {
             nativeRes = f.apply(nativeObj);
-        } catch (SQLException | ClassCastException e) {
+        } catch (SQLException | RuntimeException e) {
             nativeEx = e;
         }
         try {
@@ -452,9 +458,6 @@ public class AssertUtils {
                 resultAssertor.accept(nativeRes, httpRes);
             }
         } else if (!(nativeEx instanceof SQLFeatureNotSupportedException)) { // some getters throw SQLFeatureNotSupportedException while we can handle it at client side, so we ignore this case
-//            if (httpEx == null) {
-//                f.apply(httpObj);
-//            }
             assertNotNull(httpEx, message);
             //assertEquals(nativeEx.getMessage(), httpEx.getMessage(), message);
             exceptionAssertor.accept(nativeEx, httpEx);

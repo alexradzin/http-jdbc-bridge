@@ -25,12 +25,11 @@ import java.sql.SQLXML;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -95,12 +94,14 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
         private final Class<?> from;
         private final Class<?> to;
         private final int sqlType;
+        private final int columnIndex;
 
-        public CastorArg(Object obj, Class<?> from, Class<?> to, int sqlType) {
+        public CastorArg(Object obj, Class<?> from, Class<?> to, int sqlType, int columnIndex) {
             this.obj = obj;
             this.from = from;
             this.to = to;
             this.sqlType = sqlType;
+            this.columnIndex = columnIndex;
         }
 
         public Object getObj() {
@@ -118,6 +119,10 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
         public int getSqlType() {
             return sqlType;
         }
+
+        public int getColumnIndex() {
+            return columnIndex;
+        }
     }
 
     private final Map<Class<?>, ThrowingFunction<CastorArg, ? extends Object, SQLException>> casters;
@@ -127,12 +132,18 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
         private final Function<Object, T> actualCastor;
         private final Function<Boolean, T> booleanCastor;
         private final Class<T> type;
+        private final Function<Character, T> charToNumber;
 
         private NumericCastor(Predicate<Object> checker, Function<Object, T> actualCastor, Function<Boolean, T> booleanCastor, Class<T> type) {
+            this(checker, actualCastor, booleanCastor, type, null);
+        }
+
+        private NumericCastor(Predicate<Object> checker, Function<Object, T> actualCastor, Function<Boolean, T> booleanCastor, Class<T> type, Function<Character, T> charToNumber) {
             this.checker = checker;
             this.actualCastor = actualCastor;
             this.booleanCastor = booleanCastor;
             this.type = type;
+            this.charToNumber = charToNumber;
         }
 
 
@@ -144,6 +155,9 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
             }
             if (o instanceof Boolean) {
                 return booleanCastor.apply((Boolean)o);
+            }
+            if (arg.getSqlType() == Types.CHAR && charToNumber != null) {
+                return charToNumber.apply(((String)o).charAt(0));
             }
             if (!checker.test(o)) {
                 throw new IllegalArgumentException(format("Value '%s' is outside of valid range for type %s", o, type));
@@ -187,17 +201,17 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     public ResultSetProxy(@JsonProperty("entityUrl") String entityUrl, @JsonProperty("connectionProperties") ConnectionProperties connectionProperties) {
         super(entityUrl, ResultSet.class);
         this.connectionProperties = connectionProperties;
-        casters = generalCastors;
+        casters = new HashMap<>(generalCastors);
 
-        casters.put(byte.class, new NumericCastor<>(e -> inRange(e, Byte.MIN_VALUE, Byte.MAX_VALUE), e -> (byte)connectionProperties.toInteger(((Number) e).doubleValue()), b -> (byte)(b ? 1 : 0), Byte.class));
+        casters.put(byte.class, new NumericCastor<>(e -> inRange(e, Byte.MIN_VALUE, Byte.MAX_VALUE), e -> (byte)connectionProperties.toInteger(((Number) e).doubleValue()), b -> (byte)(b ? 1 : 0), Byte.class, connectionProperties.isCharToByte() ? connectionProperties::toByte: null));
         casters.put(short.class, new NumericCastor<>(e -> inRange(e, Short.MIN_VALUE, Short.MAX_VALUE), e -> (short)connectionProperties.toInteger(((Number) e).doubleValue()), b -> (short)(b ? 1 : 0), Short.class));
         casters.put(int.class, new NumericCastor<>(e -> inRange(e, Integer.MIN_VALUE, Integer.MAX_VALUE), e -> (int)connectionProperties.toInteger(((Number) e).doubleValue()), b -> (int)(b ? 1 : 0), Integer.class));
         casters.put(long.class, new NumericCastor<>(e -> inRange(e, Long.MIN_VALUE, Long.MAX_VALUE), e -> connectionProperties.toInteger(((Number) e).doubleValue()), b -> (long)(b ? 1 : 0), Long.class));
-        casters.put(Byte.class, new NumericCastor<>(e -> inRange(e, Byte.MIN_VALUE, Byte.MAX_VALUE), e -> (byte)connectionProperties.toInteger(((Number) e).doubleValue()), b -> (byte)(b ? 1 : 0), Byte.class));
+        casters.put(Byte.class, new NumericCastor<>(e -> inRange(e, Byte.MIN_VALUE, Byte.MAX_VALUE), e -> (byte)connectionProperties.toInteger(((Number) e).doubleValue()), b -> (byte)(b ? 1 : 0), Byte.class, connectionProperties.isCharToByte() ? c -> (byte)connectionProperties.toByte(c) : null));
         casters.put(Short.class, new NumericCastor<>(e -> inRange(e, Short.MIN_VALUE, Short.MAX_VALUE), e -> (short)connectionProperties.toInteger(((Number) e).doubleValue()), b -> (short)(b ? 1 : 0), Short.class));
         casters.put(Integer.class, new NumericCastor<>(e -> inRange(e, Integer.MIN_VALUE, Integer.MAX_VALUE), e -> (int)connectionProperties.toInteger(((Number) e).doubleValue()), b -> (int)(b ? 1 : 0), Integer.class));
         casters.put(Long.class, new NumericCastor<>(e -> inRange(e, Long.MIN_VALUE, Long.MAX_VALUE), e -> connectionProperties.toInteger(((Number) e).doubleValue()), b -> (long)(b ? 1 : 0), Long.class));
-        casters.put(Blob.class, arg -> connectionProperties.asBlob(arg.getObj(), arg.getFrom()));
+        casters.put(Blob.class, arg -> connectionProperties.asBlob(arg.getObj(), arg.getFrom(), this::getMetaData, arg.getColumnIndex()));
         casters.put(Clob.class, arg -> connectionProperties.asClob(arg.getObj(), arg.getFrom()));
         casters.put(NClob.class, arg -> connectionProperties.asNClob(arg.getObj(), arg.getFrom()));
         casters.put(Date.class, arg -> connectionProperties.asDate(arg.getObj(), arg.getSqlType()));
@@ -1444,7 +1458,7 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
         //try {
             if (caster != null) {
                 try {
-                    CastorArg arg = new CastorArg(obj, from, to, getMetaData().getColumnType(columnIndex));
+                    CastorArg arg = new CastorArg(obj, from, to, getMetaData().getColumnType(columnIndex), columnIndex);
                     return (T) caster.apply(arg);
                 } catch (IllegalArgumentException e) {
                     throw new SQLException(e.getMessage());
@@ -1456,26 +1470,7 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
                 return (T)defaultValues.get(to);
             }
             if (String.class.equals(to)) {
-                if (obj instanceof String) {
-                    return (T)obj;
-                }
-                if (obj instanceof Boolean) {
-                    return (T)(toBooleanString((boolean)obj));
-                }
-                if (obj instanceof Timestamp) {
-                    return (T)connectionProperties.asString((Timestamp)obj, getMetaData().getColumnType(columnIndex));
-                }
-                if (obj instanceof Array) {
-                    Object a = ((Array)obj).getArray();
-                    int n = java.lang.reflect.Array.getLength(a);
-                    List<Object> list = new ArrayList<>(n);
-                    for (int i = 0; i < n; i++) {
-                        list.add(java.lang.reflect.Array.get(a, i));
-                    }
-                    return (T)list.toString();
-                }
-
-                return (T)connectionProperties.asString(obj);
+                return (T)connectionProperties.asString(obj, this::getMetaData, columnIndex);
             }
             //return objectMapper.readValue(obj instanceof String ? "\"" + obj + "\"" : "" + obj, clazz);
             return (T)obj;

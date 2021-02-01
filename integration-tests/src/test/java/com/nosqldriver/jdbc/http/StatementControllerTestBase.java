@@ -237,6 +237,12 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
         } finally {
             for (String sql : after) {
                 nativeConn.createStatement().execute(sql);
+                if (nativeUrl.contains("hsqldb")) {
+                    try {
+                        Thread.sleep(1000L);
+                    } catch (InterruptedException e) {
+                    }
+                }
             }
         }
     }
@@ -255,13 +261,13 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
                                                            Collection<AssertUtils.ResultSetAssertMode> mode,
                                                            ThrowingConsumer<T, SQLException>... setters) throws SQLException {
         ResultSet nativeRs = null;
-        SQLException nativeEx = null;
+        Exception nativeEx = null;
         ResultSet httpRs = null;
         SQLException httpEx = null;
         try {
             try {
                 nativeRs = executeQuery(nativeConn, query, setters);
-            } catch (SQLException e) {
+            } catch (SQLException | RuntimeException e) {
                 nativeEx = e;
             }
             try {

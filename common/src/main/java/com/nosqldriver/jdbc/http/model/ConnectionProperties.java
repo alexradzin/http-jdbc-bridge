@@ -2,6 +2,7 @@ package com.nosqldriver.jdbc.http.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.nosqldriver.util.function.ThrowingSupplier;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -13,6 +14,7 @@ import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.Date;
 import java.sql.NClob;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Time;
@@ -21,11 +23,13 @@ import java.sql.Types;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -55,6 +59,9 @@ public class ConnectionProperties {
                     new SimpleEntry<Class<?>, Function<Object, byte[]>>(Long.class, i -> ByteBuffer.allocate(8).putLong(((Number) i).longValue()).array()),
                     new SimpleEntry<Class<?>, Function<Object, byte[]>>(BigDecimal.class, i -> ByteBuffer.allocate(8).putDouble(((Number) i).doubleValue()).array())
             ).collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue));
+
+    Map<Integer, Class<?>> sqlTypeToClass = Stream.of(new SimpleEntry<Integer, Class<?>>(Types.BIT, Byte.class))
+            .collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue));
 
     private static final Function<Object, byte[]> serializableToBytes = obj -> {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); ObjectOutputStream oos = new ObjectOutputStream(baos)) {
@@ -92,39 +99,37 @@ public class ConnectionProperties {
                     new SimpleEntry<>(BigDecimal.class, BigDecimal.class)
             ).collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue));
 
-    private static final Function<Object, Boolean> numberToBoolean = n -> ((Number)n).longValue() != 0;
+    enum NumericToBoolean implements Function<Object, Boolean> {
+        NE0 {
+            @Override
+            public Boolean apply(Object n) {
+                return ((Number)n).doubleValue() != 0;
+            }
+        },
+        GT0 {
+            @Override
+            public Boolean apply(Object n) {
+                return ((Number)n).doubleValue() > 0;
+            }
+        }
+    }
 
-    private static Map<Class, Function<Object, Boolean>> toBooleanCastors = Stream.of(
-            new SimpleEntry<Class, Function<Object, Boolean>>(Object.class, Objects::nonNull),
-            new SimpleEntry<Class, Function<Object, Boolean>>(String.class, Objects::nonNull),
-            new SimpleEntry<Class, Function<Object, Boolean>>(byte.class, numberToBoolean),
-            new SimpleEntry<Class, Function<Object, Boolean>>(short.class, numberToBoolean),
-            new SimpleEntry<Class, Function<Object, Boolean>>(int.class, numberToBoolean),
-            new SimpleEntry<Class, Function<Object, Boolean>>(long.class, numberToBoolean),
-            new SimpleEntry<Class, Function<Object, Boolean>>(float.class, numberToBoolean),
-            new SimpleEntry<Class, Function<Object, Boolean>>(double.class, numberToBoolean),
-            new SimpleEntry<Class, Function<Object, Boolean>>(boolean.class, b -> (boolean)b),
-            new SimpleEntry<Class, Function<Object, Boolean>>(Byte.class, numberToBoolean),
-            new SimpleEntry<Class, Function<Object, Boolean>>(Short.class, numberToBoolean),
-            new SimpleEntry<Class, Function<Object, Boolean>>(Integer.class, numberToBoolean),
-            new SimpleEntry<Class, Function<Object, Boolean>>(Long.class, numberToBoolean),
-            new SimpleEntry<Class, Function<Object, Boolean>>(Float.class, numberToBoolean),
-            new SimpleEntry<Class, Function<Object, Boolean>>(Double.class, numberToBoolean),
-            new SimpleEntry<Class, Function<Object, Boolean>>(BigDecimal.class, numberToBoolean),
-            new SimpleEntry<Class, Function<Object, Boolean>>(Boolean.class, b -> (Boolean)b)
-    ).collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue));
+    private final Map<Class, Function<Object, Boolean>> toBooleanCastors;
 
     private final boolean timestampWithMillis; //= true;
     private final boolean anyClob;// = true;
     private final boolean anyNClob;// = true;
     private final boolean anyArray;// = true;
+    private final boolean charToByte;
     private final Collection<String> blobable;// = true;
     private final Collection<String> partialBlobable = new HashSet<>();
+    private final Collection<String> stringBlob;
     private final Collection<String> nullableBlobable = new HashSet<>();
     private final Round floatToInt;// = Round.INT; // h2 -> floor
     private final Map<Boolean, String> booleanLiterals;
     private final Collection<String> unsupportedFunctions;
     private final Collection<Class> toTimestamp;// = true;
+    private final Collection<Class> toDate;
     private final Collection<Class> toBoolean;// = true;
     private final Map<Class, String> stringFormats;
     private final TimeZone timezone;
@@ -167,6 +172,7 @@ public class ConnectionProperties {
         this.anyClob = getBoolean(props, "anyClob", true);
         this.anyNClob = getBoolean(props, "anyNClob", true);
         this.anyArray = getBoolean(props, "anyArray", true);
+        this.charToByte =  getBoolean(props, "charToByte", false);
         this.blobable = Optional.ofNullable(props.getProperty("blobable")).map(p ->
                 Arrays.stream(p.split("\\s*,\\s*"))
                         .map(t -> {
@@ -189,6 +195,12 @@ public class ConnectionProperties {
                             }
                             return className;
                         }).collect(toSet())).orElse(emptySet());
+
+        this.stringBlob = Optional.ofNullable(props.getProperty("stringBlob")).map(p ->
+                Arrays.stream(p.split("\\s*,\\s*")).map(typeName -> Optional.ofNullable(primitives.get(typeName)).map(types::get).map(Class::getName).orElse(typeName)).collect(toSet()))
+                .orElse(emptySet());
+
+
         this.floatToInt = Round.valueOf(props.getProperty("floatToInt", Round.INT.name()));
         String[] boolLiterals = props.getProperty("booleanLiterals", "FALSE,TRUE").split("\\s*,\\s*");
         this.booleanLiterals = new HashMap<>();
@@ -197,6 +209,8 @@ public class ConnectionProperties {
         unsupportedFunctions = new HashSet<>(Arrays.asList(props.getProperty("unsupportedFunctions", "").split("\\s*,\\s*")));
         toTimestamp = Optional.ofNullable(props.getProperty("toTimestamp")).map(p -> Arrays.stream(p.split("\\s*,\\s*"))
                         .map(ConnectionProperties::toClass).collect(toList())).orElse(emptyList());
+        toDate = Optional.ofNullable(props.getProperty("toDate")).map(p -> Arrays.stream(p.split("\\s*,\\s*"))
+                .map(ConnectionProperties::toClass).collect(toList())).orElse(emptyList());
         toBoolean = Stream.concat(
                 Stream.of(boolean.class, Boolean.class),
                 Optional.ofNullable(props.getProperty("toBoolean")).map(p -> Arrays.stream(p.split("\\s*,\\s*"))
@@ -213,6 +227,29 @@ public class ConnectionProperties {
         timezone = Optional.ofNullable(props.getProperty("timezone"))
                 .map(tzid -> {TimeZone tz = TimeZone.getTimeZone(tzid); tz.setRawOffset(2 * (TimeZone.getDefault().getRawOffset() - tz.getRawOffset()));  return tz;})
                 .orElseGet(TimeZone::getDefault);
+
+
+        Function<Object, Boolean> numberToBoolean = NumericToBoolean.valueOf(props.getProperty("numberToBoolean", NumericToBoolean.NE0.name()));
+        toBooleanCastors = Stream.of(
+                new SimpleEntry<Class, Function<Object, Boolean>>(Object.class, Objects::nonNull),
+                new SimpleEntry<Class, Function<Object, Boolean>>(String.class, Objects::nonNull),
+                new SimpleEntry<Class, Function<Object, Boolean>>(byte.class, numberToBoolean),
+                new SimpleEntry<Class, Function<Object, Boolean>>(short.class, numberToBoolean),
+                new SimpleEntry<Class, Function<Object, Boolean>>(int.class, numberToBoolean),
+                new SimpleEntry<Class, Function<Object, Boolean>>(long.class, numberToBoolean),
+                new SimpleEntry<Class, Function<Object, Boolean>>(float.class, numberToBoolean),
+                new SimpleEntry<Class, Function<Object, Boolean>>(double.class, numberToBoolean),
+                new SimpleEntry<Class, Function<Object, Boolean>>(boolean.class, b -> (boolean)b),
+                new SimpleEntry<Class, Function<Object, Boolean>>(Byte.class, numberToBoolean),
+                new SimpleEntry<Class, Function<Object, Boolean>>(Short.class, numberToBoolean),
+                new SimpleEntry<Class, Function<Object, Boolean>>(Integer.class, numberToBoolean),
+                new SimpleEntry<Class, Function<Object, Boolean>>(Long.class, numberToBoolean),
+                new SimpleEntry<Class, Function<Object, Boolean>>(Float.class, numberToBoolean),
+                new SimpleEntry<Class, Function<Object, Boolean>>(Double.class, numberToBoolean),
+                new SimpleEntry<Class, Function<Object, Boolean>>(BigDecimal.class, numberToBoolean),
+                new SimpleEntry<Class, Function<Object, Boolean>>(Boolean.class, b -> (Boolean)b)
+        ).collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue));
+
     }
 
     private static boolean getBoolean(Properties props, String name, boolean defaultValue) {
@@ -223,10 +260,39 @@ public class ConnectionProperties {
         return floatToInt.getInt(value);
     }
 
+    public byte toByte(char c) {
+        return (byte)c;
+    }
+
     private static final DateFormat timestampWithTimezone = new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ"); // 2020-10-08 19:18:17+00
     static {
         timestampWithTimezone.setTimeZone(TimeZone.getTimeZone("UTC")); // TODO: probably get it from the current timezone of the DB
     }
+
+    public String asString(Object obj, ThrowingSupplier<ResultSetMetaData, SQLException> md, int columnIndex) throws SQLException {
+        if (obj instanceof String) {
+            return (String)obj;
+        }
+        if (obj instanceof Boolean) {
+            return (toBooleanString((boolean)obj));
+        }
+        if (obj instanceof Timestamp) {
+            return asString((Timestamp)obj, md.get().getColumnType(columnIndex));
+        }
+        if (obj instanceof Array) {
+            Object a = ((Array)obj).getArray();
+            int n = java.lang.reflect.Array.getLength(a);
+            List<Object> list = new ArrayList<>(n);
+            for (int i = 0; i < n; i++) {
+                list.add(java.lang.reflect.Array.get(a, i));
+            }
+            return list.toString();
+        }
+
+        return asFormattedString(obj);
+
+    }
+
     public String asString(Timestamp ts, int type) {
         if (Types.TIMESTAMP_WITH_TIMEZONE == type) {
             return timestampWithTimezone.format(ts).replaceFirst("00$", "");
@@ -236,7 +302,7 @@ public class ConnectionProperties {
         return timestampWithMillis ? str : str.replaceFirst("\\.\\d+$", "");
     }
 
-    public <T> Blob asBlob(T obj, Class fromClazz) throws SQLException {
+    public <T> Blob asBlob(T obj, Class fromClazz, ThrowingSupplier<ResultSetMetaData, SQLException> md, int columnIndex) throws SQLException {
         String fromClassName = fromClazz == null ? null : fromClazz.getName();
         if (!(blobable.contains(fromClassName) || (types.containsKey(fromClazz) && blobable.contains(types.get(fromClazz).getName())))) {
             throw new SQLException("Cannot create blob from " + obj);
@@ -253,7 +319,26 @@ public class ConnectionProperties {
 //        }
 
         boolean partial = partialBlobable.contains(fromClassName) || (types.containsKey(fromClazz) && partialBlobable.contains(types.get(fromClazz).getName()));
-        return new TransportableBlob(toBytes.getOrDefault(fromClazz, serializableToBytes).apply(obj), partial);
+        Object value = obj;
+        Class<?> fromClazz2 = fromClazz;
+        if(!areCompatible(fromClazz, obj.getClass())) {
+            fromClazz2 = sqlTypeToClass.getOrDefault(md.get().getColumnType(columnIndex), obj.getClass());
+        }
+        if (fromClazz2 != null && stringBlob.contains(fromClazz2.getName())) {
+            value = asString(obj, md, columnIndex);
+            fromClazz2 = String.class;
+        }
+        return new TransportableBlob(toBytes.getOrDefault(fromClazz2, serializableToBytes).apply(value), partial);
+    }
+
+    private boolean areCompatible(Class<?> fromClazz, Class<?> realClazz) {
+        if (realClazz == null) {
+            return true;
+        }
+        if (Number.class.isAssignableFrom(fromClazz) && Number.class.isAssignableFrom(realClazz)) {
+            return true;
+        }
+        return fromClazz.equals(realClazz);
     }
 
     public <T> Clob asClob(T obj, Class<?> fromClazz) throws SQLException {
@@ -302,7 +387,7 @@ public class ConnectionProperties {
         if (obj instanceof Date) {
             return (Date)obj;
         }
-        if (obj instanceof Timestamp) {
+        if (obj instanceof Timestamp && toDate.contains(Timestamp.class)) {
             Timestamp ts = (Timestamp)obj;
             Calendar c = Calendar.getInstance();
             c.setTimeInMillis(ts.getTime());
@@ -317,6 +402,18 @@ public class ConnectionProperties {
             cDate.set(Calendar.MINUTE, 0);
             cDate.set(Calendar.SECOND, 0);
             cDate.set(Calendar.MILLISECOND, 0);
+            return new Date(cDate.getTimeInMillis());
+        }
+        if (obj instanceof Time && toDate.contains(Time.class)) {
+            Time t = (Time)obj;
+            Calendar c = Calendar.getInstance();
+            c.setTimeInMillis(t.getTime());
+            Calendar cDate = Calendar.getInstance();
+            cDate.setTimeInMillis(0);
+            cDate.set(Calendar.HOUR_OF_DAY, c.get(Calendar.HOUR_OF_DAY));
+            cDate.set(Calendar.MINUTE, c.get(Calendar.MINUTE));
+            cDate.set(Calendar.SECOND, c.get(Calendar.SECOND));
+            cDate.set(Calendar.MILLISECOND, c.get(Calendar.MILLISECOND));
             return new Date(cDate.getTimeInMillis());
         }
         throw new SQLException(format("Cannot cast %s to date", obj));
@@ -388,7 +485,7 @@ public class ConnectionProperties {
         throw new SQLException(format("Cannot cast %s to boolean", obj));
     }
 
-    public <T> String asString(T obj) {
+    private <T> String asFormattedString(T obj) {
         String format = stringFormats.getOrDefault(obj.getClass(), stringFormats.get(types.get(obj.getClass())));
         if (format != null) {
             return String.format(format, obj);
@@ -404,6 +501,10 @@ public class ConnectionProperties {
         if (unsupportedFunctions.contains(function)) {
             throw new SQLFeatureNotSupportedException(function);
         }
+    }
+
+    public boolean isCharToByte() {
+        return charToByte;
     }
 
     private static Class toClass(String className) {
