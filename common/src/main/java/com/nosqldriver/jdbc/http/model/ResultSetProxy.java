@@ -130,15 +130,15 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     private static class NumericCastor<T> implements ThrowingFunction<CastorArg, T, SQLException> {
         private final Predicate<Object> checker;
         private final Function<Object, T> actualCastor;
-        private final Function<Boolean, T> booleanCastor;
+        private final ThrowingFunction<Boolean, T, SQLException> booleanCastor;
         private final Class<T> type;
         private final Function<Character, T> charToNumber;
 
-        private NumericCastor(Predicate<Object> checker, Function<Object, T> actualCastor, Function<Boolean, T> booleanCastor, Class<T> type) {
+        private NumericCastor(Predicate<Object> checker, Function<Object, T> actualCastor, ThrowingFunction<Boolean, T, SQLException> booleanCastor, Class<T> type) {
             this(checker, actualCastor, booleanCastor, type, null);
         }
 
-        private NumericCastor(Predicate<Object> checker, Function<Object, T> actualCastor, Function<Boolean, T> booleanCastor, Class<T> type, Function<Character, T> charToNumber) {
+        private NumericCastor(Predicate<Object> checker, Function<Object, T> actualCastor, ThrowingFunction<Boolean, T, SQLException> booleanCastor, Class<T> type, Function<Character, T> charToNumber) {
             this.checker = checker;
             this.actualCastor = actualCastor;
             this.booleanCastor = booleanCastor;
@@ -203,14 +203,37 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
         this.connectionProperties = connectionProperties;
         casters = new HashMap<>(generalCastors);
 
-        casters.put(byte.class, new NumericCastor<>(e -> inRange(e, Byte.MIN_VALUE, Byte.MAX_VALUE), e -> (byte)connectionProperties.toInteger(((Number) e).doubleValue()), b -> (byte)(b ? 1 : 0), Byte.class, connectionProperties.isCharToByte() ? connectionProperties::toByte: null));
-        casters.put(short.class, new NumericCastor<>(e -> inRange(e, Short.MIN_VALUE, Short.MAX_VALUE), e -> (short)connectionProperties.toInteger(((Number) e).doubleValue()), b -> (short)(b ? 1 : 0), Short.class));
-        casters.put(int.class, new NumericCastor<>(e -> inRange(e, Integer.MIN_VALUE, Integer.MAX_VALUE), e -> (int)connectionProperties.toInteger(((Number) e).doubleValue()), b -> (int)(b ? 1 : 0), Integer.class));
-        casters.put(long.class, new NumericCastor<>(e -> inRange(e, Long.MIN_VALUE, Long.MAX_VALUE), e -> connectionProperties.toInteger(((Number) e).doubleValue()), b -> (long)(b ? 1 : 0), Long.class));
-        casters.put(Byte.class, new NumericCastor<>(e -> inRange(e, Byte.MIN_VALUE, Byte.MAX_VALUE), e -> (byte)connectionProperties.toInteger(((Number) e).doubleValue()), b -> (byte)(b ? 1 : 0), Byte.class, connectionProperties.isCharToByte() ? c -> (byte)connectionProperties.toByte(c) : null));
-        casters.put(Short.class, new NumericCastor<>(e -> inRange(e, Short.MIN_VALUE, Short.MAX_VALUE), e -> (short)connectionProperties.toInteger(((Number) e).doubleValue()), b -> (short)(b ? 1 : 0), Short.class));
-        casters.put(Integer.class, new NumericCastor<>(e -> inRange(e, Integer.MIN_VALUE, Integer.MAX_VALUE), e -> (int)connectionProperties.toInteger(((Number) e).doubleValue()), b -> (int)(b ? 1 : 0), Integer.class));
-        casters.put(Long.class, new NumericCastor<>(e -> inRange(e, Long.MIN_VALUE, Long.MAX_VALUE), e -> connectionProperties.toInteger(((Number) e).doubleValue()), b -> (long)(b ? 1 : 0), Long.class));
+        casters.put(byte.class, new NumericCastor<>(e -> inRange(e, Byte.MIN_VALUE, Byte.MAX_VALUE), e -> (byte)connectionProperties.toInteger(((Number) e).doubleValue()), connectionProperties.booleanToNumber(b -> (byte)(b ? 1 : 0)), Byte.class, connectionProperties.isCharToByte() ? connectionProperties::toByte: null));
+        casters.put(short.class, new NumericCastor<>(e -> inRange(e, Short.MIN_VALUE, Short.MAX_VALUE), e -> (short)connectionProperties.toInteger(((Number) e).doubleValue()), connectionProperties.booleanToNumber(b -> (short)(b ? 1 : 0)), Short.class));
+        casters.put(int.class, new NumericCastor<>(e -> inRange(e, Integer.MIN_VALUE, Integer.MAX_VALUE), e -> (int)connectionProperties.toInteger(((Number) e).doubleValue()), connectionProperties.booleanToNumber(b -> (b ? 1 : 0)), Integer.class));
+        casters.put(long.class, new NumericCastor<>(e -> inRange(e, Long.MIN_VALUE, Long.MAX_VALUE), e -> connectionProperties.toInteger(((Number) e).doubleValue()), connectionProperties.booleanToNumber(b -> (long)(b ? 1 : 0)), Long.class));
+        casters.put(float.class, new NumericCastor<>(e -> inRange(e, -Float.MAX_VALUE, Float.MAX_VALUE), e -> ((Number) e).floatValue(), connectionProperties.booleanToNumber(f -> (f ? 1.f : 0.f)), float.class));
+        casters.put(double.class, new NumericCastor<>(e -> inRange(e, -Double.MAX_VALUE, Double.MAX_VALUE), e -> ((Number) e).doubleValue(), connectionProperties.booleanToNumber(f -> (f ? 1. : 0.f)), double.class));
+        casters.put(Byte.class, new NumericCastor<>(e -> inRange(e, Byte.MIN_VALUE, Byte.MAX_VALUE), e -> (byte)connectionProperties.toInteger(((Number) e).doubleValue()), connectionProperties.booleanToNumber(b -> (byte)(b ? 1 : 0)), Byte.class, connectionProperties.isCharToByte() ? c -> (byte)connectionProperties.toByte(c) : null));
+        casters.put(Short.class, new NumericCastor<>(e -> inRange(e, Short.MIN_VALUE, Short.MAX_VALUE), e -> (short)connectionProperties.toInteger(((Number) e).doubleValue()), connectionProperties.booleanToNumber(b -> (short)(b ? 1 : 0)), Short.class));
+        casters.put(Integer.class, new NumericCastor<>(e -> inRange(e, Integer.MIN_VALUE, Integer.MAX_VALUE), e -> (int)connectionProperties.toInteger(((Number) e).doubleValue()), connectionProperties.booleanToNumber(b -> (b ? 1 : 0)), Integer.class));
+        casters.put(Long.class, new NumericCastor<>(e -> inRange(e, Long.MIN_VALUE, Long.MAX_VALUE), e -> connectionProperties.toInteger(((Number) e).doubleValue()), connectionProperties.booleanToNumber(b -> (long)(b ? 1 : 0)), Long.class));
+        casters.put(Float.class, new NumericCastor<>(e -> inRange(e, -Float.MAX_VALUE, Float.MAX_VALUE), e -> ((Number) e).floatValue(), connectionProperties.booleanToNumber(f -> (f ? 1.f : 0.f)), Float.class));
+        casters.put(Double.class, new NumericCastor<>(e -> inRange(e, -Double.MAX_VALUE, Double.MAX_VALUE), e -> ((Number) e).doubleValue(), connectionProperties.booleanToNumber(f -> (f ? 1. : 0.f)), Double.class));
+
+        casters.put(BigDecimal.class, arg -> {
+            Object o = arg.getObj();
+            if (o == null) {
+                return null;
+            }
+            Object value = Optional.ofNullable(bigDecimalCasters.get(o.getClass())).orElse(bigDecimalUnacceptable).apply(arg.getObj());
+            if (o instanceof Boolean) {
+                if (connectionProperties.isBooleanToNumber()) {
+                    return value;
+                }
+                throw new SQLException("Cannot cast boolean to BigDecimal");
+            }
+            return value;
+        });
+
+
+
+
         casters.put(Blob.class, arg -> connectionProperties.asBlob(arg.getObj(), arg.getFrom(), this::getMetaData, arg.getColumnIndex()));
         casters.put(Clob.class, arg -> connectionProperties.asClob(arg.getObj(), arg.getFrom()));
         casters.put(NClob.class, arg -> connectionProperties.asNClob(arg.getObj(), arg.getFrom()));

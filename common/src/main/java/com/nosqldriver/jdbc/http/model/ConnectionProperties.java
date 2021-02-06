@@ -2,6 +2,7 @@ package com.nosqldriver.jdbc.http.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.nosqldriver.util.function.ThrowingFunction;
 import com.nosqldriver.util.function.ThrowingSupplier;
 
 import java.io.ByteArrayOutputStream;
@@ -120,7 +121,9 @@ public class ConnectionProperties {
     private final boolean anyClob;// = true;
     private final boolean anyNClob;// = true;
     private final boolean anyArray;// = true;
+    private final boolean anyArrayPartial;// = false;
     private final boolean charToByte;
+    private final boolean booleanToNumber;
     private final Collection<String> blobable;// = true;
     private final Collection<String> partialBlobable = new HashSet<>();
     private final Collection<String> stringBlob;
@@ -129,7 +132,11 @@ public class ConnectionProperties {
     private final Map<Boolean, String> booleanLiterals;
     private final Collection<String> unsupportedFunctions;
     private final Collection<Class> toTimestamp;// = true;
+    private final Collection<Class> copyDateToTimestamp = new HashSet<>();
     private final Collection<Class> toDate;
+    private final Collection<Class> copyTimeToDate = new HashSet<>();
+    private final Collection<Class> toTime;// = true;
+    private final Collection<Class> copyDateToTime = new HashSet<>();
     private final Collection<Class> toBoolean;// = true;
     private final Map<Class, String> stringFormats;
     private final TimeZone timezone;
@@ -172,7 +179,9 @@ public class ConnectionProperties {
         this.anyClob = getBoolean(props, "anyClob", true);
         this.anyNClob = getBoolean(props, "anyNClob", true);
         this.anyArray = getBoolean(props, "anyArray", true);
-        this.charToByte =  getBoolean(props, "charToByte", false);
+        this.anyArrayPartial = getPartialBoolean(props, "anyArray");
+        this.charToByte = getBoolean(props, "charToByte", false);
+        this.booleanToNumber = getBoolean(props, "booleanToNumber", false);
         this.blobable = Optional.ofNullable(props.getProperty("blobable")).map(p ->
                 Arrays.stream(p.split("\\s*,\\s*"))
                         .map(t -> {
@@ -208,9 +217,48 @@ public class ConnectionProperties {
         booleanLiterals.put(true, boolLiterals[1]);
         unsupportedFunctions = new HashSet<>(Arrays.asList(props.getProperty("unsupportedFunctions", "").split("\\s*,\\s*")));
         toTimestamp = Optional.ofNullable(props.getProperty("toTimestamp")).map(p -> Arrays.stream(p.split("\\s*,\\s*"))
-                        .map(ConnectionProperties::toClass).collect(toList())).orElse(emptyList());
+                .map(s -> {
+                    boolean copyData = false;
+                    if (s.endsWith("$")) {
+                        s = s.substring(0, s.length() - 1);
+                        copyData = true;
+                    }
+                    Class clazz = toClass(s);
+                    if (copyData) {
+                        copyDateToTimestamp.add(clazz);
+                    }
+                    return clazz;
+                }).collect(toList())).orElse(emptyList());
+
+
         toDate = Optional.ofNullable(props.getProperty("toDate")).map(p -> Arrays.stream(p.split("\\s*,\\s*"))
-                .map(ConnectionProperties::toClass).collect(toList())).orElse(emptyList());
+                .map(s -> {
+                    boolean copyData = false;
+                    if (s.endsWith("$")) {
+                        s = s.substring(0, s.length() - 1);
+                        copyData = true;
+                    }
+                    Class clazz = toClass(s);
+                    if (copyData) {
+                        copyTimeToDate.add(clazz);
+                    }
+                    return clazz;
+                }).collect(toList())).orElse(emptyList());
+        toTime = Optional.ofNullable(props.getProperty("toTime")).map(p -> Arrays.stream(p.split("\\s*,\\s*"))
+                .map(s -> {
+                    boolean copyData = false;
+                    if (s.endsWith("$")) {
+                        s = s.substring(0, s.length() - 1);
+                        copyData = true;
+                    }
+                    Class clazz = toClass(s);
+                    if (copyData) {
+                        copyDateToTime.add(clazz);
+                    }
+                    return clazz;
+                }).collect(toList())).orElse(emptyList());
+
+
         toBoolean = Stream.concat(
                 Stream.of(boolean.class, Boolean.class),
                 Optional.ofNullable(props.getProperty("toBoolean")).map(p -> Arrays.stream(p.split("\\s*,\\s*"))
@@ -253,7 +301,11 @@ public class ConnectionProperties {
     }
 
     private static boolean getBoolean(Properties props, String name, boolean defaultValue) {
-        return Boolean.parseBoolean(props.getProperty(name, "" + defaultValue));
+        return Boolean.parseBoolean(props.getProperty(name, "" + defaultValue).replace(".", ""));
+    }
+
+    private static boolean getPartialBoolean(Properties props, String name) {
+        return Optional.ofNullable(props.getProperty(name)).map(p -> p.endsWith(".")).orElse(false);
     }
 
     public long toInteger(double value) {
@@ -378,7 +430,7 @@ public class ConnectionProperties {
             return (Array)obj;
         }
         if (anyArray) {
-            return obj == null ? null : new TransportableArray(null, 0, new Object[]{obj});
+            return obj == null ? null : new TransportableArray(null, 0, new Object[]{obj}, anyArrayPartial);
         }
         throw new SQLException(format("Cannot cast %s to array", obj));
     }
@@ -395,13 +447,11 @@ public class ConnectionProperties {
             if (sqlType == Types.TIME_WITH_TIMEZONE || sqlType == Types.TIMESTAMP_WITH_TIMEZONE) {
                 cDate.setTimeZone(timezone);
             }
-            cDate.set(Calendar.YEAR, c.get(Calendar.YEAR));
-            cDate.set(Calendar.MONTH, c.get(Calendar.MONTH));
-            cDate.set(Calendar.DAY_OF_MONTH, c.get(Calendar.DAY_OF_MONTH));
-            cDate.set(Calendar.HOUR_OF_DAY, 0);
-            cDate.set(Calendar.MINUTE, 0);
-            cDate.set(Calendar.SECOND, 0);
-            cDate.set(Calendar.MILLISECOND, 0);
+            if (copyTimeToDate.contains(Timestamp.class)) {
+                copyCalendarFields(c, cDate, Calendar.YEAR, Calendar.MONTH, Calendar.DAY_OF_MONTH);
+            } else {
+                initCalendarFields(cDate, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND, Calendar.MILLISECOND);
+            }
             return new Date(cDate.getTimeInMillis());
         }
         if (obj instanceof Time && toDate.contains(Time.class)) {
@@ -410,13 +460,27 @@ public class ConnectionProperties {
             c.setTimeInMillis(t.getTime());
             Calendar cDate = Calendar.getInstance();
             cDate.setTimeInMillis(0);
-            cDate.set(Calendar.HOUR_OF_DAY, c.get(Calendar.HOUR_OF_DAY));
-            cDate.set(Calendar.MINUTE, c.get(Calendar.MINUTE));
-            cDate.set(Calendar.SECOND, c.get(Calendar.SECOND));
-            cDate.set(Calendar.MILLISECOND, c.get(Calendar.MILLISECOND));
+            if (copyTimeToDate.contains(Timestamp.class)) {
+                copyCalendarFields(c, cDate, Calendar.YEAR, Calendar.MONTH, Calendar.DAY_OF_MONTH);
+            } else {
+                initCalendarFields(cDate, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND, Calendar.MILLISECOND);
+            }
             return new Date(cDate.getTimeInMillis());
         }
         throw new SQLException(format("Cannot cast %s to date", obj));
+    }
+
+
+    private void copyCalendarFields(Calendar src, Calendar dest, int ... fields) {
+        for (int field : fields) {
+            dest.set(field, src.get(field));
+        }
+    }
+
+    private void initCalendarFields(Calendar dest, int ... fields) {
+        for (int field : fields) {
+            dest.set(field, 0);
+        }
     }
 
 
@@ -424,7 +488,7 @@ public class ConnectionProperties {
         if (obj instanceof Time) {
             return (Time)obj;
         }
-        if (obj instanceof Timestamp) {
+        if (obj instanceof Timestamp && toTime.contains(Timestamp.class)) {
             Calendar c = Calendar.getInstance();
             c.setTimeInMillis(((Timestamp)obj).getTime());
             Calendar cTime = Calendar.getInstance();
@@ -434,11 +498,15 @@ public class ConnectionProperties {
             cTime.set(Calendar.YEAR, 1970);
             cTime.set(Calendar.MONTH, Calendar.JANUARY);
             cTime.set(Calendar.DAY_OF_MONTH, 1);
-            cTime.set(Calendar.HOUR_OF_DAY, c.get(Calendar.HOUR_OF_DAY));
-            cTime.set(Calendar.MINUTE, c.get(Calendar.MINUTE));
-            cTime.set(Calendar.SECOND, c.get(Calendar.SECOND));
-            cTime.set(Calendar.MILLISECOND, c.get(Calendar.MILLISECOND));
+            if (copyDateToTime.contains(Timestamp.class)) {
+                copyCalendarFields(c, cTime, Calendar.YEAR, Calendar.MONTH, Calendar.DAY_OF_MONTH);
+            } else {
+                initCalendarFields(cTime, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND, Calendar.MILLISECOND);
+            }
             return new Time(cTime.getTimeInMillis());
+        }
+        if (obj instanceof Date && toTime.contains(Date.class)) {
+            return new Time(0);
         }
         throw new SQLException(format("Cannot cast %s to time", obj));
     }
@@ -454,15 +522,15 @@ public class ConnectionProperties {
             return new Timestamp(((Date)obj).getTime()); }
         if (obj instanceof Time && toTimestamp.contains(Time.class)) {
             Calendar c = Calendar.getInstance();
-            c.setTimeInMillis(((Time)obj).getTime());
+            c.setTimeInMillis(((Time) obj).getTime());
             Calendar cTimestamp = Calendar.getInstance();
             if (sqlType == Types.TIME_WITH_TIMEZONE || sqlType == Types.TIMESTAMP_WITH_TIMEZONE) {
                 cTimestamp.setTimeZone(timezone);
             }
-            cTimestamp.set(Calendar.HOUR_OF_DAY, c.get(Calendar.HOUR_OF_DAY));
-            cTimestamp.set(Calendar.MINUTE, c.get(Calendar.MINUTE));
-            cTimestamp.set(Calendar.SECOND, c.get(Calendar.SECOND));
-            cTimestamp.set(Calendar.MILLISECOND, c.get(Calendar.MILLISECOND));
+            if (!copyDateToTimestamp.contains(Time.class)) {
+                cTimestamp.setTimeInMillis(0);
+            }
+            copyCalendarFields(c, cTimestamp, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND, Calendar.MILLISECOND);
             return new Timestamp(cTimestamp.getTimeInMillis());
         }
         throw new SQLException(format("Cannot cast %s to timestamp", obj));
@@ -505,6 +573,18 @@ public class ConnectionProperties {
 
     public boolean isCharToByte() {
         return charToByte;
+    }
+
+    public <T extends Number> ThrowingFunction<Boolean, T, SQLException> booleanToNumber(ThrowingFunction<Boolean, T, SQLException> f) {
+        if (booleanToNumber) {
+            return f;
+        }
+        return aBoolean -> {throw new SQLException("Cannot boolean to number");};
+    }
+
+
+    public boolean isBooleanToNumber() {
+        return booleanToNumber;
     }
 
     private static Class toClass(String className) {

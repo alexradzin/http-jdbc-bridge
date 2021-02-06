@@ -292,7 +292,17 @@ public class ResultSetController extends BaseController {
         Object[] row = new Object[n];
         for (int i = 0; i < n; i++) {
             int column = i + 1;
-            Object value = getterByType.getOrDefault(md.getColumnType(column), ResultSet::getObject).apply(rs, column);
+            Object value;
+            ThrowingBiFunction<ResultSet, Integer, ?, SQLException> getter = getterByType.get(md.getColumnType(column));
+            if (getter != null) {
+                try {
+                    value = getter.apply(rs, column);
+                } catch (SQLException e) {
+                    value = rs.getObject(column);
+                }
+            } else {
+                value = rs.getObject(column);
+            }
             String type = md.getColumnTypeName(column);
             ThrowingBiFunction<String, Object, Object, Exception> transformer = transformers.get(type);
             row[i] = value == null || transformer == null ? value : entityToProxy(value, transformer, type.toLowerCase(), format("%s/%d", rsUrl, column));

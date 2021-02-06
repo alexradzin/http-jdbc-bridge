@@ -398,7 +398,7 @@ public class AssertUtils {
 
     public static void assertSqlArrayEquals(String nativeUrl, java.sql.Array expected, java.sql.Array actual, String message) {
         try {
-            assertArrayEquals(nativeUrl, expected.getArray(), actual.getArray(), message);
+            assertCall(java.sql.Array::getArray, expected, actual, message, (e, a) -> {}, (e, a) -> {}, 0);
         } catch (SQLException e) {
             throw new IllegalStateException(e);
         }
