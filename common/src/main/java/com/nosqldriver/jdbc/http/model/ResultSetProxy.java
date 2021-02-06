@@ -485,7 +485,12 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @Override
     public Object getObject(int columnIndex) throws SQLException {
         connectionProperties.throwIfUnsupported("getObject");
-        return getValue("index", columnIndex, getColumnClass(getMetaData().getColumnClassName(columnIndex)), columnIndex);
+        Class clazz = Object.class;
+        String className = getMetaData().getColumnClassName(columnIndex);
+        if (className != null) {
+            clazz = getColumnClass(className);
+        }
+        return getValue("index", columnIndex, clazz, columnIndex);
     }
 
     @Override
@@ -496,11 +501,12 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
         String columnTypeName = Object.class.getName();
         for (int i = 1; i <= n; i++) {
             if (columnLabel.equals(md.getColumnLabel(i))) {
-                columnTypeName = md.getColumnTypeName(i);
+                columnTypeName = md.getColumnClassName(i);
                 break;
             }
         }
-        return getValue("label", columnLabel, getColumnClass(columnTypeName), getIndex(columnLabel));
+        Class<?> clazz = columnTypeName == null ? Object.class : getColumnClass(columnTypeName);
+        return getValue("label", columnLabel, clazz, getIndex(columnLabel));
     }
 
     @Override
@@ -1442,7 +1448,8 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     }
 
     private Class<?> getClassOfColumn(int columnIndex) throws SQLException {
-        return getColumnClass(getMetaData().getColumnClassName(columnIndex));
+        String className = getMetaData().getColumnClassName(columnIndex);
+        return className == null ? Object.class : getColumnClass(className);
     }
 
     private String getTypeNameOfColumn(int columnIndex) throws SQLException {
