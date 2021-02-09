@@ -124,10 +124,10 @@ public class ConnectionProperties {
     private final boolean anyArrayPartial;// = false;
     private final boolean charToByte;
     private final boolean booleanToNumber;
-    private final Collection<String> blobable;// = true;
-    private final Collection<String> partialBlobable = new HashSet<>();
+    private final Collection<String> toBlob;// = true;
+    private final Collection<String> partiallyToBlob = new HashSet<>();
     private final Collection<String> stringBlob;
-    private final Collection<String> nullableBlobable = new HashSet<>();
+    private final Collection<String> nullableToBlob = new HashSet<>();
     private final Round floatToInt;// = Round.INT; // h2 -> floor
     private final Map<Boolean, String> booleanLiterals;
     private final Collection<String> unsupportedFunctions;
@@ -182,7 +182,7 @@ public class ConnectionProperties {
         this.anyArrayPartial = getPartialBoolean(props, "anyArray");
         this.charToByte = getBoolean(props, "charToByte", false);
         this.booleanToNumber = getBoolean(props, "booleanToNumber", false);
-        this.blobable = Optional.ofNullable(props.getProperty("blobable")).map(p ->
+        this.toBlob = Optional.ofNullable(props.getProperty("toBlob")).map(p ->
                 Arrays.stream(p.split("\\s*,\\s*"))
                         .map(t -> {
                             String typeName = t;
@@ -198,9 +198,9 @@ public class ConnectionProperties {
                             }
                             String className = Optional.ofNullable(primitives.get(typeName)).map(Class::getName).orElse(typeName);
                             if (partial) {
-                                partialBlobable.add(className);
+                                partiallyToBlob.add(className);
                             } else if (nullable) {
-                                nullableBlobable.add(className);
+                                nullableToBlob.add(className);
                             }
                             return className;
                         }).collect(toSet())).orElse(emptySet());
@@ -356,7 +356,7 @@ public class ConnectionProperties {
 
     public <T> Blob asBlob(T obj, Class fromClazz, ThrowingSupplier<ResultSetMetaData, SQLException> md, int columnIndex) throws SQLException {
         String fromClassName = fromClazz == null ? null : fromClazz.getName();
-        if (!(blobable.contains(fromClassName) || (types.containsKey(fromClazz) && blobable.contains(types.get(fromClazz).getName())))) {
+        if (!(toBlob.contains(fromClassName) || (types.containsKey(fromClazz) && toBlob.contains(types.get(fromClazz).getName())))) {
             throw new SQLException("Cannot create blob from " + obj);
         }
         if (obj == null) {
@@ -370,7 +370,7 @@ public class ConnectionProperties {
 //            return null;
 //        }
 
-        boolean partial = partialBlobable.contains(fromClassName) || (types.containsKey(fromClazz) && partialBlobable.contains(types.get(fromClazz).getName()));
+        boolean partial = partiallyToBlob.contains(fromClassName) || (types.containsKey(fromClazz) && partiallyToBlob.contains(types.get(fromClazz).getName()));
         Object value = obj;
         Class<?> fromClazz2 = fromClazz;
         if(!areCompatible(fromClazz, obj.getClass())) {
