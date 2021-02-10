@@ -61,34 +61,6 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
         throw new IllegalArgumentException(format("Value '%s' is outside of valid range for type %s", o, BigDecimal.class));
     };
 
-    private static final Map<Class<?>, ThrowingFunction<CastorArg, ? extends Object, SQLException>> generalCastors;
-
-    static {
-        Map<Class<?>, ThrowingFunction<CastorArg, ? extends Object, SQLException>> map = new HashMap<>();
-        for (SimpleEntry<Class<?>, ? extends ThrowingFunction<CastorArg, ? extends Object, SQLException>> classSimpleEntry : Arrays.asList(
-                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Byte, SQLException>>(Byte.class, new NumericCastor<>(e -> inRange(e, Byte.MIN_VALUE, Byte.MAX_VALUE), e -> (byte)Math.round(((Number) e).doubleValue()), b -> (byte)(b ? 1 : 0), Byte.class)),
-                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Byte, SQLException>>(byte.class, new NumericCastor<>(e -> inRange(e, Byte.MIN_VALUE, Byte.MAX_VALUE), e -> (byte)Math.round(((Number) e).doubleValue()), b -> (byte)(b ? 1 : 0), byte.class)),
-                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Short, SQLException>>(Short.class, new NumericCastor<>(e -> inRange(e, Short.MIN_VALUE, Short.MAX_VALUE), e -> (short)Math.round(((Number) e).doubleValue()), s -> (short)(s ? 1 : 0), Short.class)),
-                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Short, SQLException>>(short.class, new NumericCastor<>(e -> inRange(e, Short.MIN_VALUE, Short.MAX_VALUE), e -> (short)Math.round(((Number) e).doubleValue()), s -> (short)(s ? 1 : 0), short.class)),
-                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Integer, SQLException>>(Integer.class, new NumericCastor<>(e -> inRange(e, Integer.MIN_VALUE, Integer.MAX_VALUE), e -> (int)Math.round(((Number) e).doubleValue()), i -> (i ? 1 : 0), Integer.class)),
-                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Integer, SQLException>>(int.class, new NumericCastor<>(e -> inRange(e, Integer.MIN_VALUE, Integer.MAX_VALUE), e -> (int)Math.round(((Number) e).doubleValue()), i -> (i ? 1 : 0), int.class)),
-
-                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Long, SQLException>>(Long.class, new NumericCastor<>(e -> inRange(e, Long.MIN_VALUE, Long.MAX_VALUE), e -> Math.round(((Number) e).doubleValue()), i -> (i ? 1L : 0L), Long.class)),
-                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Long, SQLException>>(long.class, new NumericCastor<>(e -> inRange(e, Long.MIN_VALUE, Long.MAX_VALUE), e -> Math.round(((Number) e).doubleValue()), i -> (i ? 1L : 0L), long.class)),
-                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Object, SQLException>>(BigDecimal.class, arg -> arg.getObj() == null ? null : Optional.ofNullable(bigDecimalCasters.get(arg.getObj().getClass())).orElse(bigDecimalUnacceptable).apply(arg.getObj())),
-                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Float, SQLException>>(Float.class, new NumericCastor<>(e -> inRange(e, -Float.MAX_VALUE, Float.MAX_VALUE), e -> ((Number) e).floatValue(), f -> (f ? 1.f : 0.f), Float.class)),
-                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Float, SQLException>>(float.class, new NumericCastor<>(e -> inRange(e, -Float.MAX_VALUE, Float.MAX_VALUE), e -> ((Number) e).floatValue(), f -> (f ? 1.f : 0.f), float.class)),
-                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Double, SQLException>>(Double.class, new NumericCastor<>(e -> inRange(e, -Double.MAX_VALUE, Double.MAX_VALUE), e -> ((Number) e).doubleValue(), f -> (f ? 1. : 0.), Double.class)),
-                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, Double, SQLException>>(double.class, new NumericCastor<>(e -> inRange(e, -Double.MAX_VALUE, Double.MAX_VALUE), e -> ((Number) e).doubleValue(), f -> (f ? 1. : 0.), double.class)),
-                new SimpleEntry<Class<?>, ThrowingFunction<CastorArg, ? extends Array, SQLException>>(Array.class, arg -> new ProxyFactory<>(ArrayProxy.class, o -> o == null || o instanceof Array ? (Array)o : new TransportableArray(null, 0, new Object[]{o})).apply(arg.getObj()))
-        )) {
-            if (map.put(classSimpleEntry.getKey(), classSimpleEntry.getValue()) != null) {
-                throw new IllegalStateException("Duplicate key");
-            }
-        }
-        generalCastors = map;
-    }
-
     private static class CastorArg {
         private final Object obj;
         private final Class<?> from;
@@ -201,7 +173,7 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     public ResultSetProxy(@JsonProperty("entityUrl") String entityUrl, @JsonProperty("connectionProperties") ConnectionProperties connectionProperties) {
         super(entityUrl, ResultSet.class);
         this.connectionProperties = connectionProperties;
-        casters = new HashMap<>(generalCastors);
+        casters = new HashMap<>();
 
         casters.put(byte.class, new NumericCastor<>(e -> inRange(e, Byte.MIN_VALUE, Byte.MAX_VALUE), e -> (byte)connectionProperties.toInteger(((Number) e).doubleValue()), connectionProperties.booleanToNumber(b -> (byte)(b ? 1 : 0)), Byte.class, connectionProperties.isCharToByte() ? connectionProperties::toByte: null));
         casters.put(short.class, new NumericCastor<>(e -> inRange(e, Short.MIN_VALUE, Short.MAX_VALUE), e -> (short)connectionProperties.toInteger(((Number) e).doubleValue()), connectionProperties.booleanToNumber(b -> (short)(b ? 1 : 0)), Short.class));
@@ -230,9 +202,6 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
             }
             return value;
         });
-
-
-
 
         casters.put(Blob.class, arg -> connectionProperties.asBlob(arg.getObj(), arg.getFrom(), this::getMetaData, arg.getColumnIndex()));
         casters.put(Clob.class, arg -> connectionProperties.asClob(arg.getObj(), arg.getFrom()));

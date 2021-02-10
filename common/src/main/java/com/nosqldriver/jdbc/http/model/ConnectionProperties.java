@@ -377,11 +377,7 @@ public class ConnectionProperties {
             if (sqlType == Types.TIME_WITH_TIMEZONE || sqlType == Types.TIMESTAMP_WITH_TIMEZONE) {
                 cDate.setTimeZone(timezone);
             }
-            if (toDate.get(Timestamp.class).isCopyTimeToTarget()) {
-                copyCalendarFields(c, cDate, Calendar.YEAR, Calendar.MONTH, Calendar.DAY_OF_MONTH);
-            } else {
-                initCalendarFields(cDate, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND, Calendar.MILLISECOND);
-            }
+            initCalendar(toDate, Timestamp.class, c, cDate);
             return new Date(cDate.getTimeInMillis());
         }
         if (obj instanceof Time && toDate.containsKey(Time.class)) {
@@ -390,14 +386,18 @@ public class ConnectionProperties {
             c.setTimeInMillis(t.getTime());
             Calendar cDate = Calendar.getInstance();
             cDate.setTimeInMillis(0);
-            if (toDate.get(Time.class).isCopyTimeToTarget()) {
-                copyCalendarFields(c, cDate, Calendar.YEAR, Calendar.MONTH, Calendar.DAY_OF_MONTH);
-            } else {
-                initCalendarFields(cDate, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND, Calendar.MILLISECOND);
-            }
+            initCalendar(toDate, Time.class, c, cDate);
             return new Date(cDate.getTimeInMillis());
         }
         throw new SQLException(format("Cannot cast %s to date", obj));
+    }
+
+    private void initCalendar(Map<Class, TimeDataProperties> timeProps, Class clazz, Calendar src, Calendar dest) {
+        if (timeProps.get(clazz).isCopyTimeToTarget()) {
+            copyCalendarFields(src, dest, Calendar.YEAR, Calendar.MONTH, Calendar.DAY_OF_MONTH);
+        } else {
+            initCalendarFields(dest, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND, Calendar.MILLISECOND);
+        }
     }
 
 
@@ -428,11 +428,7 @@ public class ConnectionProperties {
             cTime.set(Calendar.YEAR, 1970);
             cTime.set(Calendar.MONTH, Calendar.JANUARY);
             cTime.set(Calendar.DAY_OF_MONTH, 1);
-            if (toTime.get(Timestamp.class).isCopyTimeToTarget()) {
-                copyCalendarFields(c, cTime, Calendar.YEAR, Calendar.MONTH, Calendar.DAY_OF_MONTH);
-            } else {
-                initCalendarFields(cTime, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND, Calendar.MILLISECOND);
-            }
+            initCalendar(toTime, Timestamp.class, c, cTime);
             return new Time(cTime.getTimeInMillis());
         }
         if (obj instanceof Date && toTime.containsKey(Date.class)) {

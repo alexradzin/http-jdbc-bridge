@@ -204,10 +204,8 @@ public class AssertUtils {
                 }
 
                 for (Entry<String, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>> getter : gettersByIndex) {
-                    //assertValues(getter.apply(expected, i), getter.apply(actual, i), format("%s:column#%d:%s", message, i, emd.getColumnName(i)));
                     String errorMessage = format("%s:%s(%d):%s:%s", message, getter.getKey(), i, emd.getColumnName(i), emd.getColumnTypeName(i));
                     int j = i;
-                    System.out.println("cccccccccccccccccccccccc=" + j + ", " + emd.getColumnName(j) + ", " + getter.getKey());
                    assertCall(rs -> getter.getValue().apply(rs, j), expected, actual, errorMessage, (e, a) -> assertValues(nativeUrl, e, a, errorMessage, emd.getColumnType(j)), exceptionAssertor, emd.getColumnType(i));
                 }
 
@@ -218,8 +216,6 @@ public class AssertUtils {
                     }
                     String label = emd.getColumnLabel(i);
                     assertEquals(expected.findColumn(label), actual.findColumn(label));
-//                    Object actualValue = getter.apply(actual, label);
-//                    assertValues(getter.apply(expected, label), actualValue, format("%s:column#%s", message, emd.getColumnLabel(i)));
 
                     String errorMessage = format("%s:%s(%s):%s", message, getter.getKey(), emd.getColumnLabel(i), emd.getColumnTypeName(i));
                     Object actualValue = assertCall(rs -> getter.getValue().apply(rs, label), expected, actual, errorMessage, (e, a) -> assertValues(nativeUrl, e, a, errorMessage, type), exceptionAssertor, emd.getColumnType(i));
