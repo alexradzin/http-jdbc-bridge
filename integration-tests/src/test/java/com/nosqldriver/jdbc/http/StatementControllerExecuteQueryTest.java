@@ -28,10 +28,10 @@ public class StatementControllerExecuteQueryTest extends StatementControllerTest
         return conn.createStatement().executeUpdate(update);
     }
 
-//    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
-//    @JdbcUrls
-//    void selectTableWithAllTypesCallAllGetters(String nativeUrl) throws SQLException, IOException {
-//        selectTableWithAllTypes(nativeUrl, "select * from test_all_types", null, asList(CALL_ALL_GETTERS, RANGE_EXCEPTION_MESSAGE));
-//    }
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void selectTableWithAllTypesCallAllGetters(String nativeUrl) throws SQLException, IOException {
+        selectTableWithAllTypes(nativeUrl, "select * from test_all_types", null, asList(CALL_ALL_GETTERS, RANGE_EXCEPTION_MESSAGE));
+    }
 
 }
