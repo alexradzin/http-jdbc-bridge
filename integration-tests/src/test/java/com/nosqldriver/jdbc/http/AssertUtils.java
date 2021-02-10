@@ -318,7 +318,9 @@ public class AssertUtils {
         if (isInteger(expected) && isInteger(actual)) {
             assertEquals(((Number)expected).longValue(), ((Number)actual).longValue(), message);
         } else if (isFloating(expected) && isFloating(actual)) {
-            assertEquals(((Number)expected).doubleValue(), ((Number)actual).doubleValue(), 0.001, message);
+            assertEquals(((Number) expected).doubleValue(), ((Number) actual).doubleValue(), 0.001, message);
+        } else if (expected instanceof String && actual instanceof String && (sqlType == Types.FLOAT || sqlType == Types.DOUBLE)) {
+            assertEquals(Double.parseDouble((String)expected), Double.parseDouble((String)actual));
         } else if (isArray(expected) && isArray(actual)) {
             assertArrayEquals(nativeUrl, expected, actual, message);
         } else if(expected instanceof java.sql.Array && actual instanceof java.sql.Array) {
