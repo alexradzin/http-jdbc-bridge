@@ -37,13 +37,13 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.TimeZone;
 import java.util.function.Function;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
-import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 public class ConnectionProperties {
@@ -124,19 +124,14 @@ public class ConnectionProperties {
     private final boolean anyArrayPartial;// = false;
     private final boolean charToByte;
     private final boolean booleanToNumber;
-    private final Collection<String> toBlob;// = true;
-    private final Collection<String> partiallyToBlob = new HashSet<>();
+    private final Map<String, LobProperties> toBlob;// = true;
     private final Collection<String> stringBlob;
-    private final Collection<String> nullableToBlob = new HashSet<>();
     private final Round floatToInt;// = Round.INT; // h2 -> floor
     private final Map<Boolean, String> booleanLiterals;
     private final Collection<String> unsupportedFunctions;
-    private final Collection<Class> toTimestamp;// = true;
-    private final Collection<Class> copyDateToTimestamp = new HashSet<>();
-    private final Collection<Class> toDate;
-    private final Collection<Class> copyTimeToDate = new HashSet<>();
-    private final Collection<Class> toTime;// = true;
-    private final Collection<Class> copyDateToTime = new HashSet<>();
+    private final Map<Class, TimeDataProperties> toTimestamp;// = true;
+    private final Map<Class, TimeDataProperties> toDate;
+    private final Map<Class, TimeDataProperties> toTime;// = true;
     private final Collection<Class> toBoolean;// = true;
     private final Map<Class, String> stringFormats;
     private final TimeZone timezone;
@@ -182,33 +177,8 @@ public class ConnectionProperties {
         this.anyArrayPartial = getPartialBoolean(props, "anyArray");
         this.charToByte = getBoolean(props, "charToByte", false);
         this.booleanToNumber = getBoolean(props, "booleanToNumber", false);
-        this.toBlob = Optional.ofNullable(props.getProperty("toBlob")).map(p ->
-                Arrays.stream(p.split("\\s*,\\s*"))
-                        .map(t -> {
-                            String typeName = t;
-                            boolean partial = false;
-                            boolean nullable = false;
-                            if (t.endsWith(".")) {
-                                typeName = t.substring(0, t.length() - 1);
-                                partial = true;
-                            }
-                            if (t.endsWith("$")) {
-                                typeName = t.substring(0, t.length() - 1);
-                                nullable = true;
-                            }
-                            String className = Optional.ofNullable(primitives.get(typeName)).map(Class::getName).orElse(typeName);
-                            if (partial) {
-                                partiallyToBlob.add(className);
-                            } else if (nullable) {
-                                nullableToBlob.add(className);
-                            }
-                            return className;
-                        }).collect(toSet())).orElse(emptySet());
-
-        this.stringBlob = Optional.ofNullable(props.getProperty("stringBlob")).map(p ->
-                Arrays.stream(p.split("\\s*,\\s*")).map(typeName -> Optional.ofNullable(primitives.get(typeName)).map(types::get).map(Class::getName).orElse(typeName)).collect(toSet()))
-                .orElse(emptySet());
-
+        toBlob = getPropertyValue(props, "toBlob", this::createLobProperties, Collectors.toMap(LobProperties::getClassName, e -> e), emptyMap());
+        stringBlob = getPropertyValue(props, "stringBlob", typeName -> Optional.ofNullable(primitives.get(typeName)).map(types::get).map(Class::getName).orElse(typeName), toSet(), emptySet());
 
         this.floatToInt = Round.valueOf(props.getProperty("floatToInt", Round.INT.name()));
         String[] boolLiterals = props.getProperty("booleanLiterals", "FALSE,TRUE").split("\\s*,\\s*");
@@ -216,48 +186,9 @@ public class ConnectionProperties {
         booleanLiterals.put(false, boolLiterals[0]);
         booleanLiterals.put(true, boolLiterals[1]);
         unsupportedFunctions = new HashSet<>(Arrays.asList(props.getProperty("unsupportedFunctions", "").split("\\s*,\\s*")));
-        toTimestamp = Optional.ofNullable(props.getProperty("toTimestamp")).map(p -> Arrays.stream(p.split("\\s*,\\s*"))
-                .map(s -> {
-                    boolean copyData = false;
-                    if (s.endsWith("$")) {
-                        s = s.substring(0, s.length() - 1);
-                        copyData = true;
-                    }
-                    Class clazz = toClass(s);
-                    if (copyData) {
-                        copyDateToTimestamp.add(clazz);
-                    }
-                    return clazz;
-                }).collect(toList())).orElse(emptyList());
-
-
-        toDate = Optional.ofNullable(props.getProperty("toDate")).map(p -> Arrays.stream(p.split("\\s*,\\s*"))
-                .map(s -> {
-                    boolean copyData = false;
-                    if (s.endsWith("$")) {
-                        s = s.substring(0, s.length() - 1);
-                        copyData = true;
-                    }
-                    Class clazz = toClass(s);
-                    if (copyData) {
-                        copyTimeToDate.add(clazz);
-                    }
-                    return clazz;
-                }).collect(toList())).orElse(emptyList());
-        toTime = Optional.ofNullable(props.getProperty("toTime")).map(p -> Arrays.stream(p.split("\\s*,\\s*"))
-                .map(s -> {
-                    boolean copyData = false;
-                    if (s.endsWith("$")) {
-                        s = s.substring(0, s.length() - 1);
-                        copyData = true;
-                    }
-                    Class clazz = toClass(s);
-                    if (copyData) {
-                        copyDateToTime.add(clazz);
-                    }
-                    return clazz;
-                }).collect(toList())).orElse(emptyList());
-
+        toTimestamp = getTimePropertiesMap(props, "toTimestamp");
+        toTime = getTimePropertiesMap(props, "toTime");
+        toDate = getTimePropertiesMap(props, "toDate");
 
         toBoolean = Stream.concat(
                 Stream.of(boolean.class, Boolean.class),
@@ -356,7 +287,16 @@ public class ConnectionProperties {
 
     public <T> Blob asBlob(T obj, Class fromClazz, ThrowingSupplier<ResultSetMetaData, SQLException> md, int columnIndex) throws SQLException {
         String fromClassName = fromClazz == null ? null : fromClazz.getName();
-        if (!(toBlob.contains(fromClassName) || (types.containsKey(fromClazz) && toBlob.contains(types.get(fromClazz).getName())))) {
+
+        LobProperties lobProps = toBlob.get(fromClassName);
+        if (lobProps == null) {
+            Class refClass = types.get(fromClazz);
+            if (refClass != null) {
+                lobProps = toBlob.get(types.get(fromClazz).getName());
+            }
+        }
+
+        if (lobProps == null) {
             throw new SQLException("Cannot create blob from " + obj);
         }
         if (obj == null) {
@@ -365,12 +305,10 @@ public class ConnectionProperties {
         if (obj instanceof Blob) {
             return (Blob)obj;
         }
-//        boolean nullable = nullableBlobable.contains(fromClassName) || nullableBlobable.contains(types.get(fromClazz).getName());
-//        if (nullable) {
-//            return null;
-//        }
+        if (lobProps.isNullable()) {
+            return null;
+        }
 
-        boolean partial = partiallyToBlob.contains(fromClassName) || (types.containsKey(fromClazz) && partiallyToBlob.contains(types.get(fromClazz).getName()));
         Object value = obj;
         Class<?> fromClazz2 = fromClazz;
         if(!areCompatible(fromClazz, obj.getClass())) {
@@ -380,7 +318,7 @@ public class ConnectionProperties {
             value = asString(obj, md, columnIndex);
             fromClazz2 = String.class;
         }
-        return new TransportableBlob(toBytes.getOrDefault(fromClazz2, serializableToBytes).apply(value), partial);
+        return new TransportableBlob(toBytes.getOrDefault(fromClazz2, serializableToBytes).apply(value), lobProps.isPartial());
     }
 
     private boolean areCompatible(Class<?> fromClazz, Class<?> realClazz) {
@@ -394,35 +332,27 @@ public class ConnectionProperties {
     }
 
     public <T> Clob asClob(T obj, Class<?> fromClazz) throws SQLException {
-        if (!anyClob && !Clob.class.isAssignableFrom(fromClazz)) {
-            throw new SQLException("Cannot create clob from " + obj);
-        }
-        if (obj == null) {
-            return null;
-        }
-        if (obj instanceof Clob) {
-            return (Clob)obj;
-        }
-        if (!anyClob) {
-            throw new SQLException("Cannot create clob from " + obj);
-        }
-        return new TransportableClob(obj instanceof Boolean ? toBooleanString((boolean)obj) : obj.toString());
+        return asClob(obj, fromClazz, anyClob);
     }
 
     public <T> NClob asNClob(T obj, Class<?> fromClazz) throws SQLException {
-        if (!anyNClob && !Clob.class.isAssignableFrom(fromClazz)) {
-            throw new SQLException("Cannot create nclob from " + obj);
+        return asClob(obj, fromClazz, anyNClob);
+    }
+
+    private <T, C extends Clob> C asClob(T obj, Class<?> fromClazz, boolean any) throws SQLException {
+        if (!any && !Clob.class.isAssignableFrom(fromClazz)) {
+            throw new SQLException("Cannot create clob from " + obj);
         }
         if (obj == null) {
             return null;
         }
-        if (obj instanceof Clob) {
-            return (NClob)obj;
+        if (Clob.class.isAssignableFrom(obj.getClass())) {
+            return (C)obj;
         }
-        if (!anyNClob) {
+        if (!any) {
             throw new SQLException("Cannot create clob from " + obj);
         }
-        return new TransportableClob(obj instanceof Boolean ? toBooleanString((boolean)obj) : obj.toString());
+        return (C)new TransportableClob(obj instanceof Boolean ? toBooleanString((boolean)obj) : obj.toString());
     }
 
     public <T> Array asArray(T obj) throws SQLException {
@@ -439,7 +369,7 @@ public class ConnectionProperties {
         if (obj instanceof Date) {
             return (Date)obj;
         }
-        if (obj instanceof Timestamp && toDate.contains(Timestamp.class)) {
+        if (obj instanceof Timestamp && toDate.containsKey(Timestamp.class)) {
             Timestamp ts = (Timestamp)obj;
             Calendar c = Calendar.getInstance();
             c.setTimeInMillis(ts.getTime());
@@ -447,20 +377,20 @@ public class ConnectionProperties {
             if (sqlType == Types.TIME_WITH_TIMEZONE || sqlType == Types.TIMESTAMP_WITH_TIMEZONE) {
                 cDate.setTimeZone(timezone);
             }
-            if (copyTimeToDate.contains(Timestamp.class)) {
+            if (toDate.get(Timestamp.class).isCopyTimeToTarget()) {
                 copyCalendarFields(c, cDate, Calendar.YEAR, Calendar.MONTH, Calendar.DAY_OF_MONTH);
             } else {
                 initCalendarFields(cDate, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND, Calendar.MILLISECOND);
             }
             return new Date(cDate.getTimeInMillis());
         }
-        if (obj instanceof Time && toDate.contains(Time.class)) {
+        if (obj instanceof Time && toDate.containsKey(Time.class)) {
             Time t = (Time)obj;
             Calendar c = Calendar.getInstance();
             c.setTimeInMillis(t.getTime());
             Calendar cDate = Calendar.getInstance();
             cDate.setTimeInMillis(0);
-            if (copyTimeToDate.contains(Timestamp.class)) {
+            if (toDate.get(Time.class).isCopyTimeToTarget()) {
                 copyCalendarFields(c, cDate, Calendar.YEAR, Calendar.MONTH, Calendar.DAY_OF_MONTH);
             } else {
                 initCalendarFields(cDate, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND, Calendar.MILLISECOND);
@@ -488,7 +418,7 @@ public class ConnectionProperties {
         if (obj instanceof Time) {
             return (Time)obj;
         }
-        if (obj instanceof Timestamp && toTime.contains(Timestamp.class)) {
+        if (obj instanceof Timestamp && toTime.containsKey(Timestamp.class)) {
             Calendar c = Calendar.getInstance();
             c.setTimeInMillis(((Timestamp)obj).getTime());
             Calendar cTime = Calendar.getInstance();
@@ -498,14 +428,14 @@ public class ConnectionProperties {
             cTime.set(Calendar.YEAR, 1970);
             cTime.set(Calendar.MONTH, Calendar.JANUARY);
             cTime.set(Calendar.DAY_OF_MONTH, 1);
-            if (copyDateToTime.contains(Timestamp.class)) {
+            if (toTime.get(Timestamp.class).isCopyTimeToTarget()) {
                 copyCalendarFields(c, cTime, Calendar.YEAR, Calendar.MONTH, Calendar.DAY_OF_MONTH);
             } else {
                 initCalendarFields(cTime, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND, Calendar.MILLISECOND);
             }
             return new Time(cTime.getTimeInMillis());
         }
-        if (obj instanceof Date && toTime.contains(Date.class)) {
+        if (obj instanceof Date && toTime.containsKey(Date.class)) {
             return new Time(0);
         }
         throw new SQLException(format("Cannot cast %s to time", obj));
@@ -518,16 +448,16 @@ public class ConnectionProperties {
         if (obj instanceof Timestamp) {
             return (Timestamp)obj;
         }
-        if (obj instanceof Date && toTimestamp.contains(Date.class)) {
+        if (obj instanceof Date && toTimestamp.containsKey(Date.class)) {
             return new Timestamp(((Date)obj).getTime()); }
-        if (obj instanceof Time && toTimestamp.contains(Time.class)) {
+        if (obj instanceof Time && toTimestamp.containsKey(Time.class)) {
             Calendar c = Calendar.getInstance();
             c.setTimeInMillis(((Time) obj).getTime());
             Calendar cTimestamp = Calendar.getInstance();
             if (sqlType == Types.TIME_WITH_TIMEZONE || sqlType == Types.TIMESTAMP_WITH_TIMEZONE) {
                 cTimestamp.setTimeZone(timezone);
             }
-            if (!copyDateToTimestamp.contains(Time.class)) {
+            if (!toTimestamp.get(Time.class).isCopyTimeToTarget()) {
                 cTimestamp.setTimeInMillis(0);
             }
             copyCalendarFields(c, cTimestamp, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND, Calendar.MILLISECOND);
@@ -593,5 +523,41 @@ public class ConnectionProperties {
         } catch (ClassNotFoundException e) {
             throw new IllegalArgumentException(className, e);
         }
+    }
+
+    private TimeDataProperties createTimeDataProperties(String s) {
+        boolean copyData = false;
+        if (s.endsWith("$")) {
+            s = s.substring(0, s.length() - 1);
+            copyData = true;
+        }
+        Class clazz = toClass(s);
+        return new TimeDataProperties(clazz, copyData);
+    }
+
+    private LobProperties createLobProperties(String t) {
+        String typeName = t;
+        boolean partial = false;
+        boolean nullable = false;
+        if (t.endsWith(".")) {
+            typeName = t.substring(0, t.length() - 1);
+            partial = true;
+        }
+        if (t.endsWith("$")) {
+            typeName = t.substring(0, t.length() - 1);
+            nullable = true;
+        }
+        String className = Optional.ofNullable(primitives.get(typeName)).map(Class::getName).orElse(typeName);
+        return new LobProperties(typeName, partial, nullable);
+    }
+
+    private <C, T> C getPropertyValue(Properties props, String name, Function<String, T> factory, Collector<T, ?, C> collector, C defaultValue) {
+        return Optional.ofNullable(props.getProperty(name)).map(p -> Arrays.stream(p.split("\\s*,\\s*"))
+                .map(factory)
+                .collect(collector)).orElse(defaultValue);
+    }
+
+    private Map<Class, TimeDataProperties> getTimePropertiesMap(Properties props, String name) {
+        return getPropertyValue(props, name, this::createTimeDataProperties, Collectors.toMap(TimeDataProperties::getClazz, e -> e), emptyMap());
     }
 }
