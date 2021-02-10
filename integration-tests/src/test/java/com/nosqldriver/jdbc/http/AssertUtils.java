@@ -151,6 +151,8 @@ public class AssertUtils {
         typedGettersByLabel.put(Types.ROWID, asList(pair("getRowId", ResultSet::getRowId)));
     }
 
+    private static final Collection<Integer> floatingPointSqlTypes = new HashSet<>(Arrays.asList(Types.FLOAT, Types.DOUBLE, Types.REAL));
+
 
     /**
      *
@@ -319,7 +321,7 @@ public class AssertUtils {
             assertEquals(((Number)expected).longValue(), ((Number)actual).longValue(), message);
         } else if (isFloating(expected) && isFloating(actual)) {
             assertEquals(((Number) expected).doubleValue(), ((Number) actual).doubleValue(), 0.001, message);
-        } else if (expected instanceof String && actual instanceof String && (sqlType == Types.FLOAT || sqlType == Types.DOUBLE)) {
+        } else if (expected instanceof String && actual instanceof String && floatingPointSqlTypes.contains(sqlType)) {
             assertEquals(Double.parseDouble((String)expected), Double.parseDouble((String)actual), 0.001, message);
         } else if (isArray(expected) && isArray(actual)) {
             assertArrayEquals(nativeUrl, expected, actual, message);
