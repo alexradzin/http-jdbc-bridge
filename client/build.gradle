@@ -47,9 +47,6 @@ test {
         events 'PASSED', 'FAILED', 'SKIPPED'
     }
     useJUnitPlatform()
-    filter {
-
-    }
 }
 
 task fatJar(type: Jar) {

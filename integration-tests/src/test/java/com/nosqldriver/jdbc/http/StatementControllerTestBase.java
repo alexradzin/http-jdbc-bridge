@@ -34,8 +34,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_PLACEHOLDER;
 
 public abstract class StatementControllerTestBase<T extends Statement, R extends Number> extends ControllerTestBase {
-//    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
-//    @JdbcUrls
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
     void getters(String nativeUrl) throws SQLException {
         Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
         Connection nativeConn = DriverManager.getConnection(nativeUrl);
@@ -73,8 +73,8 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
     }
 
 
-//    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
-//    @JdbcUrls
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
     void gettersAndSetters(String nativeUrl) throws SQLException {
         Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
         Connection nativeConn = DriverManager.getConnection(nativeUrl);
@@ -118,8 +118,8 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
 
 
 
-//    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
-//    @JdbcUrls
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
     void voidFunctions(String nativeUrl) throws SQLException {
         Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
         Connection nativeConn = DriverManager.getConnection(nativeUrl);
@@ -150,8 +150,8 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
         }
     }
 
-//    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
-//    @JdbcUrls
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
     void selectEmptyTableWithAllTypes(String nativeUrl) throws SQLException, IOException {
         selectEmptyTableWithAllTypes(nativeUrl, "select * from test_all_types", null);
     }
@@ -167,14 +167,14 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
     }
 
 
-//    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
-//    @JdbcUrls
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
     void selectTableWithAllTypes(String nativeUrl) throws SQLException, IOException {
         selectTableWithAllTypes(nativeUrl, "select * from test_all_types", null, Collections.emptyList());
     }
 
-//    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
-//    @JdbcUrls
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
     void selectTableWithAllTypesAndUpdate(String nativeUrl) throws SQLException, IOException {
         Collection<Map<String, Object>> result = selectTableWithAllTypes(nativeUrl, "select * from test_all_types", "update test_all_types set i = 5", Collections.emptyList());
         if (result != null) {
@@ -184,8 +184,8 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
         }
     }
 
-//    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
-//    @JdbcUrls
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
     void wrap(String nativeUrl) throws SQLException {
         Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
         Connection nativeConn = DriverManager.getConnection(nativeUrl);
