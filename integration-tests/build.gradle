@@ -56,6 +56,11 @@ test {
     testLogging {
         events 'PASSED', 'FAILED', 'SKIPPED'
     }
+//    systemProperty "jdbc.urls", "jdbc:h2:mem:test,jdbc:hsqldb:mem,jdbc:derby:memory:test\\;create=true,jdbc:mysql://localhost:3306/public?user=root&password=1spider8legs,jdbc:postgresql://localhost:5432/test_db?user=alex&password=alex"
+//    systemProperty "jdbc.conf", "/home/alex/Documents/http-jdbc-bridge/jdbc.properties"
+    filter {
+        includeTestsMatching "com.nosqldriver.jdbc.http.StatementControllerExecuteQueryTest"
+    }
     useJUnitPlatform()
 }
 

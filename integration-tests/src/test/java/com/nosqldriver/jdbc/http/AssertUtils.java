@@ -91,7 +91,7 @@ public class AssertUtils {
             pair("getByte", ResultSet::getByte), pair("getShort", ResultSet::getShort), pair("getInt", ResultSet::getInt), pair("getString", ResultSet::getLong),
             pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble), pair("getBigDecimal", ResultSet::getBigDecimal),
             pair("getString", ResultSet::getString), //returns different string representation for H2: Time
-            pair("getNString", ResultSet::getNString), // throws not supported excetion in some drivers
+            pair("getNString", ResultSet::getNString), // throws not supported exception in some drivers
             pair("getDate", ResultSet::getDate), pair("getTime", ResultSet::getTime), pair("getTimestamp", ResultSet::getTimestamp),
             pair("getArray", ResultSet::getArray),
             pair("getBlob", ResultSet::getBlob),
@@ -332,7 +332,6 @@ public class AssertUtils {
         } else if (expected instanceof Reader && actual instanceof Reader) {
             assertEquals(readAll((Reader)expected), readAll((Reader)actual));
         } else if (expected instanceof Blob && actual instanceof Blob) {
-            //Assertions.assertArrayEquals(getBytes((Blob)expected), getBytes((Blob)actual));
             if (nativeUrl.contains("mysql") && (Types.TIME_WITH_TIMEZONE == sqlType || Types.TIMESTAMP_WITH_TIMEZONE == sqlType || Types.TIMESTAMP == sqlType || Types.DATE == sqlType || Types.TIME == sqlType)) {
                 if (expected == null) {
                     assertNull(actual);

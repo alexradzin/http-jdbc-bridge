@@ -11,7 +11,7 @@ before_script:
   - chmod +x gradlew
   - psql -c 'create database test;' -U postgres
 script:
-  - ./gradlew clean build
+  - ./gradlew clean build --info
   - ./gradlew jacocoTestReport
 after_success:
   - bash <(curl -s https://codecov.io/bash)
