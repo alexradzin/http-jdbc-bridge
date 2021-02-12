@@ -34,4 +34,9 @@ public class StatementControllerExecuteQueryTest extends StatementControllerTest
         selectTableWithAllTypes(nativeUrl, "select * from test_all_types", null, singletonList(RANGE_EXCEPTION_MESSAGE), GettersSupplier.ALL);
     }
 
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void selectTableWithAllTypesGetClob(String nativeUrl) throws SQLException, IOException {
+        selectTableWithAllTypes(nativeUrl, "select * from test_all_types", null, singletonList(RANGE_EXCEPTION_MESSAGE), GettersSupplier.CLOB);
+    }
 }

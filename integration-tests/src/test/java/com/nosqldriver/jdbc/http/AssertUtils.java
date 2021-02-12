@@ -153,6 +153,7 @@ public class AssertUtils {
     }
 
     private static final Collection<Integer> floatingPointSqlTypes = new HashSet<>(Arrays.asList(Types.FLOAT, Types.DOUBLE, Types.REAL));
+    private static final Collection<Integer> dateTimeSqlTypes = new HashSet<>(Arrays.asList(Types.TIME_WITH_TIMEZONE, Types.TIMESTAMP_WITH_TIMEZONE, Types.TIMESTAMP, Types.DATE, Types.TIME));
 
     enum GettersSupplier {
         ALL {
@@ -418,7 +419,7 @@ public class AssertUtils {
         } else if (expected instanceof Reader && actual instanceof Reader) {
             assertEquals(readAll((Reader)expected), readAll((Reader)actual));
         } else if (expected instanceof Blob && actual instanceof Blob) {
-            if (nativeUrl.contains("mysql") && (Types.TIME_WITH_TIMEZONE == sqlType || Types.TIMESTAMP_WITH_TIMEZONE == sqlType || Types.TIMESTAMP == sqlType || Types.DATE == sqlType || Types.TIME == sqlType)) {
+            if (nativeUrl.contains("mysql") && dateTimeSqlTypes.contains(sqlType)) {
                 if (expected == null) {
                     assertNull(actual);
                 } else {
@@ -427,10 +428,22 @@ public class AssertUtils {
             } else {
                 assertCall(o -> getBytes((Blob)o), expected, actual, "blob", Assertions::assertArrayEquals, (e1, e2) -> {});
             }
+        } else if (nativeUrl.contains("mysql") && dateTimeSqlTypes.contains(sqlType)) {
+            assertNotNull(actual);
+        } else if ((nativeUrl.contains("mysql") || nativeUrl.contains("h2")) && dateTimeSqlTypes.contains(sqlType) && expected instanceof Clob && actual instanceof Clob) {
+            assertNotNull(actual);
         } else if (expected instanceof NClob && actual instanceof NClob) {
-            assertEquals(getString((NClob) expected), getString((NClob) actual));
+            if (nativeUrl.contains("h2") && sqlType == Types.ARRAY) {
+                assertNotNull(actual); // h2 returns clob that contains toString() of the original Array, so there is no reason to support this "feature"
+            } else {
+                assertCall(o -> getString((Clob)o), expected, actual, "clob", Assertions::assertEquals, (e1, e2) -> {});
+            }
         } else if (expected instanceof Clob && actual instanceof Clob) {
-            assertEquals(getString((Clob)expected), getString((Clob)actual));
+            if (nativeUrl.contains("h2") && sqlType == Types.ARRAY) {
+                assertNotNull(actual); // h2 returns clob that contains toString() of the original Array, so there is no reason to support this "feature"
+            } else {
+                assertCall(o -> getString((Clob)o), expected, actual, "clob", Assertions::assertEquals, (e1, e2) -> {});
+            }
         } else if (!(expected instanceof Timestamp) && actual instanceof Timestamp) {
             assertNotNull(expected);
             String expStr = expected.toString();
@@ -441,8 +454,6 @@ public class AssertUtils {
             }
         } else if (Types.TIME_WITH_TIMEZONE == sqlType || Types.TIMESTAMP_WITH_TIMEZONE == sqlType || Types.TIMESTAMP == sqlType || Types.DATE == sqlType) {
             // Patch for HSQL: 19:18:17+0:00 vs 19:18:17 etc
-            assertNotNull(actual);
-        } else if (nativeUrl.contains("mysql") && (Types.TIME_WITH_TIMEZONE == sqlType || Types.TIMESTAMP_WITH_TIMEZONE == sqlType || Types.TIMESTAMP == sqlType || Types.DATE == sqlType || Types.TIME == sqlType)) {
             assertNotNull(actual);
         } else {
             assertEquals(expected, actual, message);

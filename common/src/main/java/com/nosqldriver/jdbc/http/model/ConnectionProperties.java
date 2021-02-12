@@ -125,6 +125,7 @@ public class ConnectionProperties {
     private final boolean charToByte;
     private final boolean booleanToNumber;
     private final Map<String, LobProperties> toBlob;// = true;
+    private final Map<String, LobProperties> toClob;// = true;
     private final Collection<String> stringBlob;
     private final Round floatToInt;// = Round.INT; // h2 -> floor
     private final Map<Boolean, String> booleanLiterals;
@@ -179,6 +180,7 @@ public class ConnectionProperties {
         this.booleanToNumber = getBoolean(props, "booleanToNumber", false);
         toBlob = getPropertyValue(props, "toBlob", this::createLobProperties, Collectors.toMap(LobProperties::getClassName, e -> e), emptyMap());
         stringBlob = getPropertyValue(props, "stringBlob", typeName -> Optional.ofNullable(primitives.get(typeName)).map(types::get).map(Class::getName).orElse(typeName), toSet(), emptySet());
+        toClob = getPropertyValue(props, "toClob", this::createLobProperties, Collectors.toMap(LobProperties::getClassName, e -> e), emptyMap());
 
         this.floatToInt = Round.valueOf(props.getProperty("floatToInt", Round.INT.name()));
         String[] boolLiterals = props.getProperty("booleanLiterals", "FALSE,TRUE").split("\\s*,\\s*");
@@ -340,7 +342,17 @@ public class ConnectionProperties {
     }
 
     private <T, C extends Clob> C asClob(T obj, Class<?> fromClazz, boolean any) throws SQLException {
-        if (!any && !Clob.class.isAssignableFrom(fromClazz)) {
+        String fromClassName = fromClazz == null ? null : fromClazz.getName();
+
+        LobProperties lobProps = toClob.get(fromClassName);
+        if (lobProps == null) {
+            Class refClass = types.get(fromClazz);
+            if (refClass != null) {
+                lobProps = toClob.get(types.get(fromClazz).getName());
+            }
+        }
+
+        if (lobProps == null && !any && !Clob.class.isAssignableFrom(fromClazz)) {
             throw new SQLException("Cannot create clob from " + obj);
         }
         if (obj == null) {
@@ -349,10 +361,8 @@ public class ConnectionProperties {
         if (Clob.class.isAssignableFrom(obj.getClass())) {
             return (C)obj;
         }
-        if (!any) {
-            throw new SQLException("Cannot create clob from " + obj);
-        }
-        return (C)new TransportableClob(obj instanceof Boolean ? toBooleanString((boolean)obj) : obj.toString());
+        boolean partial = lobProps != null && lobProps.isPartial();
+        return (C)new TransportableClob(obj instanceof Boolean ? toBooleanString((boolean)obj) : obj.toString(), partial);
     }
 
     public <T> Array asArray(T obj) throws SQLException {
