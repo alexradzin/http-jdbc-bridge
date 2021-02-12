@@ -1,5 +1,6 @@
 package com.nosqldriver.jdbc.http;
 
+import com.nosqldriver.jdbc.http.AssertUtils.GettersSupplier;
 import com.nosqldriver.util.function.ThrowingConsumer;
 import org.junit.jupiter.params.ParameterizedTest;
 
@@ -9,9 +10,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import static com.nosqldriver.jdbc.http.AssertUtils.ResultSetAssertMode.CALL_ALL_GETTERS;
 import static com.nosqldriver.jdbc.http.AssertUtils.ResultSetAssertMode.RANGE_EXCEPTION_MESSAGE;
-import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_PLACEHOLDER;
 
 public class StatementControllerExecuteQueryTest extends StatementControllerTestBase<Statement, Integer> {
@@ -31,7 +31,7 @@ public class StatementControllerExecuteQueryTest extends StatementControllerTest
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void selectTableWithAllTypesCallAllGetters(String nativeUrl) throws SQLException, IOException {
-        selectTableWithAllTypes(nativeUrl, "select * from test_all_types", null, asList(CALL_ALL_GETTERS, RANGE_EXCEPTION_MESSAGE));
+        selectTableWithAllTypes(nativeUrl, "select * from test_all_types", null, singletonList(RANGE_EXCEPTION_MESSAGE), GettersSupplier.ALL);
     }
 
 }

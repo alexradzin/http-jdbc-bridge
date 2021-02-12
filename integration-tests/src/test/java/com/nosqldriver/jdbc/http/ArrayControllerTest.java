@@ -60,7 +60,7 @@ public class ArrayControllerTest extends ControllerTestBase {
 
         @Override
         public void accept(ResultSet expected, ResultSet actual) throws SQLException {
-            AssertUtils.assertResultSet(nativeUrl, expected, actual, message, limit, Collections.emptyList());
+            AssertUtils.assertResultSet(nativeUrl, expected, actual, message, limit, Collections.emptyList(), AssertUtils.GettersSupplier.BY_TYPE);
         }
     }
 

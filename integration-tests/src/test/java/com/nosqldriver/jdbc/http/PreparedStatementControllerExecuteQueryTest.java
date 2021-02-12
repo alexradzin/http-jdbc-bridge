@@ -1,5 +1,6 @@
 package com.nosqldriver.jdbc.http;
 
+import com.nosqldriver.jdbc.http.AssertUtils.GettersSupplier;
 import com.nosqldriver.util.function.ThrowingConsumer;
 import org.junit.jupiter.params.ParameterizedTest;
 
@@ -28,7 +29,7 @@ public class PreparedStatementControllerExecuteQueryTest extends StatementContro
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void selectTableWithIndexedArgumentsWithAllTypes(String nativeUrl) throws SQLException {
-        selectTableWithAllTypes(nativeUrl, "select * from test_all_types where i=?", null, Collections.emptyList(), preparedStatement -> preparedStatement.setInt(1, 12345));
+        selectTableWithAllTypes(nativeUrl, "select * from test_all_types where i=?", null, Collections.emptyList(), GettersSupplier.BY_TYPE, preparedStatement -> preparedStatement.setInt(1, 12345));
     }
 
     @Override

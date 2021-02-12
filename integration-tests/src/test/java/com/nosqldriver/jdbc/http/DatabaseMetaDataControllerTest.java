@@ -1,5 +1,6 @@
 package com.nosqldriver.jdbc.http;
 
+import com.nosqldriver.jdbc.http.AssertUtils.GettersSupplier;
 import com.nosqldriver.util.function.ThrowingFunction;
 import com.nosqldriver.util.function.ThrowingQuadraFunction;
 import com.nosqldriver.util.function.ThrowingTriFunction;
@@ -351,7 +352,7 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
             httpEx = e;
         }
         if (nativeEx == null) {
-            AssertUtils.assertResultSet(nativeUrl, nativeRes, httpRes, message, limit, Collections.emptyList());
+            AssertUtils.assertResultSet(nativeUrl, nativeRes, httpRes, message, limit, Collections.emptyList(), GettersSupplier.BY_TYPE);
         } else {
             assertNotNull(httpEx);
             assertEquals(nativeEx.getMessage(), httpEx.getMessage());

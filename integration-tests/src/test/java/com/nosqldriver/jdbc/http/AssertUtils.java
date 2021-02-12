@@ -37,6 +37,7 @@ import static com.nosqldriver.util.function.Pair.pair;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -45,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AssertUtils {
     enum ResultSetAssertMode {
-        CHECK_STATE, CALL_ALL_GETTERS, RANGE_EXCEPTION_MESSAGE,;
+        CHECK_STATE, RANGE_EXCEPTION_MESSAGE,;
     }
     private static final Collection<Class<?>> integerTypes = new HashSet<>(asList(Byte.class, Short.class, Integer.class, Long.class));
     private static final Collection<Class<?>> floatingTypes = new HashSet<>(asList(Float.class, Double.class, BigDecimal.class));
@@ -153,6 +154,89 @@ public class AssertUtils {
 
     private static final Collection<Integer> floatingPointSqlTypes = new HashSet<>(Arrays.asList(Types.FLOAT, Types.DOUBLE, Types.REAL));
 
+    enum GettersSupplier {
+        ALL {
+            public Collection<Entry<String, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>>> gettersByIndex(int columnType) {
+                return allGettersByIndex;
+            }
+
+            public Collection<Entry<String, ThrowingBiFunction<ResultSet, String, ?, SQLException>>> gettersByLabel(int columnType) {
+                return allGettersByLabel;
+            }
+        },
+        BY_TYPE {
+            public Collection<Entry<String, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>>> gettersByIndex(int columnType) {
+                return typedGettersByIndex.getOrDefault(columnType, singleton(pair("getObject", ResultSet::getObject)));
+            }
+
+            public Collection<Entry<String, ThrowingBiFunction<ResultSet, String, ?, SQLException>>> gettersByLabel(int columnType) {
+                return typedGettersByLabel.getOrDefault(columnType, singleton(pair("getObject", ResultSet::getObject)));
+            }
+        },
+        CLOB {
+            public Collection<Entry<String, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>>> gettersByIndex(int columnType) {
+                return singletonList(pair("getClob", ResultSet::getClob));
+            }
+
+            public Collection<Entry<String, ThrowingBiFunction<ResultSet, String, ?, SQLException>>> gettersByLabel(int columnType) {
+                return singletonList(pair("getClob", ResultSet::getClob));
+            }
+        },
+
+        ASCII_STREAM {
+            public Collection<Entry<String, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>>> gettersByIndex(int columnType) {
+                return singletonList(pair("getAsciiStream", ResultSet::getAsciiStream));
+            }
+
+            public Collection<Entry<String, ThrowingBiFunction<ResultSet, String, ?, SQLException>>> gettersByLabel(int columnType) {
+                return singletonList(pair("getAsciiStream", ResultSet::getAsciiStream));
+            }
+        },
+
+        CHARACTER_STREAM {
+            public Collection<Entry<String, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>>> gettersByIndex(int columnType) {
+                return singletonList(pair("getCharacterStream", ResultSet::getCharacterStream));
+            }
+
+            public Collection<Entry<String, ThrowingBiFunction<ResultSet, String, ?, SQLException>>> gettersByLabel(int columnType) {
+                return singletonList(pair("getCharacterStream", ResultSet::getCharacterStream));
+            }
+        },
+
+        NCHARACTER_STREAM {
+            public Collection<Entry<String, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>>> gettersByIndex(int columnType) {
+                return singletonList(pair("getNCharacterStream", ResultSet::getNCharacterStream));
+            }
+
+            public Collection<Entry<String, ThrowingBiFunction<ResultSet, String, ?, SQLException>>> gettersByLabel(int columnType) {
+                return singletonList(pair("getNCharacterStream", ResultSet::getNCharacterStream));
+            }
+        },
+
+        BINARY_STREAM {
+            public Collection<Entry<String, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>>> gettersByIndex(int columnType) {
+                return singletonList(pair("getBinaryStream", ResultSet::getBinaryStream));
+            }
+
+            public Collection<Entry<String, ThrowingBiFunction<ResultSet, String, ?, SQLException>>> gettersByLabel(int columnType) {
+                return singletonList(pair("getBinaryStream", ResultSet::getBinaryStream));
+            }
+        },
+
+        UNICODE_STREAM {
+            public Collection<Entry<String, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>>> gettersByIndex(int columnType) {
+                return singletonList(pair("getUnicodeStream", ResultSet::getUnicodeStream));
+            }
+
+            public Collection<Entry<String, ThrowingBiFunction<ResultSet, String, ?, SQLException>>> gettersByLabel(int columnType) {
+                return singletonList(pair("getUnicodeStream", ResultSet::getUnicodeStream));
+            }
+        },
+        ;
+
+        public abstract Collection<Entry<String, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>>> gettersByIndex(int columnType);
+        public abstract Collection<Entry<String, ThrowingBiFunction<ResultSet, String, ?, SQLException>>> gettersByLabel(int columnType);
+    }
 
     /**
      *
@@ -165,7 +249,14 @@ public class AssertUtils {
      * @return
      * @throws SQLException
      */
-    public static Collection<Map<String, Object>> assertResultSet(String nativeUrl, ResultSet expected, ResultSet actual, String message, int limit, Collection<ResultSetAssertMode> mode) throws SQLException {
+    public static Collection<Map<String, Object>> assertResultSet(
+            String nativeUrl,
+            ResultSet expected,
+            ResultSet actual,
+            String message,
+            int limit,
+            Collection<ResultSetAssertMode> mode,
+            GettersSupplier gettersSupplier) throws SQLException {
         if (expected == null) {
             assertNull(actual);
             return null;
@@ -194,21 +285,12 @@ public class AssertUtils {
             Map<String, Object> rowData = new LinkedHashMap<>();
             for (int i = 1; i <= n; i++) {
                 int columnType = emd.getColumnType(i);
-
-                final Collection<Entry<String, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>>> gettersByIndex;
-                final Collection<Entry<String, ThrowingBiFunction<ResultSet, String, ?, SQLException>>> gettersByLabel;
-                if (mode.contains(ResultSetAssertMode.CALL_ALL_GETTERS)) {
-                    gettersByIndex = allGettersByIndex;
-                    gettersByLabel = allGettersByLabel;
-                } else {
-                    gettersByIndex = typedGettersByIndex.getOrDefault(columnType, singleton(pair("getObject", ResultSet::getObject)));
-                    gettersByLabel = typedGettersByLabel.getOrDefault(columnType, singleton(pair("getObject", ResultSet::getObject)));
-                }
-
+                final Collection<Entry<String, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>>> gettersByIndex = gettersSupplier.gettersByIndex(columnType);
+                final Collection<Entry<String, ThrowingBiFunction<ResultSet, String, ?, SQLException>>> gettersByLabel = gettersSupplier.gettersByLabel(columnType);
                 for (Entry<String, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>> getter : gettersByIndex) {
                     String errorMessage = format("%s:%s(%d):%s:%s", message, getter.getKey(), i, emd.getColumnName(i), emd.getColumnTypeName(i));
                     int j = i;
-                   assertCall(rs -> getter.getValue().apply(rs, j), expected, actual, errorMessage, (e, a) -> assertValues(nativeUrl, e, a, errorMessage, emd.getColumnType(j)), exceptionAssertor, emd.getColumnType(i));
+                    assertCall(rs -> getter.getValue().apply(rs, j), expected, actual, errorMessage, (e, a) -> assertValues(nativeUrl, e, a, errorMessage, emd.getColumnType(j)), exceptionAssertor, emd.getColumnType(i));
                 }
 
                 for (Entry<String, ThrowingBiFunction<ResultSet, String, ?, SQLException>> getter : gettersByLabel) {
