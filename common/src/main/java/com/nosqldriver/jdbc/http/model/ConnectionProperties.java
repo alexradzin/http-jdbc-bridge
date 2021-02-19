@@ -138,6 +138,7 @@ public class ConnectionProperties {
     private final Map<Class, TimeDataProperties> toTime;// = true;
     private final Collection<Class> toBoolean;// = true;
     private final Collection<Class> toBinaryStream;
+    private final boolean toBinaryStreamAsString;
     private final Collection<Class> toAsciiStream;
     private final Collection<Class> toCharacterStream;
     private final Collection<Class> toNCharacterStream;
@@ -206,7 +207,15 @@ public class ConnectionProperties {
                         .map(typeName -> Optional.ofNullable(primitives.get(typeName)).orElseGet(() -> toClass(typeName)))).orElse(Stream.empty())
         ).collect(Collectors.toList());
 
-        toBinaryStream = getPropertyValue(props, "toBinaryStream", this::primitiveOrClass, Collectors.toList(), emptyList());
+        final String toBinaryStreamProp;
+        if (props.containsKey("toBinaryStream.string")) {
+            toBinaryStreamProp = "toBinaryStream.string";
+            toBinaryStreamAsString = true;
+        } else {
+            toBinaryStreamProp = "toBinaryStream";
+            toBinaryStreamAsString = false;
+        }
+        toBinaryStream = getPropertyValue(props, toBinaryStreamProp, this::primitiveOrClass, Collectors.toList(), emptyList());
         toAsciiStream = getPropertyValue(props, "toAsciiStream", this::primitiveOrClass, Collectors.toList(), emptyList());
         toCharacterStream = getPropertyValue(props, "toCharacterStream", this::primitiveOrClass, Collectors.toList(), emptyList());
         toNCharacterStream = getPropertyValue(props, "toNCharacterStream", this::primitiveOrClass, Collectors.toList(), emptyList());
@@ -586,9 +595,22 @@ public class ConnectionProperties {
     }
 
     public <T> InputStream asAsciiStream(T obj, Class fromClazz, ThrowingSupplier<ResultSetMetaData, SQLException> md, int columnIndex) throws SQLException {
-        if (!(toAsciiStream.contains(fromClazz) || toAsciiStream.contains(types.get(fromClazz)))) {
-            throw new SQLException("Cannot create AsciiStream from " + fromClazz);
+        return asStream(toAsciiStream, "AsciiStream", obj, fromClazz, () -> asString(obj, md, columnIndex).getBytes());
+    }
+
+    public <T> InputStream asBinaryStream(T obj, Class fromClazz, ThrowingSupplier<ResultSetMetaData, SQLException> md, int columnIndex) throws SQLException {
+        ThrowingSupplier<byte[], SQLException> toBytesTransformer = toBinaryStreamAsString ? () -> asString(obj, md, columnIndex).getBytes() : () -> toBytes.getOrDefault(fromClazz, serializableToBytes).apply(obj);
+        return asStream(toBinaryStream, "BinaryStream", obj, fromClazz, toBytesTransformer);
+    }
+
+    private <T> InputStream asStream(Collection<Class> toStream,
+                                     String streamType,
+                                     T obj,
+                                     Class fromClazz,
+                                     ThrowingSupplier<byte[], SQLException> toBytesTransformer) throws SQLException {
+        if (!(toStream.contains(fromClazz) || toStream.contains(types.get(fromClazz)))) {
+            throw new SQLException(format("Cannot create %s from %s", streamType, fromClazz));
         }
-        return obj == null ? null : new ByteArrayInputStream(asString(obj, md, columnIndex).getBytes());
+        return obj == null ? null : new ByteArrayInputStream(toBytesTransformer.get());
     }
 }

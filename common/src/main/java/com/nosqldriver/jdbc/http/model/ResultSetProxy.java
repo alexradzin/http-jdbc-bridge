@@ -324,7 +324,9 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @Override
     public InputStream getBinaryStream(int columnIndex) throws SQLException {
         connectionProperties.throwIfUnsupported("getBinaryStream");
-        return getValue("index", columnIndex, InputStream.class, "binary/stream", columnIndex);
+        return rowData == null ?
+                connector.get(format("%s/%s/%s/%s", entityUrl, "binary/stream", "index", columnIndex), InputStream.class) :
+                connectionProperties.asBinaryStream(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), this::getMetaData, columnIndex);
     }
 
     @Override
@@ -423,7 +425,10 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @Override
     public InputStream getBinaryStream(String columnLabel) throws SQLException {
         connectionProperties.throwIfUnsupported("getBinaryStream");
-        return getValue("label", columnLabel, InputStream.class, "binary/stream", getIndex(columnLabel));
+        int columnIndex = getIndex(columnLabel);
+        return rowData == null ?
+                connector.get(format("%s/%s/%s/%s", entityUrl, "binary/stream", "index", columnIndex), InputStream.class) :
+                connectionProperties.asBinaryStream(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), this::getMetaData, columnIndex);
     }
 
     @Override
