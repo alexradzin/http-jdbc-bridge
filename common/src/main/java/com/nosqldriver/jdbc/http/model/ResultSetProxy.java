@@ -310,7 +310,9 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @Override
     public InputStream getAsciiStream(int columnIndex) throws SQLException {
         connectionProperties.throwIfUnsupported("getAsciiStream");
-        return getValue("index", columnIndex, InputStream.class, "ascii/stream", columnIndex);
+        return rowData == null ?
+                connector.get(format("%s/%s/%s/%s", entityUrl, "ascii/stream", "index", columnIndex), InputStream.class) :
+                connectionProperties.asAsciiStream(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), () -> getMetaData(), columnIndex);
     }
 
     @Override
@@ -406,7 +408,10 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @Override
     public InputStream getAsciiStream(String columnLabel) throws SQLException {
         connectionProperties.throwIfUnsupported("getAsciiStream");
-        return getValue("label", columnLabel, InputStream.class, "ascii/stream", getIndex(columnLabel));
+        int columnIndex = getIndex(columnLabel);
+        return rowData == null ?
+                connector.get(format("%s/%s/%s/%s", entityUrl, "ascii/stream", "index", columnIndex), InputStream.class) :
+                connectionProperties.asAsciiStream(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), this::getMetaData, columnIndex);
     }
 
     @Override
@@ -1453,29 +1458,24 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
             return (T)obj;
         }
         ThrowingFunction<CastorArg, ?, SQLException> caster = casters.get(to);
-        //noinspection unchecked
-        //try {
-            if (caster != null) {
-                try {
-                    CastorArg arg = new CastorArg(obj, from, to, getMetaData().getColumnType(columnIndex), columnIndex);
-                    return (T) caster.apply(arg);
-                } catch (IllegalArgumentException e) {
-                    throw new SQLException(e.getMessage());
-                }
-            } else if (Ref.class.equals(to)) {
-                return (T)new TransportableRef(obj, typeName);
-            } else if (obj == null) {
-                wasNull = true;
-                return (T)defaultValues.get(to);
+        if (caster != null) {
+            try {
+                CastorArg arg = new CastorArg(obj, from, to, getMetaData().getColumnType(columnIndex), columnIndex);
+                return (T) caster.apply(arg);
+            } catch (IllegalArgumentException e) {
+                throw new SQLException(e.getMessage());
             }
-            if (String.class.equals(to)) {
-                return (T)connectionProperties.asString(obj, this::getMetaData, columnIndex);
-            }
-            //return objectMapper.readValue(obj instanceof String ? "\"" + obj + "\"" : "" + obj, clazz);
-            return (T)obj;
-        //} catch (JsonProcessingException e) {
-        //    throw new IllegalArgumentException(e);
-        //}
+        } else if (Ref.class.equals(to)) {
+            return (T)new TransportableRef(obj, typeName);
+        } else if (obj == null) {
+            wasNull = true;
+            return (T)defaultValues.get(to);
+        }
+        if (String.class.equals(to)) {
+            return (T)connectionProperties.asString(obj, this::getMetaData, columnIndex);
+        }
+        //return objectMapper.readValue(obj instanceof String ? "\"" + obj + "\"" : "" + obj, clazz);
+        return (T)obj;
     }
 
     private String toBooleanString(boolean b) {

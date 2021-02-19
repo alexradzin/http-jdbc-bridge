@@ -5,8 +5,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.nosqldriver.util.function.ThrowingFunction;
 import com.nosqldriver.util.function.ThrowingSupplier;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
@@ -42,6 +44,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toSet;
@@ -134,6 +137,11 @@ public class ConnectionProperties {
     private final Map<Class, TimeDataProperties> toDate;
     private final Map<Class, TimeDataProperties> toTime;// = true;
     private final Collection<Class> toBoolean;// = true;
+    private final Collection<Class> toBinaryStream;
+    private final Collection<Class> toAsciiStream;
+    private final Collection<Class> toCharacterStream;
+    private final Collection<Class> toNCharacterStream;
+    private final Collection<Class> toUnicodeStream;
     private final Map<Class, String> stringFormats;
     private final TimeZone timezone;
 
@@ -197,6 +205,12 @@ public class ConnectionProperties {
                 Optional.ofNullable(props.getProperty("toBoolean")).map(p -> Arrays.stream(p.split("\\s*,\\s*"))
                         .map(typeName -> Optional.ofNullable(primitives.get(typeName)).orElseGet(() -> toClass(typeName)))).orElse(Stream.empty())
         ).collect(Collectors.toList());
+
+        toBinaryStream = getPropertyValue(props, "toBinaryStream", this::primitiveOrClass, Collectors.toList(), emptyList());
+        toAsciiStream = getPropertyValue(props, "toAsciiStream", this::primitiveOrClass, Collectors.toList(), emptyList());
+        toCharacterStream = getPropertyValue(props, "toCharacterStream", this::primitiveOrClass, Collectors.toList(), emptyList());
+        toNCharacterStream = getPropertyValue(props, "toNCharacterStream", this::primitiveOrClass, Collectors.toList(), emptyList());
+        toUnicodeStream = getPropertyValue(props, "toUnicodeStream", this::primitiveOrClass, Collectors.toList(), emptyList());
 
         stringFormats = props.entrySet().stream().filter(e -> ((String)e.getKey()).startsWith("asString.")).map(e -> {
             String typeName = ((String) e.getKey()).substring("asString.".length());
@@ -523,12 +537,16 @@ public class ConnectionProperties {
         return booleanToNumber;
     }
 
-    private static Class toClass(String className) {
+    private Class toClass(String className) {
         try {
             return Class.forName(className);
         } catch (ClassNotFoundException e) {
             throw new IllegalArgumentException(className, e);
         }
+    }
+
+    private Class primitiveOrClass(String typeName) {
+        return Optional.ofNullable(primitives.get(typeName)).orElseGet(() -> toClass(typeName));
     }
 
     private TimeDataProperties createTimeDataProperties(String s) {
@@ -565,5 +583,12 @@ public class ConnectionProperties {
 
     private Map<Class, TimeDataProperties> getTimePropertiesMap(Properties props, String name) {
         return getPropertyValue(props, name, this::createTimeDataProperties, Collectors.toMap(TimeDataProperties::getClazz, e -> e), emptyMap());
+    }
+
+    public <T> InputStream asAsciiStream(T obj, Class fromClazz, ThrowingSupplier<ResultSetMetaData, SQLException> md, int columnIndex) throws SQLException {
+        if (!(toAsciiStream.contains(fromClazz) || toAsciiStream.contains(types.get(fromClazz)))) {
+            throw new SQLException("Cannot create AsciiStream from " + fromClazz);
+        }
+        return obj == null ? null : new ByteArrayInputStream(asString(obj, md, columnIndex).getBytes());
     }
 }

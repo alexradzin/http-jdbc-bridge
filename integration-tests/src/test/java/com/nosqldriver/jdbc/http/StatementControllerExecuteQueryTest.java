@@ -31,12 +31,22 @@ public class StatementControllerExecuteQueryTest extends StatementControllerTest
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void selectTableWithAllTypesCallAllGetters(String nativeUrl) throws SQLException, IOException {
-        selectTableWithAllTypes(nativeUrl, "select * from test_all_types", null, singletonList(RANGE_EXCEPTION_MESSAGE), GettersSupplier.ALL);
+        selectTableWithAllTypesGetClob(nativeUrl, GettersSupplier.ALL);
     }
 
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void selectTableWithAllTypesGetClob(String nativeUrl) throws SQLException, IOException {
-        selectTableWithAllTypes(nativeUrl, "select * from test_all_types", null, singletonList(RANGE_EXCEPTION_MESSAGE), GettersSupplier.CLOB);
+        selectTableWithAllTypesGetClob(nativeUrl, GettersSupplier.CLOB);
+    }
+
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void selectTableWithAllTypesGetAsciiStream(String nativeUrl) throws SQLException, IOException {
+        selectTableWithAllTypesGetClob(nativeUrl, GettersSupplier.ASCII_STREAM);
+    }
+
+    private void selectTableWithAllTypesGetClob(String nativeUrl, GettersSupplier gettersSupplier) throws SQLException, IOException {
+        selectTableWithAllTypes(nativeUrl, "select * from test_all_types", null, singletonList(RANGE_EXCEPTION_MESSAGE), gettersSupplier);
     }
 }
