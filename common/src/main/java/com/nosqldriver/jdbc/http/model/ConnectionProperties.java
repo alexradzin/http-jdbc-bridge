@@ -10,6 +10,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
+import java.io.Reader;
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -594,6 +596,7 @@ public class ConnectionProperties {
 
     private <C, T> C getPropertyValue(Properties props, String name, Function<String, T> factory, Collector<T, ?, C> collector, C defaultValue) {
         return Optional.ofNullable(props.getProperty(name)).map(p -> Arrays.stream(p.split("\\s*,\\s*"))
+                .filter(s -> !"".equals(s))
                 .map(factory)
                 .collect(collector)).orElse(defaultValue);
     }
@@ -614,6 +617,15 @@ public class ConnectionProperties {
         ThrowingSupplier<byte[], SQLException> toBytesTransformer = toBinaryStreamAsString ? () -> asString(obj, md, columnIndex).getBytes() : () -> toBytes.getOrDefault(fromClazz, serializableToBytes).apply(obj);
         return asStream(toBinaryStream, "BinaryStream", obj, fromClazz, toBytesTransformer);
     }
+
+    public <T> Reader asReader(T obj, Class fromClazz, ThrowingSupplier<ResultSetMetaData, SQLException> md, int columnIndex, boolean n) throws SQLException {
+        Collection<Class> cs = n ? toNCharacterStream : toCharacterStream;
+        if (!(cs.contains(fromClazz) || cs.contains(types.get(fromClazz)))) {
+            throw new SQLException(format("Cannot create %s from %s", "CharacterStream", fromClazz));
+        }
+        return obj == null ? null : new StringReader(asString(obj, md, columnIndex));
+    }
+
 
     private <T> InputStream asStream(Collection<Class> toStream,
                                      String streamType,

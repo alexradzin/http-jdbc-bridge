@@ -58,6 +58,18 @@ public class StatementControllerExecuteQueryTest extends StatementControllerTest
         selectTableWithAllTypesGetClob(nativeUrl, GettersSupplier.UNICODE_STREAM);
     }
 
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void selectTableWithAllTypesGetCharacterStream(String nativeUrl) throws SQLException, IOException {
+        selectTableWithAllTypesGetClob(nativeUrl, GettersSupplier.CHARACTER_STREAM);
+    }
+
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void selectTableWithAllTypesGetNCharacterStream(String nativeUrl) throws SQLException, IOException {
+        selectTableWithAllTypesGetClob(nativeUrl, GettersSupplier.NCHARACTER_STREAM);
+    }
+
     private void selectTableWithAllTypesGetClob(String nativeUrl, GettersSupplier gettersSupplier) throws SQLException, IOException {
         selectTableWithAllTypes(nativeUrl, "select * from test_all_types", null, singletonList(RANGE_EXCEPTION_MESSAGE), gettersSupplier);
     }

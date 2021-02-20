@@ -27,7 +27,6 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
@@ -502,13 +501,18 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @Override
     public Reader getCharacterStream(int columnIndex) throws SQLException {
         connectionProperties.throwIfUnsupported("getCharacterStream");
-        return getValue("index", columnIndex, Reader.class, "character/stream", columnIndex);
+        return rowData == null ?
+                connector.get(format("%s/%s/%s/%s", entityUrl, "character/stream", "index", columnIndex), Reader.class) :
+                connectionProperties.asReader(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), this::getMetaData, columnIndex, false);
     }
 
     @Override
     public Reader getCharacterStream(String columnLabel) throws SQLException {
         connectionProperties.throwIfUnsupported("getCharacterStream");
-        return getValue("label", columnLabel, Reader.class, "character/stream", getIndex(columnLabel));
+        int columnIndex = getIndex(columnLabel);
+        return rowData == null ?
+                connector.get(format("%s/%s/%s/%s", entityUrl, "character/stream", "index", columnIndex), Reader.class) :
+                connectionProperties.asReader(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), this::getMetaData, columnIndex, false);
     }
 
     @Override
@@ -1205,13 +1209,18 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @Override
     public Reader getNCharacterStream(int columnIndex) throws SQLException {
         connectionProperties.throwIfUnsupported("getNCharacterStream");
-        return getValue("index", columnIndex, Reader.class, "ncharacter/stream", columnIndex);
+        return rowData == null ?
+                connector.get(format("%s/%s/%s/%s", entityUrl, "ncharacter/stream", "index", columnIndex), Reader.class) :
+                connectionProperties.asReader(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), this::getMetaData, columnIndex, true);
     }
 
     @Override
     public Reader getNCharacterStream(String columnLabel) throws SQLException {
         connectionProperties.throwIfUnsupported("getNCharacterStream");
-        return getValue("label", columnLabel, Reader.class, "ncharacter/stream", getIndex(columnLabel));
+        int columnIndex = getIndex(columnLabel);
+        return rowData == null ?
+                connector.get(format("%s/%s/%s/%s", entityUrl, "ncharacter/stream", "index", columnIndex), Reader.class) :
+                connectionProperties.asReader(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), this::getMetaData, columnIndex, true);
     }
 
     @Override

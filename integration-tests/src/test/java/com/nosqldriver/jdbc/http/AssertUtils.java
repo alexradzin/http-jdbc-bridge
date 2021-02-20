@@ -423,7 +423,11 @@ public class AssertUtils {
                 throw new IllegalStateException(e);
             }
         } else if (expected instanceof Reader && actual instanceof Reader) {
-            assertEquals(readAll((Reader)expected), readAll((Reader)actual));
+            if (nativeUrl.contains("postgresql") && Types.TIMESTAMP == sqlType) {
+                assertNotNull(new BufferedReader(((Reader) actual)).lines().collect(Collectors.joining()));
+            } else {
+                assertEquals(readAll((Reader) expected), readAll((Reader) actual));
+            }
         } else if (expected instanceof Blob && actual instanceof Blob) {
             if (nativeUrl.contains("mysql") && dateTimeSqlTypes.contains(sqlType)) {
                 if (expected == null) {
