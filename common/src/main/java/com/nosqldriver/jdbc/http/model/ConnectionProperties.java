@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.Clob;
@@ -143,6 +144,7 @@ public class ConnectionProperties {
     private final Collection<Class> toCharacterStream;
     private final Collection<Class> toNCharacterStream;
     private final Collection<Class> toUnicodeStream;
+    private final Charset unicodeStreamCharset;
     private final Map<Class, String> stringFormats;
     private final TimeZone timezone;
 
@@ -219,7 +221,13 @@ public class ConnectionProperties {
         toAsciiStream = getPropertyValue(props, "toAsciiStream", this::primitiveOrClass, Collectors.toList(), emptyList());
         toCharacterStream = getPropertyValue(props, "toCharacterStream", this::primitiveOrClass, Collectors.toList(), emptyList());
         toNCharacterStream = getPropertyValue(props, "toNCharacterStream", this::primitiveOrClass, Collectors.toList(), emptyList());
-        toUnicodeStream = getPropertyValue(props, "toUnicodeStream", this::primitiveOrClass, Collectors.toList(), emptyList());
+
+        SimpleEntry<String, String> unicodeStreamParams = props.keySet().stream().filter(p -> ((String)p).startsWith("toUnicodeStream")).findFirst()
+                .map(p -> ((String) p).split("\\."))
+                .map(p -> new SimpleEntry<>(String.join(".", p), p.length > 1 ? p[1] : "UTF8"))
+                .orElse(new SimpleEntry<>("toUnicodeStream", "UTF8"));
+        unicodeStreamCharset = Charset.forName(unicodeStreamParams.getValue());
+        toUnicodeStream = getPropertyValue(props, unicodeStreamParams.getKey(), this::primitiveOrClass, Collectors.toList(), emptyList());
 
         stringFormats = props.entrySet().stream().filter(e -> ((String)e.getKey()).startsWith("asString.")).map(e -> {
             String typeName = ((String) e.getKey()).substring("asString.".length());
@@ -596,6 +604,10 @@ public class ConnectionProperties {
 
     public <T> InputStream asAsciiStream(T obj, Class fromClazz, ThrowingSupplier<ResultSetMetaData, SQLException> md, int columnIndex) throws SQLException {
         return asStream(toAsciiStream, "AsciiStream", obj, fromClazz, () -> asString(obj, md, columnIndex).getBytes());
+    }
+
+    public <T> InputStream asUnicodeStream(T obj, Class fromClazz, ThrowingSupplier<ResultSetMetaData, SQLException> md, int columnIndex) throws SQLException {
+        return asStream(toUnicodeStream, "UnicodeStream", obj, fromClazz, () -> asString(obj, md, columnIndex).getBytes(unicodeStreamCharset));
     }
 
     public <T> InputStream asBinaryStream(T obj, Class fromClazz, ThrowingSupplier<ResultSetMetaData, SQLException> md, int columnIndex) throws SQLException {

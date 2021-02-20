@@ -318,7 +318,9 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @Override
     public InputStream getUnicodeStream(int columnIndex) throws SQLException {
         connectionProperties.throwIfUnsupported("getUnicodeStream");
-        return getValue("index", columnIndex, InputStream.class, "unicode/stream", columnIndex);
+        return rowData == null ?
+                connector.get(format("%s/%s/%s/%s", entityUrl, "unicode/stream", "index", columnIndex), InputStream.class) :
+                connectionProperties.asUnicodeStream(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), () -> getMetaData(), columnIndex);
     }
 
     @Override
@@ -419,7 +421,10 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @Override
     public InputStream getUnicodeStream(String columnLabel) throws SQLException {
         connectionProperties.throwIfUnsupported("getUnicodeStream");
-        return getValue("label", columnLabel, InputStream.class, "unicode/stream", getIndex(columnLabel));
+        int columnIndex = getIndex(columnLabel);
+        return rowData == null ?
+                connector.get(format("%s/%s/%s/%s", entityUrl, "unicode/stream", "index", columnIndex), InputStream.class) :
+                connectionProperties.asUnicodeStream(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), this::getMetaData, columnIndex);
     }
 
     @Override
