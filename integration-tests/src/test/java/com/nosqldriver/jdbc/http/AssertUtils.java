@@ -412,9 +412,7 @@ public class AssertUtils {
             assertSqlArrayEquals(nativeUrl, (java.sql.Array)expected, (java.sql.Array)actual, message);
         } else if (expected instanceof InputStream && actual instanceof InputStream) {
             try {
-                if (nativeUrl.contains("hsqldb") && (Types.TIME_WITH_TIMEZONE == sqlType || Types.TIMESTAMP_WITH_TIMEZONE == sqlType || Types.TIMESTAMP == sqlType || Types.DATE == sqlType)) {
-                    assertNotNull(((InputStream) actual).readAllBytes());
-                } else if (nativeUrl.contains("postgresql") && Types.TIMESTAMP == sqlType) {
+                if ((nativeUrl.contains("hsqldb") || nativeUrl.contains("postgresql")) && dateTimeSqlTypes.contains(sqlType)) {
                     assertNotNull(((InputStream) actual).readAllBytes());
                 } else {
                     Assertions.assertArrayEquals(((InputStream) expected).readAllBytes(), ((InputStream) actual).readAllBytes());
@@ -423,7 +421,7 @@ public class AssertUtils {
                 throw new IllegalStateException(e);
             }
         } else if (expected instanceof Reader && actual instanceof Reader) {
-            if (nativeUrl.contains("postgresql") && Types.TIMESTAMP == sqlType) {
+            if (nativeUrl.contains("postgresql") && dateTimeSqlTypes.contains(sqlType)) {
                 assertNotNull(new BufferedReader(((Reader) actual)).lines().collect(Collectors.joining()));
             } else {
                 assertEquals(readAll((Reader) expected), readAll((Reader) actual));
