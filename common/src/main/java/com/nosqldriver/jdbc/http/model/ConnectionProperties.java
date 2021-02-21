@@ -150,6 +150,38 @@ public class ConnectionProperties {
     private final Map<Class, String> stringFormats;
     private final TimeZone timezone;
 
+    enum StreamType {
+        BINARY {
+            public <T> InputStream asStream(ConnectionProperties conProps, T obj, Class fromClazz, ThrowingSupplier<ResultSetMetaData, SQLException> md, int columnIndex) throws SQLException {
+                ThrowingSupplier<byte[], SQLException> toBytesTransformer = conProps.toBinaryStreamAsString ? () -> conProps.asString(obj, md, columnIndex).getBytes() : () -> conProps.toBytes.getOrDefault(fromClazz, serializableToBytes).apply(obj);
+                return asStreamImpl(conProps.toBinaryStream, "BinaryStream", obj, fromClazz, toBytesTransformer);
+            }
+        },
+        ASCII {
+            public <T> InputStream asStream(ConnectionProperties conProps, T obj, Class fromClazz, ThrowingSupplier<ResultSetMetaData, SQLException> md, int columnIndex) throws SQLException {
+                return asStreamImpl(conProps.toAsciiStream, "AsciiStream", obj, fromClazz, () -> conProps.asString(obj, md, columnIndex).getBytes());
+            }
+        },
+        UNICODE {
+            public <T> InputStream asStream(ConnectionProperties conProps, T obj, Class fromClazz, ThrowingSupplier<ResultSetMetaData, SQLException> md, int columnIndex) throws SQLException {
+                return asStreamImpl(conProps.toUnicodeStream, "UnicodeStream", obj, fromClazz, () -> conProps.asString(obj, md, columnIndex).getBytes(conProps.unicodeStreamCharset));
+            }
+        },
+        ;
+
+        public abstract <T> InputStream asStream(ConnectionProperties conProps, T obj, Class fromClazz, ThrowingSupplier<ResultSetMetaData, SQLException> md, int columnIndex) throws SQLException;
+        private static <T> InputStream asStreamImpl(Collection<Class> toStream,
+                                         String streamType,
+                                         T obj,
+                                         Class fromClazz,
+                                         ThrowingSupplier<byte[], SQLException> toBytesTransformer) throws SQLException {
+            if (!(toStream.contains(fromClazz) || toStream.contains(types.get(fromClazz)))) {
+                throw new SQLException(format("Cannot create %s from %s", streamType, fromClazz));
+            }
+            return obj == null ? null : new ByteArrayInputStream(toBytesTransformer.get());
+        }
+    }
+
     enum Round {
         CEIL {
             @Override
@@ -590,7 +622,6 @@ public class ConnectionProperties {
             typeName = t.substring(0, t.length() - 1);
             nullable = true;
         }
-        String className = Optional.ofNullable(primitives.get(typeName)).map(Class::getName).orElse(typeName);
         return new LobProperties(typeName, partial, nullable);
     }
 
@@ -605,36 +636,11 @@ public class ConnectionProperties {
         return getPropertyValue(props, name, this::createTimeDataProperties, Collectors.toMap(TimeDataProperties::getClazz, e -> e), emptyMap());
     }
 
-    public <T> InputStream asAsciiStream(T obj, Class fromClazz, ThrowingSupplier<ResultSetMetaData, SQLException> md, int columnIndex) throws SQLException {
-        return asStream(toAsciiStream, "AsciiStream", obj, fromClazz, () -> asString(obj, md, columnIndex).getBytes());
-    }
-
-    public <T> InputStream asUnicodeStream(T obj, Class fromClazz, ThrowingSupplier<ResultSetMetaData, SQLException> md, int columnIndex) throws SQLException {
-        return asStream(toUnicodeStream, "UnicodeStream", obj, fromClazz, () -> asString(obj, md, columnIndex).getBytes(unicodeStreamCharset));
-    }
-
-    public <T> InputStream asBinaryStream(T obj, Class fromClazz, ThrowingSupplier<ResultSetMetaData, SQLException> md, int columnIndex) throws SQLException {
-        ThrowingSupplier<byte[], SQLException> toBytesTransformer = toBinaryStreamAsString ? () -> asString(obj, md, columnIndex).getBytes() : () -> toBytes.getOrDefault(fromClazz, serializableToBytes).apply(obj);
-        return asStream(toBinaryStream, "BinaryStream", obj, fromClazz, toBytesTransformer);
-    }
-
     public <T> Reader asReader(T obj, Class fromClazz, ThrowingSupplier<ResultSetMetaData, SQLException> md, int columnIndex, boolean n) throws SQLException {
         Collection<Class> cs = n ? toNCharacterStream : toCharacterStream;
         if (!(cs.contains(fromClazz) || cs.contains(types.get(fromClazz)))) {
             throw new SQLException(format("Cannot create %s from %s", "CharacterStream", fromClazz));
         }
         return obj == null ? null : new StringReader(asString(obj, md, columnIndex));
-    }
-
-
-    private <T> InputStream asStream(Collection<Class> toStream,
-                                     String streamType,
-                                     T obj,
-                                     Class fromClazz,
-                                     ThrowingSupplier<byte[], SQLException> toBytesTransformer) throws SQLException {
-        if (!(toStream.contains(fromClazz) || toStream.contains(types.get(fromClazz)))) {
-            throw new SQLException(format("Cannot create %s from %s", streamType, fromClazz));
-        }
-        return obj == null ? null : new ByteArrayInputStream(toBytesTransformer.get());
     }
 }

@@ -3,8 +3,10 @@ package com.nosqldriver.jdbc.http.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.nosqldriver.jdbc.http.model.ConnectionProperties.StreamType;
 import com.nosqldriver.util.function.ThrowingBiFunction;
 import com.nosqldriver.util.function.ThrowingFunction;
+import com.nosqldriver.util.function.ThrowingSupplier;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -37,6 +39,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.nosqldriver.jdbc.http.Util.encode;
+import static com.nosqldriver.jdbc.http.model.ConnectionProperties.StreamType.ASCII;
+import static com.nosqldriver.jdbc.http.model.ConnectionProperties.StreamType.UNICODE;
 import static java.lang.String.format;
 
 public class ResultSetProxy extends WrapperProxy implements ResultSet {
@@ -308,26 +312,17 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public InputStream getAsciiStream(int columnIndex) throws SQLException {
-        connectionProperties.throwIfUnsupported("getAsciiStream");
-        return rowData == null ?
-                connector.get(format("%s/%s/%s/%s", entityUrl, "ascii/stream", "index", columnIndex), InputStream.class) :
-                connectionProperties.asAsciiStream(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), () -> getMetaData(), columnIndex);
+        return getStream("index", () -> columnIndex, ASCII);
     }
 
     @Override
     public InputStream getUnicodeStream(int columnIndex) throws SQLException {
-        connectionProperties.throwIfUnsupported("getUnicodeStream");
-        return rowData == null ?
-                connector.get(format("%s/%s/%s/%s", entityUrl, "unicode/stream", "index", columnIndex), InputStream.class) :
-                connectionProperties.asUnicodeStream(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), () -> getMetaData(), columnIndex);
+        return getStream("index", () -> columnIndex, UNICODE);
     }
 
     @Override
     public InputStream getBinaryStream(int columnIndex) throws SQLException {
-        connectionProperties.throwIfUnsupported("getBinaryStream");
-        return rowData == null ?
-                connector.get(format("%s/%s/%s/%s", entityUrl, "binary/stream", "index", columnIndex), InputStream.class) :
-                connectionProperties.asBinaryStream(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), this::getMetaData, columnIndex);
+        return getStream("index", () -> columnIndex, StreamType.BINARY);
     }
 
     @Override
@@ -410,29 +405,17 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public InputStream getAsciiStream(String columnLabel) throws SQLException {
-        connectionProperties.throwIfUnsupported("getAsciiStream");
-        int columnIndex = getIndex(columnLabel);
-        return rowData == null ?
-                connector.get(format("%s/%s/%s/%s", entityUrl, "ascii/stream", "index", columnIndex), InputStream.class) :
-                connectionProperties.asAsciiStream(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), this::getMetaData, columnIndex);
+        return getStream("label", () -> getIndex(columnLabel), ASCII);
     }
 
     @Override
     public InputStream getUnicodeStream(String columnLabel) throws SQLException {
-        connectionProperties.throwIfUnsupported("getUnicodeStream");
-        int columnIndex = getIndex(columnLabel);
-        return rowData == null ?
-                connector.get(format("%s/%s/%s/%s", entityUrl, "unicode/stream", "index", columnIndex), InputStream.class) :
-                connectionProperties.asUnicodeStream(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), this::getMetaData, columnIndex);
+        return getStream("label", () -> getIndex(columnLabel), UNICODE);
     }
 
     @Override
     public InputStream getBinaryStream(String columnLabel) throws SQLException {
-        connectionProperties.throwIfUnsupported("getBinaryStream");
-        int columnIndex = getIndex(columnLabel);
-        return rowData == null ?
-                connector.get(format("%s/%s/%s/%s", entityUrl, "binary/stream", "index", columnIndex), InputStream.class) :
-                connectionProperties.asBinaryStream(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), this::getMetaData, columnIndex);
+        return getStream("label", () -> getIndex(columnLabel), StreamType.BINARY);
     }
 
     @Override
@@ -500,19 +483,12 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public Reader getCharacterStream(int columnIndex) throws SQLException {
-        connectionProperties.throwIfUnsupported("getCharacterStream");
-        return rowData == null ?
-                connector.get(format("%s/%s/%s/%s", entityUrl, "character/stream", "index", columnIndex), Reader.class) :
-                connectionProperties.asReader(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), this::getMetaData, columnIndex, false);
+        return getCharacterStream("index", () -> columnIndex, false);
     }
 
     @Override
     public Reader getCharacterStream(String columnLabel) throws SQLException {
-        connectionProperties.throwIfUnsupported("getCharacterStream");
-        int columnIndex = getIndex(columnLabel);
-        return rowData == null ?
-                connector.get(format("%s/%s/%s/%s", entityUrl, "character/stream", "index", columnIndex), Reader.class) :
-                connectionProperties.asReader(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), this::getMetaData, columnIndex, false);
+        return getCharacterStream("label", () -> getIndex(columnLabel), false);
     }
 
     @Override
@@ -1208,19 +1184,12 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public Reader getNCharacterStream(int columnIndex) throws SQLException {
-        connectionProperties.throwIfUnsupported("getNCharacterStream");
-        return rowData == null ?
-                connector.get(format("%s/%s/%s/%s", entityUrl, "ncharacter/stream", "index", columnIndex), Reader.class) :
-                connectionProperties.asReader(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), this::getMetaData, columnIndex, true);
+        return getCharacterStream("index", () -> columnIndex, true);
     }
 
     @Override
     public Reader getNCharacterStream(String columnLabel) throws SQLException {
-        connectionProperties.throwIfUnsupported("getNCharacterStream");
-        int columnIndex = getIndex(columnLabel);
-        return rowData == null ?
-                connector.get(format("%s/%s/%s/%s", entityUrl, "ncharacter/stream", "index", columnIndex), Reader.class) :
-                connectionProperties.asReader(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), this::getMetaData, columnIndex, true);
+        return getCharacterStream("label", () -> getIndex(columnLabel), true);
     }
 
     @Override
@@ -1542,5 +1511,23 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
         } catch (ClassNotFoundException e) {
             return Object.class;
         }
+    }
+
+    private Reader getCharacterStream(String markerName, ThrowingSupplier<Integer, SQLException> columnIndexSupplier, boolean n) throws SQLException {
+        connectionProperties.throwIfUnsupported("get" + (n ? "N" : "") + "CharacterStream");
+        int columnIndex = columnIndexSupplier.get();
+        String path = (n ? "n" : "") + "character/stream";
+        return rowData == null ?
+                connector.get(format("%s/%s/%s/%s", entityUrl, path, markerName, columnIndex), Reader.class) :
+                connectionProperties.asReader(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), this::getMetaData, columnIndex, n);
+    }
+
+    private InputStream getStream(String markerName, ThrowingSupplier<Integer, SQLException> columnIndexSupplier, StreamType streamType) throws SQLException {
+        String streamTypeName = streamType.name();
+        connectionProperties.throwIfUnsupported("get" + streamTypeName.substring(0, 1).toUpperCase() + streamTypeName.substring(1) + "Stream");
+        int columnIndex = columnIndexSupplier.get();
+        return rowData == null ?
+                connector.get(format("%s/%s/%s/%s", entityUrl, streamType + "/stream", markerName, columnIndex), InputStream.class) :
+                streamType.asStream(connectionProperties, rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), this::getMetaData, columnIndex);
     }
 }
