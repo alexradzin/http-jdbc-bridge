@@ -56,6 +56,9 @@ test {
     testLogging {
         events 'PASSED', 'FAILED', 'SKIPPED'
     }
+    filter {
+        includeTestsMatching "com.nosqldriver.jdbc.http.StatementControllerExecuteQueryTest"
+    }
     useJUnitPlatform()
 }
 
