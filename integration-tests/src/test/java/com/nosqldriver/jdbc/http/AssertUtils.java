@@ -45,6 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AssertUtils {
+    private static final double DELTA = 0.001;
     enum ResultSetAssertMode {
         CHECK_STATE, RANGE_EXCEPTION_MESSAGE,;
     }
@@ -403,9 +404,9 @@ public class AssertUtils {
         if (isInteger(expected) && isInteger(actual)) {
             assertEquals(((Number)expected).longValue(), ((Number)actual).longValue(), message);
         } else if (isFloating(expected) && isFloating(actual)) {
-            assertEquals(((Number) expected).doubleValue(), ((Number) actual).doubleValue(), 0.001, message);
+            assertEquals(((Number) expected).doubleValue(), ((Number) actual).doubleValue(), DELTA, message);
         } else if (expected instanceof String && actual instanceof String && floatingPointSqlTypes.contains(sqlType)) {
-            assertEquals(Double.parseDouble((String)expected), Double.parseDouble((String)actual), 0.001, message);
+            assertEquals(Double.parseDouble((String)expected), Double.parseDouble((String)actual), DELTA, message);
         } else if (isArray(expected) && isArray(actual)) {
             assertArrayEquals(nativeUrl, expected, actual, message);
         } else if(expected instanceof java.sql.Array && actual instanceof java.sql.Array) {
@@ -414,6 +415,8 @@ public class AssertUtils {
             try {
                 if ((nativeUrl.contains("hsqldb") || nativeUrl.contains("postgresql")) && dateTimeSqlTypes.contains(sqlType)) {
                     assertNotNull(((InputStream) actual).readAllBytes());
+                } else if (nativeUrl.contains("postgresql") && floatingPointSqlTypes.contains(sqlType)) {
+                    assertEquals(Double.parseDouble(new String(((InputStream) expected).readAllBytes())), Double.parseDouble(new String(((InputStream) actual).readAllBytes())), DELTA);
                 } else {
                     Assertions.assertArrayEquals(((InputStream) expected).readAllBytes(), ((InputStream) actual).readAllBytes());
                 }
@@ -423,6 +426,8 @@ public class AssertUtils {
         } else if (expected instanceof Reader && actual instanceof Reader) {
             if (nativeUrl.contains("postgresql") && dateTimeSqlTypes.contains(sqlType)) {
                 assertNotNull(new BufferedReader(((Reader) actual)).lines().collect(Collectors.joining()));
+            } else if (floatingPointSqlTypes.contains(sqlType)) {
+                assertEquals(Double.parseDouble(readAll((Reader) expected)), Double.parseDouble(readAll((Reader) actual)), DELTA);
             } else {
                 assertEquals(readAll((Reader) expected), readAll((Reader) actual));
             }
