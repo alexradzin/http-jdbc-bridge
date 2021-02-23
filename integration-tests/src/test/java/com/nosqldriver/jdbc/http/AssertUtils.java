@@ -292,7 +292,6 @@ public class AssertUtils {
                 for (Entry<String, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>> getter : gettersByIndex) {
                     String errorMessage = format("%s:%s(%d):%s:%s", message, getter.getKey(), i, emd.getColumnName(i), emd.getColumnTypeName(i));
                     int j = i;
-                    System.out.println("iiiiiiiiiiiii " + j);
                     assertCall(rs -> getter.getValue().apply(rs, j), expected, actual, errorMessage, (e, a) -> assertValues(nativeUrl, e, a, errorMessage, emd.getColumnType(j)), exceptionAssertor, emd.getColumnType(i));
                 }
 
