@@ -406,7 +406,7 @@ public class AssertUtils {
         } else if (isFloating(expected) && isFloating(actual)) {
             assertEquals(((Number) expected).doubleValue(), ((Number) actual).doubleValue(), DELTA, message);
         } else if (expected instanceof String && actual instanceof String && floatingPointSqlTypes.contains(sqlType)) {
-            assertEquals(Double.parseDouble((String)expected), Double.parseDouble((String)actual), DELTA, message);
+            assertDoubleEquals((String)expected, (String)actual, message);
         } else if (isArray(expected) && isArray(actual)) {
             assertArrayEquals(nativeUrl, expected, actual, message);
         } else if(expected instanceof java.sql.Array && actual instanceof java.sql.Array) {
@@ -416,7 +416,7 @@ public class AssertUtils {
                 if ((nativeUrl.contains("hsqldb") || nativeUrl.contains("postgresql")) && dateTimeSqlTypes.contains(sqlType)) {
                     assertNotNull(((InputStream) actual).readAllBytes());
                 } else if (nativeUrl.contains("postgresql") && floatingPointSqlTypes.contains(sqlType)) {
-                    assertEquals(Double.parseDouble(new String(((InputStream) expected).readAllBytes())), Double.parseDouble(new String(((InputStream) actual).readAllBytes())), DELTA);
+                    assertDoubleEquals(expected, actual, in -> new String(((InputStream)in).readAllBytes()), message);
                 } else {
                     Assertions.assertArrayEquals(((InputStream) expected).readAllBytes(), ((InputStream) actual).readAllBytes());
                 }
@@ -427,7 +427,7 @@ public class AssertUtils {
             if (nativeUrl.contains("postgresql") && dateTimeSqlTypes.contains(sqlType)) {
                 assertNotNull(new BufferedReader(((Reader) actual)).lines().collect(Collectors.joining()));
             } else if (floatingPointSqlTypes.contains(sqlType)) {
-                assertEquals(Double.parseDouble(readAll((Reader) expected)), Double.parseDouble(readAll((Reader) actual)), DELTA);
+                assertDoubleEquals(expected, actual, r -> readAll((Reader) r), message);
             } else {
                 assertEquals(readAll((Reader) expected), readAll((Reader) actual));
             }
@@ -471,6 +471,14 @@ public class AssertUtils {
         } else {
             assertEquals(expected, actual, message);
         }
+    }
+
+    private static <T, E extends Exception> void assertDoubleEquals(T expected, T actual, ThrowingFunction<T, String, E> toString, String message) throws E {
+        assertDoubleEquals(toString.apply(expected), toString.apply(actual), message);
+    }
+
+    private static void assertDoubleEquals(String expected, String actual, String message) {
+        assertEquals(Double.parseDouble(expected), Double.parseDouble(actual), DELTA, message);
     }
 
     private static String readAll(Reader reader) {
@@ -564,7 +572,6 @@ public class AssertUtils {
             }
         } else if (!(nativeEx instanceof SQLFeatureNotSupportedException)) { // some getters throw SQLFeatureNotSupportedException while we can handle it at client side, so we ignore this case
             assertNotNull(httpEx, message);
-            //assertEquals(nativeEx.getMessage(), httpEx.getMessage(), message);
             exceptionAssertor.accept(nativeEx, httpEx);
         }
         return httpRes;
