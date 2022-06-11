@@ -12,9 +12,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.AbstractMap;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -26,6 +26,7 @@ import static java.sql.ResultSet.FETCH_UNKNOWN;
 import static java.sql.Statement.CLOSE_ALL_RESULTS;
 import static java.sql.Statement.CLOSE_CURRENT_RESULT;
 import static java.sql.Statement.KEEP_CURRENT_RESULT;
+import static java.util.List.of;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -47,7 +48,7 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
         assertSame(nativeConn, nativeStatement.getConnection());
         assertSame(httpConn, httpStatement.getConnection());
 
-        Collection<AbstractMap.SimpleEntry<String, ThrowingFunction<Statement, ?,  SQLException>>> getters = Arrays.asList(
+        Collection<AbstractMap.SimpleEntry<String, ThrowingFunction<Statement, ?,  SQLException>>> getters = of(
                 new AbstractMap.SimpleEntry<>("getMoreResults", Statement::getMoreResults),
                 new AbstractMap.SimpleEntry<>("getGeneratedKeys", Statement::getGeneratedKeys),
                 new AbstractMap.SimpleEntry<>("getLargeUpdateCount", Statement::getLargeUpdateCount),
@@ -83,7 +84,7 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
         Statement httpStatement = createStatement(httpConn, db);
         Statement nativeStatement = createStatement(nativeConn, db);
 
-        Collection<Map.Entry<String, Map.Entry<ThrowingFunction<Statement, ?, SQLException>, ThrowingConsumer<Statement, SQLException>>>> functions = Arrays.asList(
+        Collection<Map.Entry<String, Map.Entry<ThrowingFunction<Statement, ?, SQLException>, ThrowingConsumer<Statement, SQLException>>>> functions = of(
                 new AbstractMap.SimpleEntry<>("FetchDirection", new AbstractMap.SimpleEntry<>(Statement::getFetchDirection, s -> s.setFetchDirection(0))),
                 new AbstractMap.SimpleEntry<>("FetchDirection", new AbstractMap.SimpleEntry<>(Statement::getFetchDirection, s -> s.setFetchDirection(FETCH_FORWARD))),
                 new AbstractMap.SimpleEntry<>("FetchDirection", new AbstractMap.SimpleEntry<>(Statement::getFetchDirection, s -> s.setFetchDirection(FETCH_UNKNOWN))),
@@ -128,7 +129,7 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
         Statement httpStatement = createStatement(httpConn, db);
         Statement nativeStatement = createStatement(nativeConn, db);
 
-        Collection<AbstractMap.SimpleEntry<String, ThrowingConsumer<Statement, SQLException>>> getters = Arrays.asList(
+        Collection<AbstractMap.SimpleEntry<String, ThrowingConsumer<Statement, SQLException>>> getters = List.of(
                 new AbstractMap.SimpleEntry<>("setEscapeProcessing(true)", s -> s.setEscapeProcessing(true)),
                 new AbstractMap.SimpleEntry<>("setEscapeProcessing(false)", s -> s.setEscapeProcessing(false)),
                 new AbstractMap.SimpleEntry<>("setCursorName(my)", s -> s.setCursorName("my")),

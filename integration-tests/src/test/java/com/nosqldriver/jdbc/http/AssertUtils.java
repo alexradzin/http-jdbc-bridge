@@ -25,18 +25,17 @@ import java.sql.Types;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import static com.nosqldriver.util.function.Pair.pair;
 import static java.lang.String.format;
-import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -50,46 +49,46 @@ public class AssertUtils {
     enum ResultSetAssertMode {
         CHECK_STATE, RANGE_EXCEPTION_MESSAGE,;
     }
-    private static final Collection<Class<?>> integerTypes = new HashSet<>(asList(Byte.class, Short.class, Integer.class, Long.class));
-    private static final Collection<Class<?>> floatingTypes = new HashSet<>(asList(Float.class, Double.class, BigDecimal.class));
+    private static final Collection<Class<?>> integerTypes = new HashSet<>(List.of(Byte.class, Short.class, Integer.class, Long.class));
+    private static final Collection<Class<?>> floatingTypes = new HashSet<>(List.of(Float.class, Double.class, BigDecimal.class));
     private static final Map<Integer, Collection<Entry<String, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>>>> typedGettersByIndex = new HashMap<>();
     static {
-        typedGettersByIndex.put(Types.BIT, asList(pair("getBoolean", ResultSet::getBoolean), pair("getObject", ResultSet::getObject)));
-        typedGettersByIndex.put(Types.TINYINT, asList(pair("getByte", ResultSet::getByte), pair("getShort", ResultSet::getShort), pair("getInt", ResultSet::getInt), pair("getLong", ResultSet::getLong)));
-        typedGettersByIndex.put(Types.SMALLINT, asList(pair("getShort", ResultSet::getShort), pair("getInt", ResultSet::getInt), pair("getLong", ResultSet::getLong)));
-        typedGettersByIndex.put(Types.INTEGER, asList(pair("getInt", ResultSet::getInt), pair("getLong", ResultSet::getLong)));
-        typedGettersByIndex.put(Types.BIGINT, asList(pair("getLong", ResultSet::getLong)));
-        typedGettersByIndex.put(Types.FLOAT, asList(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble)));
-        typedGettersByIndex.put(Types.REAL, asList(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble)));
-        typedGettersByIndex.put(Types.DOUBLE, asList(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble)));
-        typedGettersByIndex.put(Types.NUMERIC, asList(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble)));
-        typedGettersByIndex.put(Types.DECIMAL, asList(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble), pair("getBigDecimal", ResultSet::getBigDecimal)));
-        typedGettersByIndex.put(Types.CHAR, asList(pair("getString[0]", (rs, i) -> {String s = rs.getString(i); return s == null ? null : s.length() > 0 ? s.substring(0, 1) : "";})));
-        typedGettersByIndex.put(Types.VARCHAR, asList(pair("getString", ResultSet::getString)));
-        typedGettersByIndex.put(Types.LONGVARCHAR, asList(pair("getString", ResultSet::getString)));
-        typedGettersByIndex.put(Types.DATE, asList(pair("getDate", ResultSet::getDate)));
-        typedGettersByIndex.put(Types.TIME, asList(pair("getTime", ResultSet::getTime)));
-        typedGettersByIndex.put(Types.TIME_WITH_TIMEZONE, asList(pair("getTime", ResultSet::getTime)));
-        typedGettersByIndex.put(Types.TIMESTAMP, asList(pair("getTimestamp", ResultSet::getTimestamp)));
-        typedGettersByIndex.put(Types.TIMESTAMP_WITH_TIMEZONE, asList(pair("getTimestamp", ResultSet::getTimestamp)));
+        typedGettersByIndex.put(Types.BIT, List.of(pair("getBoolean", ResultSet::getBoolean), pair("getObject", ResultSet::getObject)));
+        typedGettersByIndex.put(Types.TINYINT, List.of(pair("getByte", ResultSet::getByte), pair("getShort", ResultSet::getShort), pair("getInt", ResultSet::getInt), pair("getLong", ResultSet::getLong)));
+        typedGettersByIndex.put(Types.SMALLINT, List.of(pair("getShort", ResultSet::getShort), pair("getInt", ResultSet::getInt), pair("getLong", ResultSet::getLong)));
+        typedGettersByIndex.put(Types.INTEGER, List.of(pair("getInt", ResultSet::getInt), pair("getLong", ResultSet::getLong)));
+        typedGettersByIndex.put(Types.BIGINT, List.of(pair("getLong", ResultSet::getLong)));
+        typedGettersByIndex.put(Types.FLOAT, List.of(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble)));
+        typedGettersByIndex.put(Types.REAL, List.of(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble)));
+        typedGettersByIndex.put(Types.DOUBLE, List.of(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble)));
+        typedGettersByIndex.put(Types.NUMERIC, List.of(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble)));
+        typedGettersByIndex.put(Types.DECIMAL, List.of(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble), pair("getBigDecimal", ResultSet::getBigDecimal)));
+        typedGettersByIndex.put(Types.CHAR, List.of(pair("getString[0]", (rs, i) -> {String s = rs.getString(i); return s == null ? null : s.length() > 0 ? s.substring(0, 1) : "";})));
+        typedGettersByIndex.put(Types.VARCHAR, List.of(pair("getString", ResultSet::getString)));
+        typedGettersByIndex.put(Types.LONGVARCHAR, List.of(pair("getString", ResultSet::getString)));
+        typedGettersByIndex.put(Types.DATE, List.of(pair("getDate", ResultSet::getDate)));
+        typedGettersByIndex.put(Types.TIME, List.of(pair("getTime", ResultSet::getTime)));
+        typedGettersByIndex.put(Types.TIME_WITH_TIMEZONE, List.of(pair("getTime", ResultSet::getTime)));
+        typedGettersByIndex.put(Types.TIMESTAMP, List.of(pair("getTimestamp", ResultSet::getTimestamp)));
+        typedGettersByIndex.put(Types.TIMESTAMP_WITH_TIMEZONE, List.of(pair("getTimestamp", ResultSet::getTimestamp)));
         //getters.put(Types.BINARY, ResultSet::getObject);
         //getters.put(Types.VARBINARY, ResultSet::getInt);
         //getters.put(Types.LONGVARBINARY, ResultSet::getInt);
-        typedGettersByIndex.put(Types.NULL, asList(pair("getObject", ResultSet::getObject)));
+        typedGettersByIndex.put(Types.NULL, singletonList(pair("getObject", ResultSet::getObject)));
         //getters.put(Types.OTHER, ResultSet::getObject);
         //getters.put(Types.JAVA_OBJECT, ResultSet::getObject);
         //getters.put(Types.DISTINCT, ResultSet::getInt);
         //getters.put(Types.STRUCT, ResultSet::getInt);
-        typedGettersByIndex.put(Types.ARRAY, asList(pair("getArray", ResultSet::getArray)));
-        typedGettersByIndex.put(Types.BLOB, asList(pair("getBlob", ResultSet::getBlob)));
-        typedGettersByIndex.put(Types.CLOB, asList(pair("getClob", ResultSet::getClob)));
-        typedGettersByIndex.put(Types.REF, asList(pair("getRef", ResultSet::getRef)));
+        typedGettersByIndex.put(Types.ARRAY, List.of(pair("getArray", ResultSet::getArray)));
+        typedGettersByIndex.put(Types.BLOB, List.of(pair("getBlob", ResultSet::getBlob)));
+        typedGettersByIndex.put(Types.CLOB, List.of(pair("getClob", ResultSet::getClob)));
+        typedGettersByIndex.put(Types.REF, List.of(pair("getRef", ResultSet::getRef)));
         //getters.put(Types.DATALINK, ResultSet::getObject);
-        typedGettersByIndex.put(Types.BOOLEAN, asList(pair("getBoolean", ResultSet::getBoolean)));
-        typedGettersByIndex.put(Types.ROWID, asList(pair("getRowId", ResultSet::getRowId)));
+        typedGettersByIndex.put(Types.BOOLEAN, List.of(pair("getBoolean", ResultSet::getBoolean)));
+        typedGettersByIndex.put(Types.ROWID, List.of(pair("getRowId", ResultSet::getRowId)));
     }
 
-    private static final Collection<Entry<String, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>>> allGettersByIndex = Arrays.asList(
+    private static final Collection<Entry<String, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>>> allGettersByIndex = List.of(
             pair("getBoolean", ResultSet::getBoolean),
             pair("getByte", ResultSet::getByte), pair("getShort", ResultSet::getShort), pair("getInt", ResultSet::getInt), pair("getString", ResultSet::getLong),
             pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble), pair("getBigDecimal", ResultSet::getBigDecimal),
@@ -103,7 +102,7 @@ public class AssertUtils {
             //pair("getAsciiStream", ResultSet::getAsciiStream), pair("getBinaryStream", ResultSet::getBinaryStream), pair("getCharacterStream", ResultSet::getCharacterStream), pair("getNCharacterStream", ResultSet::getNCharacterStream), pair("getUnicodeStream", ResultSet::getUnicodeStream)
     );
 
-    private static final Collection<Entry<String, ThrowingBiFunction<ResultSet, String, ?, SQLException>>> allGettersByLabel = Arrays.asList(
+    private static final Collection<Entry<String, ThrowingBiFunction<ResultSet, String, ?, SQLException>>> allGettersByLabel = List.of(
             pair("getBoolean", ResultSet::getBoolean),
             pair("getByte", ResultSet::getByte), pair("getShort", ResultSet::getShort), pair("getInt", ResultSet::getInt), pair("getString", ResultSet::getLong),
             pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble), pair("getBigDecimal", ResultSet::getBigDecimal),
@@ -119,43 +118,43 @@ public class AssertUtils {
 
     private static final Map<Integer, Collection<Entry<String, ThrowingBiFunction<ResultSet, String, ?, SQLException>>>> typedGettersByLabel = new HashMap<>();
     static {
-        typedGettersByLabel.put(Types.BIT, asList(pair("getBoolean", ResultSet::getBoolean), pair("getObject", ResultSet::getObject)));
-        typedGettersByLabel.put(Types.TINYINT, asList(pair("getByte", ResultSet::getByte), pair("getShort", ResultSet::getShort), pair("getInt", ResultSet::getInt), pair("getLong", ResultSet::getLong)));
-        typedGettersByLabel.put(Types.SMALLINT, asList(pair("getShort", ResultSet::getShort), pair("getInt", ResultSet::getInt), pair("getLong", ResultSet::getLong)));
-        typedGettersByLabel.put(Types.INTEGER, asList(pair("getInt", ResultSet::getInt), pair("getLong", ResultSet::getLong)));
-        typedGettersByLabel.put(Types.BIGINT, asList(pair("getLong", ResultSet::getLong)));
-        typedGettersByLabel.put(Types.FLOAT, asList(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble)));
-        typedGettersByLabel.put(Types.REAL, asList(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble)));
-        typedGettersByLabel.put(Types.DOUBLE, asList(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble)));
-        typedGettersByLabel.put(Types.NUMERIC, asList(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble)));
-        typedGettersByLabel.put(Types.DECIMAL, asList(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble), pair("getBigDecimal", ResultSet::getBigDecimal)));
-        typedGettersByLabel.put(Types.CHAR, asList(pair("getString[0]", (rs, i) -> {String s = rs.getString(i); return s == null ? null : s.length() > 0 ? s.substring(0, 1) : "";})));
-        typedGettersByLabel.put(Types.VARCHAR, asList(pair("getString", ResultSet::getString)));
-        typedGettersByLabel.put(Types.LONGVARCHAR, asList(pair("getString", ResultSet::getString)));
-        typedGettersByLabel.put(Types.DATE, asList(pair("getDate", ResultSet::getDate)));
-        typedGettersByLabel.put(Types.TIME, asList(pair("getTime", ResultSet::getTime)));
-        typedGettersByLabel.put(Types.TIME_WITH_TIMEZONE, asList(pair("getTime", ResultSet::getTime)));
-        typedGettersByLabel.put(Types.TIMESTAMP, asList(pair("getTimestamp", ResultSet::getTimestamp)));
-        typedGettersByLabel.put(Types.TIMESTAMP_WITH_TIMEZONE, asList(pair("getTimestamp", ResultSet::getTimestamp)));
+        typedGettersByLabel.put(Types.BIT, List.of(pair("getBoolean", ResultSet::getBoolean), pair("getObject", ResultSet::getObject)));
+        typedGettersByLabel.put(Types.TINYINT, List.of(pair("getByte", ResultSet::getByte), pair("getShort", ResultSet::getShort), pair("getInt", ResultSet::getInt), pair("getLong", ResultSet::getLong)));
+        typedGettersByLabel.put(Types.SMALLINT, List.of(pair("getShort", ResultSet::getShort), pair("getInt", ResultSet::getInt), pair("getLong", ResultSet::getLong)));
+        typedGettersByLabel.put(Types.INTEGER, List.of(pair("getInt", ResultSet::getInt), pair("getLong", ResultSet::getLong)));
+        typedGettersByLabel.put(Types.BIGINT, List.of(pair("getLong", ResultSet::getLong)));
+        typedGettersByLabel.put(Types.FLOAT, List.of(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble)));
+        typedGettersByLabel.put(Types.REAL, List.of(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble)));
+        typedGettersByLabel.put(Types.DOUBLE, List.of(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble)));
+        typedGettersByLabel.put(Types.NUMERIC, List.of(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble)));
+        typedGettersByLabel.put(Types.DECIMAL, List.of(pair("getFloat", ResultSet::getFloat), pair("getDouble", ResultSet::getDouble), pair("getBigDecimal", ResultSet::getBigDecimal)));
+        typedGettersByLabel.put(Types.CHAR, List.of(pair("getString[0]", (rs, i) -> {String s = rs.getString(i); return s == null ? null : s.length() > 0 ? s.substring(0, 1) : "";})));
+        typedGettersByLabel.put(Types.VARCHAR, List.of(pair("getString", ResultSet::getString)));
+        typedGettersByLabel.put(Types.LONGVARCHAR, List.of(pair("getString", ResultSet::getString)));
+        typedGettersByLabel.put(Types.DATE, List.of(pair("getDate", ResultSet::getDate)));
+        typedGettersByLabel.put(Types.TIME, List.of(pair("getTime", ResultSet::getTime)));
+        typedGettersByLabel.put(Types.TIME_WITH_TIMEZONE, List.of(pair("getTime", ResultSet::getTime)));
+        typedGettersByLabel.put(Types.TIMESTAMP, List.of(pair("getTimestamp", ResultSet::getTimestamp)));
+        typedGettersByLabel.put(Types.TIMESTAMP_WITH_TIMEZONE, List.of(pair("getTimestamp", ResultSet::getTimestamp)));
         //getters.put(Types.BINARY, ResultSet::getObject);
         //getters.put(Types.VARBINARY, ResultSet::getInt);
         //getters.put(Types.LONGVARBINARY, ResultSet::getInt);
-        typedGettersByLabel.put(Types.NULL, asList(pair("getObject", ResultSet::getObject)));
+        typedGettersByLabel.put(Types.NULL, List.of(pair("getObject", ResultSet::getObject)));
         //getters.put(Types.OTHER, ResultSet::getObject);
         //getters.put(Types.JAVA_OBJECT, ResultSet::getObject);
         //getters.put(Types.DISTINCT, ResultSet::getInt);
         //getters.put(Types.STRUCT, ResultSet::getInt);
-        typedGettersByLabel.put(Types.ARRAY, asList(pair("getArray", ResultSet::getArray)));
-        typedGettersByLabel.put(Types.BLOB, asList(pair("getBlob", ResultSet::getBlob)));
-        typedGettersByLabel.put(Types.CLOB, asList(pair("getClob", ResultSet::getClob)));
-        typedGettersByLabel.put(Types.REF, asList(pair("getRef", ResultSet::getRef)));
+        typedGettersByLabel.put(Types.ARRAY, List.of(pair("getArray", ResultSet::getArray)));
+        typedGettersByLabel.put(Types.BLOB, List.of(pair("getBlob", ResultSet::getBlob)));
+        typedGettersByLabel.put(Types.CLOB, List.of(pair("getClob", ResultSet::getClob)));
+        typedGettersByLabel.put(Types.REF, List.of(pair("getRef", ResultSet::getRef)));
         //getters.put(Types.DATALINK, ResultSet::getObject);
-        typedGettersByLabel.put(Types.BOOLEAN, asList(pair("getBoolean", ResultSet::getBoolean)));
-        typedGettersByLabel.put(Types.ROWID, asList(pair("getRowId", ResultSet::getRowId)));
+        typedGettersByLabel.put(Types.BOOLEAN, List.of(pair("getBoolean", ResultSet::getBoolean)));
+        typedGettersByLabel.put(Types.ROWID, List.of(pair("getRowId", ResultSet::getRowId)));
     }
 
-    private static final Collection<Integer> floatingPointSqlTypes = new HashSet<>(Arrays.asList(Types.FLOAT, Types.DOUBLE, Types.REAL));
-    private static final Collection<Integer> dateTimeSqlTypes = new HashSet<>(Arrays.asList(Types.TIME_WITH_TIMEZONE, Types.TIMESTAMP_WITH_TIMEZONE, Types.TIMESTAMP, Types.DATE, Types.TIME));
+    private static final Collection<Integer> floatingPointSqlTypes = new HashSet<>(List.of(Types.FLOAT, Types.DOUBLE, Types.REAL));
+    private static final Collection<Integer> dateTimeSqlTypes = new HashSet<>(List.of(Types.TIME_WITH_TIMEZONE, Types.TIMESTAMP_WITH_TIMEZONE, Types.TIMESTAMP, Types.DATE, Types.TIME));
 
     enum GettersSupplier {
         ALL {
@@ -242,15 +241,15 @@ public class AssertUtils {
     }
 
     /**
-     *
-     * @param nativeUrl
-     * @param expected
-     * @param actual
-     * @param message
-     * @param limit
+     * Compares two result sets and asserts values
+     * @param nativeUrl native URL
+     * @param expected expected result set
+     * @param actual actual result set
+     * @param message error message
+     * @param limit limit
      * @param mode - exists for performance reasons
-     * @return
-     * @throws SQLException
+     * @return data extracted from given result set
+     * @throws SQLException if something is going wrong
      */
     public static Collection<Map<String, Object>> assertResultSet(
             String nativeUrl,

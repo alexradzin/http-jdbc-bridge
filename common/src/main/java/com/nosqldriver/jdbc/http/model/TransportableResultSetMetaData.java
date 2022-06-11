@@ -35,7 +35,7 @@ public class TransportableResultSetMetaData extends WrapperProxy implements Resu
 
     @Override
     @JsonIgnore
-    public int getColumnCount() throws SQLException {
+    public int getColumnCount() {
         return columns.size();
     }
 

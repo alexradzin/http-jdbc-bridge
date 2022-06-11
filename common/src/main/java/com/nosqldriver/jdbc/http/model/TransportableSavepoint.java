@@ -10,7 +10,7 @@ public class TransportableSavepoint extends EntityProxy implements Savepoint {
     @JsonProperty private final int savepointId;
     @JsonProperty private final String savepointName;
 
-    public TransportableSavepoint(String entityUrl, Savepoint savepoint) throws SQLException {
+    public TransportableSavepoint(String entityUrl, Savepoint savepoint) {
         this(entityUrl, retrieveSavepointId(savepoint), retrieveSavepointName(savepoint));
     }
 
@@ -49,12 +49,12 @@ public class TransportableSavepoint extends EntityProxy implements Savepoint {
 
 
     @Override
-    public int getSavepointId() throws SQLException {
+    public int getSavepointId() {
         return savepointId;
     }
 
     @Override
-    public String getSavepointName() throws SQLException {
+    public String getSavepointName() {
         return savepointName;
     }
 }

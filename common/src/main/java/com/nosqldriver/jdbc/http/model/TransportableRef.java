@@ -31,22 +31,22 @@ public class TransportableRef extends EntityProxy implements Ref {
     }
 
     @Override
-    public String getBaseTypeName() throws SQLException {
+    public String getBaseTypeName() {
         return baseTypeName;
     }
 
     @Override
-    public Object getObject(Map<String, Class<?>> map) throws SQLException {
+    public Object getObject(Map<String, Class<?>> map) {
         return object == null ? connector.post(format("%s/object", entityUrl), map, Object[].class) : object;
     }
 
     @Override
-    public Object getObject() throws SQLException {
+    public Object getObject() {
         return object;
     }
 
     @Override
-    public void setObject(Object value) throws SQLException {
+    public void setObject(Object value) {
         object = value;
     }
 }

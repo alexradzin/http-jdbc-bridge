@@ -8,7 +8,6 @@ import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,17 +27,17 @@ public class HttpDriver implements Driver {
     protected final HttpConnector connector = new HttpConnector();
 
     @Override
-    public Connection connect(String url, Properties info) throws SQLException {
+    public Connection connect(String url, Properties info) {
         return acceptsURL(url) ? connector.post(connector.buildUrl(getHttpUrl(url), "connection"), getConnectionInfo(url, info), ConnectionProxy.class) : null;
     }
 
     @Override
-    public boolean acceptsURL(String url) throws SQLException {
+    public boolean acceptsURL(String url) {
         return url != null && (url.startsWith("http:") || url.startsWith("https:")) && connector.post(connector.buildUrl(getHttpUrl(url), "acceptsurl"), url, Boolean.class);
     }
 
     @Override
-    public DriverPropertyInfo[] getPropertyInfo(String fullUrl, Properties info) throws SQLException {
+    public DriverPropertyInfo[] getPropertyInfo(String fullUrl, Properties info) {
         Map<String, DriverPropertyInfo> allInfo = new HashMap<>();
         for (String url : fullUrl.split("#")) {
             int questionPos = url.indexOf('?');
@@ -69,7 +68,7 @@ public class HttpDriver implements Driver {
     }
 
     @Override
-    public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+    public Logger getParentLogger() {
         return Logger.getLogger(getClass().getName());
     }
 

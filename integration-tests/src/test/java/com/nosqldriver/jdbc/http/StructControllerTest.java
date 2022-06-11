@@ -1,7 +1,6 @@
 package com.nosqldriver.jdbc.http;
 
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

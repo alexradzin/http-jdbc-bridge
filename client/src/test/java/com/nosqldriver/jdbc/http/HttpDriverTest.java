@@ -91,6 +91,16 @@ class HttpDriverTest {
         checkPropertiesInfo("http://localhost?fetchSize=1234#jdbc:h2:mem?pageSize=5678", props, expected);
     }
 
+    @Test
+    void acceptsNullURL() {
+        assertFalse(new HttpDriver().acceptsURL(null));
+    }
+
+    @Test
+    void acceptsNativeURL() {
+        assertFalse(new HttpDriver().acceptsURL("jdbc:mysql://127.0.0.1:3306/test"));
+    }
+
     private void checkPropertiesInfo(String url, Properties info, Map<String, String> expected) throws SQLException {
         Driver driver = new HttpDriver();
         Map<String, String> actual = Arrays.stream(driver.getPropertyInfo(url, info)).collect(Collectors.toMap(i -> i.name, i -> i.value));

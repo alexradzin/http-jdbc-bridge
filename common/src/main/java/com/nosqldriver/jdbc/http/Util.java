@@ -1,25 +1,28 @@
 package com.nosqldriver.jdbc.http;
 
+import com.nosqldriver.util.function.ThrowingSupplier;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class Util {
     public static String encode(String s) {
-        try {
-            return URLEncoder.encode(s, UTF_8.name());
-        } catch (UnsupportedEncodingException e) {
-            throw new IllegalStateException(e);
-        }
+        return code(() -> URLEncoder.encode(s, UTF_8.name()));
     }
 
     public static String decode(String s) {
+        return code(() -> URLDecoder.decode(s, UTF_8.name()));
+    }
+
+    private static String code(ThrowingSupplier<String, UnsupportedEncodingException> coder) {
         try {
-            return URLEncoder.encode(s, UTF_8.name());
+            return coder.get();
         } catch (UnsupportedEncodingException e) {
             throw new IllegalStateException(e);
         }

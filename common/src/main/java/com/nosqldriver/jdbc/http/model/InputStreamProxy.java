@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.nosqldriver.jdbc.http.HttpConnector;
 
-import java.io.IOException;
 import java.io.InputStream;
 
 public class InputStreamProxy extends InputStream {
@@ -20,12 +19,12 @@ public class InputStreamProxy extends InputStream {
     }
 
     @Override
-    public int read() throws IOException {
+    public int read() {
         return connector.get(url, int.class);
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         connector.delete(url, null, Void.class);
     }
 }

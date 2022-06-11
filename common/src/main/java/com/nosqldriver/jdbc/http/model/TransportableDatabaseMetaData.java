@@ -304,67 +304,67 @@ public class TransportableDatabaseMetaData extends WrapperProxy implements Datab
 
 
     @Override
-    public boolean allProceduresAreCallable() throws SQLException {
+    public boolean allProceduresAreCallable() {
         return allProceduresAreCallable;
     }
 
     @Override
-    public boolean allTablesAreSelectable() throws SQLException {
+    public boolean allTablesAreSelectable() {
         return allTablesAreSelectable;
     }
 
     @Override
-    public String getURL() throws SQLException {
+    public String getURL() {
         return url;
     }
 
     @Override
-    public String getUserName() throws SQLException {
+    public String getUserName() {
         return userName;
     }
 
     @Override
-    public boolean isReadOnly() throws SQLException {
+    public boolean isReadOnly() {
         return readOnly;
     }
 
     @Override
-    public boolean nullsAreSortedHigh() throws SQLException {
+    public boolean nullsAreSortedHigh() {
         return nullsAreSortedHigh;
     }
 
     @Override
-    public boolean nullsAreSortedLow() throws SQLException {
+    public boolean nullsAreSortedLow() {
         return nullsAreSortedLow;
     }
 
     @Override
-    public boolean nullsAreSortedAtStart() throws SQLException {
+    public boolean nullsAreSortedAtStart() {
         return nullsAreSortedAtStart;
     }
 
     @Override
-    public boolean nullsAreSortedAtEnd() throws SQLException {
+    public boolean nullsAreSortedAtEnd() {
         return nullsAreSortedAtEnd;
     }
 
     @Override
-    public String getDatabaseProductName() throws SQLException {
+    public String getDatabaseProductName() {
         return databaseProductName;
     }
 
     @Override
-    public String getDatabaseProductVersion() throws SQLException {
+    public String getDatabaseProductVersion() {
         return databaseProductVersion;
     }
 
     @Override
-    public String getDriverName() throws SQLException {
+    public String getDriverName() {
         return driverName;
     }
 
     @Override
-    public String getDriverVersion() throws SQLException {
+    public String getDriverVersion() {
         return driverVersion;
     }
 
@@ -379,535 +379,535 @@ public class TransportableDatabaseMetaData extends WrapperProxy implements Datab
     }
 
     @Override
-    public boolean usesLocalFiles() throws SQLException {
+    public boolean usesLocalFiles() {
         return usesLocalFiles;
     }
 
     @Override
-    public boolean usesLocalFilePerTable() throws SQLException {
+    public boolean usesLocalFilePerTable() {
         return usesLocalFilePerTable;
     }
 
     @Override
-    public boolean supportsMixedCaseIdentifiers() throws SQLException {
+    public boolean supportsMixedCaseIdentifiers() {
         return supportsMixedCaseIdentifiers;
     }
 
     @Override
-    public boolean storesUpperCaseIdentifiers() throws SQLException {
+    public boolean storesUpperCaseIdentifiers() {
         return storesUpperCaseIdentifiers;
     }
 
     @Override
-    public boolean storesLowerCaseIdentifiers() throws SQLException {
+    public boolean storesLowerCaseIdentifiers() {
         return storesLowerCaseIdentifiers;
     }
 
     @Override
-    public boolean storesMixedCaseIdentifiers() throws SQLException {
+    public boolean storesMixedCaseIdentifiers() {
         return storesMixedCaseIdentifiers;
     }
 
     @Override
-    public boolean supportsMixedCaseQuotedIdentifiers() throws SQLException {
+    public boolean supportsMixedCaseQuotedIdentifiers() {
         return supportsMixedCaseQuotedIdentifiers;
     }
 
     @Override
-    public boolean storesUpperCaseQuotedIdentifiers() throws SQLException {
+    public boolean storesUpperCaseQuotedIdentifiers() {
         return storesUpperCaseQuotedIdentifiers;
     }
 
     @Override
-    public boolean storesLowerCaseQuotedIdentifiers() throws SQLException {
+    public boolean storesLowerCaseQuotedIdentifiers() {
         return storesLowerCaseQuotedIdentifiers;
     }
 
     @Override
-    public boolean storesMixedCaseQuotedIdentifiers() throws SQLException {
+    public boolean storesMixedCaseQuotedIdentifiers() {
         return storesMixedCaseQuotedIdentifiers;
     }
 
     @Override
-    public String getIdentifierQuoteString() throws SQLException {
+    public String getIdentifierQuoteString() {
         return identifierQuoteString;
     }
 
     @Override
     @JsonProperty("sqlKeywords")
-    public String getSQLKeywords() throws SQLException {
+    public String getSQLKeywords() {
         return sqlKeywords;
     }
 
     @Override
-    public String getNumericFunctions() throws SQLException {
+    public String getNumericFunctions() {
         return numericFunctions;
     }
 
     @Override
-    public String getStringFunctions() throws SQLException {
+    public String getStringFunctions() {
         return stringFunctions;
     }
 
     @Override
-    public String getSystemFunctions() throws SQLException {
+    public String getSystemFunctions() {
         return systemFunctions;
     }
 
     @Override
-    public String getTimeDateFunctions() throws SQLException {
+    public String getTimeDateFunctions() {
         return timeDateFunctions;
     }
 
     @Override
-    public String getSearchStringEscape() throws SQLException {
+    public String getSearchStringEscape() {
         return searchStringEscape;
     }
 
     @Override
-    public String getExtraNameCharacters() throws SQLException {
+    public String getExtraNameCharacters() {
         return extraNameCharacters;
     }
 
     @Override
-    public boolean supportsAlterTableWithAddColumn() throws SQLException {
+    public boolean supportsAlterTableWithAddColumn() {
         return supportsAlterTableWithAddColumn;
     }
 
     @Override
-    public boolean supportsAlterTableWithDropColumn() throws SQLException {
+    public boolean supportsAlterTableWithDropColumn() {
         return supportsAlterTableWithDropColumn;
     }
 
     @Override
-    public boolean supportsColumnAliasing() throws SQLException {
+    public boolean supportsColumnAliasing() {
         return supportsColumnAliasing;
     }
 
     @Override
-    public boolean nullPlusNonNullIsNull() throws SQLException {
+    public boolean nullPlusNonNullIsNull() {
         return nullPlusNonNullIsNull;
     }
 
     @Override
-    public boolean supportsConvert() throws SQLException {
+    public boolean supportsConvert() {
         return supportsConvert;
     }
 
     @Override
-    public boolean supportsConvert(int fromType, int toType) throws SQLException {
+    public boolean supportsConvert(int fromType, int toType) {
         return connector.get(format("%s/supports/convert/%d/%d", super.entityUrl, fromType, toType), Boolean.class);
     }
 
     @Override
-    public boolean supportsTableCorrelationNames() throws SQLException {
+    public boolean supportsTableCorrelationNames() {
         return supportsTableCorrelationNames;
     }
 
     @Override
-    public boolean supportsDifferentTableCorrelationNames() throws SQLException {
+    public boolean supportsDifferentTableCorrelationNames() {
         return supportsDifferentTableCorrelationNames;
     }
 
     @Override
-    public boolean supportsExpressionsInOrderBy() throws SQLException {
+    public boolean supportsExpressionsInOrderBy() {
         return supportsExpressionsInOrderBy;
     }
 
     @Override
-    public boolean supportsOrderByUnrelated() throws SQLException {
+    public boolean supportsOrderByUnrelated() {
         return supportsOrderByUnrelated;
     }
 
     @Override
-    public boolean supportsGroupBy() throws SQLException {
+    public boolean supportsGroupBy() {
         return supportsGroupBy;
     }
 
     @Override
-    public boolean supportsGroupByUnrelated() throws SQLException {
+    public boolean supportsGroupByUnrelated() {
         return supportsGroupByUnrelated;
     }
 
     @Override
-    public boolean supportsGroupByBeyondSelect() throws SQLException {
+    public boolean supportsGroupByBeyondSelect() {
         return supportsGroupByBeyondSelect;
     }
 
     @Override
-    public boolean supportsLikeEscapeClause() throws SQLException {
+    public boolean supportsLikeEscapeClause() {
         return supportsLikeEscapeClause;
     }
 
     @Override
-    public boolean supportsMultipleResultSets() throws SQLException {
+    public boolean supportsMultipleResultSets() {
         return supportsMultipleResultSets;
     }
 
     @Override
-    public boolean supportsMultipleTransactions() throws SQLException {
+    public boolean supportsMultipleTransactions() {
         return supportsMultipleTransactions;
     }
 
     @Override
-    public boolean supportsNonNullableColumns() throws SQLException {
+    public boolean supportsNonNullableColumns() {
         return supportsNonNullableColumns;
     }
 
     @Override
-    public boolean supportsMinimumSQLGrammar() throws SQLException {
+    public boolean supportsMinimumSQLGrammar() {
         return supportsMinimumSQLGrammar;
     }
 
     @Override
-    public boolean supportsCoreSQLGrammar() throws SQLException {
+    public boolean supportsCoreSQLGrammar() {
         return supportsCoreSQLGrammar;
     }
 
     @Override
-    public boolean supportsExtendedSQLGrammar() throws SQLException {
+    public boolean supportsExtendedSQLGrammar() {
         return supportsExtendedSQLGrammar;
     }
 
     @Override
-    public boolean supportsANSI92EntryLevelSQL() throws SQLException {
+    public boolean supportsANSI92EntryLevelSQL() {
         return supportsANSI92EntryLevelSQL;
     }
 
     @Override
-    public boolean supportsANSI92IntermediateSQL() throws SQLException {
+    public boolean supportsANSI92IntermediateSQL() {
         return supportsANSI92IntermediateSQL;
     }
 
     @Override
-    public boolean supportsANSI92FullSQL() throws SQLException {
+    public boolean supportsANSI92FullSQL() {
         return supportsANSI92FullSQL;
     }
 
     @Override
-    public boolean supportsIntegrityEnhancementFacility() throws SQLException {
+    public boolean supportsIntegrityEnhancementFacility() {
         return supportsIntegrityEnhancementFacility;
     }
 
     @Override
-    public boolean supportsOuterJoins() throws SQLException {
+    public boolean supportsOuterJoins() {
         return supportsOuterJoins;
     }
 
     @Override
-    public boolean supportsFullOuterJoins() throws SQLException {
+    public boolean supportsFullOuterJoins() {
         return supportsFullOuterJoins;
     }
 
     @Override
-    public boolean supportsLimitedOuterJoins() throws SQLException {
+    public boolean supportsLimitedOuterJoins() {
         return supportsLimitedOuterJoins;
     }
 
     @Override
-    public String getSchemaTerm() throws SQLException {
+    public String getSchemaTerm() {
         return schemaTerm;
     }
 
     @Override
-    public String getProcedureTerm() throws SQLException {
+    public String getProcedureTerm() {
         return procedureTerm;
     }
 
     @Override
-    public String getCatalogTerm() throws SQLException {
+    public String getCatalogTerm() {
         return catalogTerm;
     }
 
     @Override
-    public boolean isCatalogAtStart() throws SQLException {
+    public boolean isCatalogAtStart() {
         return catalogAtStart;
     }
 
     @Override
-    public String getCatalogSeparator() throws SQLException {
+    public String getCatalogSeparator() {
         return catalogSeparator;
     }
 
     @Override
-    public boolean supportsSchemasInDataManipulation() throws SQLException {
+    public boolean supportsSchemasInDataManipulation() {
         return supportsSchemasInDataManipulation;
     }
 
     @Override
-    public boolean supportsSchemasInProcedureCalls() throws SQLException {
+    public boolean supportsSchemasInProcedureCalls() {
         return supportsSchemasInProcedureCalls;
     }
 
     @Override
-    public boolean supportsSchemasInTableDefinitions() throws SQLException {
+    public boolean supportsSchemasInTableDefinitions() {
         return supportsSchemasInTableDefinitions;
     }
 
     @Override
-    public boolean supportsSchemasInIndexDefinitions() throws SQLException {
+    public boolean supportsSchemasInIndexDefinitions() {
         return supportsSchemasInIndexDefinitions;
     }
 
     @Override
-    public boolean supportsSchemasInPrivilegeDefinitions() throws SQLException {
+    public boolean supportsSchemasInPrivilegeDefinitions() {
         return supportsSchemasInPrivilegeDefinitions;
     }
 
     @Override
-    public boolean supportsCatalogsInDataManipulation() throws SQLException {
+    public boolean supportsCatalogsInDataManipulation() {
         return supportsCatalogsInDataManipulation;
     }
 
     @Override
-    public boolean supportsCatalogsInProcedureCalls() throws SQLException {
+    public boolean supportsCatalogsInProcedureCalls() {
         return supportsCatalogsInProcedureCalls;
     }
 
     @Override
-    public boolean supportsCatalogsInTableDefinitions() throws SQLException {
+    public boolean supportsCatalogsInTableDefinitions() {
         return supportsCatalogsInTableDefinitions;
     }
 
     @Override
-    public boolean supportsCatalogsInIndexDefinitions() throws SQLException {
+    public boolean supportsCatalogsInIndexDefinitions() {
         return supportsCatalogsInIndexDefinitions;
     }
 
     @Override
-    public boolean supportsCatalogsInPrivilegeDefinitions() throws SQLException {
+    public boolean supportsCatalogsInPrivilegeDefinitions() {
         return supportsCatalogsInPrivilegeDefinitions;
     }
 
     @Override
-    public boolean supportsPositionedDelete() throws SQLException {
+    public boolean supportsPositionedDelete() {
         return supportsPositionedDelete;
     }
 
     @Override
-    public boolean supportsPositionedUpdate() throws SQLException {
+    public boolean supportsPositionedUpdate() {
         return supportsPositionedUpdate;
     }
 
     @Override
-    public boolean supportsSelectForUpdate() throws SQLException {
+    public boolean supportsSelectForUpdate() {
         return supportsSelectForUpdate;
     }
 
     @Override
-    public boolean supportsStoredProcedures() throws SQLException {
+    public boolean supportsStoredProcedures() {
         return supportsStoredProcedures;
     }
 
     @Override
-    public boolean supportsSubqueriesInComparisons() throws SQLException {
+    public boolean supportsSubqueriesInComparisons() {
         return supportsSubqueriesInComparisons;
     }
 
     @Override
-    public boolean supportsSubqueriesInExists() throws SQLException {
+    public boolean supportsSubqueriesInExists() {
         return supportsSubqueriesInExists;
     }
 
     @Override
-    public boolean supportsSubqueriesInIns() throws SQLException {
+    public boolean supportsSubqueriesInIns() {
         return supportsSubqueriesInIns;
     }
 
     @Override
-    public boolean supportsSubqueriesInQuantifieds() throws SQLException {
+    public boolean supportsSubqueriesInQuantifieds() {
         return supportsSubqueriesInQuantifieds;
     }
 
     @Override
-    public boolean supportsCorrelatedSubqueries() throws SQLException {
+    public boolean supportsCorrelatedSubqueries() {
         return supportsCorrelatedSubqueries;
     }
 
     @Override
-    public boolean supportsUnion() throws SQLException {
+    public boolean supportsUnion() {
         return supportsUnion;
     }
 
     @Override
-    public boolean supportsUnionAll() throws SQLException {
+    public boolean supportsUnionAll() {
         return supportsUnionAll;
     }
 
     @Override
-    public boolean supportsOpenCursorsAcrossCommit() throws SQLException {
+    public boolean supportsOpenCursorsAcrossCommit() {
         return supportsOpenCursorsAcrossCommit;
     }
 
     @Override
-    public boolean supportsOpenCursorsAcrossRollback() throws SQLException {
+    public boolean supportsOpenCursorsAcrossRollback() {
         return supportsOpenCursorsAcrossRollback;
     }
 
     @Override
-    public boolean supportsOpenStatementsAcrossCommit() throws SQLException {
+    public boolean supportsOpenStatementsAcrossCommit() {
         return supportsOpenStatementsAcrossCommit;
     }
 
     @Override
-    public boolean supportsOpenStatementsAcrossRollback() throws SQLException {
+    public boolean supportsOpenStatementsAcrossRollback() {
         return supportsOpenStatementsAcrossRollback;
     }
 
     @Override
-    public int getMaxBinaryLiteralLength() throws SQLException {
+    public int getMaxBinaryLiteralLength() {
         return maxBinaryLiteralLength;
     }
 
     @Override
-    public int getMaxCharLiteralLength() throws SQLException {
+    public int getMaxCharLiteralLength() {
         return maxCharLiteralLength;
     }
 
     @Override
-    public int getMaxColumnNameLength() throws SQLException {
+    public int getMaxColumnNameLength() {
         return maxColumnNameLength;
     }
 
     @Override
-    public int getMaxColumnsInGroupBy() throws SQLException {
+    public int getMaxColumnsInGroupBy() {
         return maxColumnsInGroupBy;
     }
 
     @Override
-    public int getMaxColumnsInIndex() throws SQLException {
+    public int getMaxColumnsInIndex() {
         return maxColumnsInIndex;
     }
 
     @Override
-    public int getMaxColumnsInOrderBy() throws SQLException {
+    public int getMaxColumnsInOrderBy() {
         return maxColumnsInOrderBy;
     }
 
     @Override
-    public int getMaxColumnsInSelect() throws SQLException {
+    public int getMaxColumnsInSelect() {
         return maxColumnsInSelect;
     }
 
     @Override
-    public int getMaxColumnsInTable() throws SQLException {
+    public int getMaxColumnsInTable() {
         return maxColumnsInTable;
     }
 
     @Override
-    public int getMaxConnections() throws SQLException {
+    public int getMaxConnections() {
         return maxConnections;
     }
 
     @Override
-    public int getMaxCursorNameLength() throws SQLException {
+    public int getMaxCursorNameLength() {
         return maxCursorNameLength;
     }
 
     @Override
-    public int getMaxIndexLength() throws SQLException {
+    public int getMaxIndexLength() {
         return maxIndexLength;
     }
 
     @Override
-    public int getMaxSchemaNameLength() throws SQLException {
+    public int getMaxSchemaNameLength() {
         return maxSchemaNameLength;
     }
 
     @Override
-    public int getMaxProcedureNameLength() throws SQLException {
+    public int getMaxProcedureNameLength() {
         return maxProcedureNameLength;
     }
 
     @Override
-    public int getMaxCatalogNameLength() throws SQLException {
+    public int getMaxCatalogNameLength() {
         return maxCatalogNameLength;
     }
 
     @Override
-    public int getMaxRowSize() throws SQLException {
+    public int getMaxRowSize() {
         return maxRowSize;
     }
 
     @Override
-    public boolean doesMaxRowSizeIncludeBlobs() throws SQLException {
+    public boolean doesMaxRowSizeIncludeBlobs() {
         return doesMaxRowSizeIncludeBlobs;
     }
 
     @Override
-    public int getMaxStatementLength() throws SQLException {
+    public int getMaxStatementLength() {
         return maxStatementLength;
     }
 
     @Override
-    public int getMaxStatements() throws SQLException {
+    public int getMaxStatements() {
         return maxStatements;
     }
 
     @Override
-    public int getMaxTableNameLength() throws SQLException {
+    public int getMaxTableNameLength() {
         return maxTableNameLength;
     }
 
     @Override
-    public int getMaxTablesInSelect() throws SQLException {
+    public int getMaxTablesInSelect() {
         return maxTablesInSelect;
     }
 
     @Override
-    public int getMaxUserNameLength() throws SQLException {
+    public int getMaxUserNameLength() {
         return maxUserNameLength;
     }
 
     @Override
-    public int getDefaultTransactionIsolation() throws SQLException {
+    public int getDefaultTransactionIsolation() {
         return defaultTransactionIsolation;
     }
 
     @Override
-    public boolean supportsTransactions() throws SQLException {
+    public boolean supportsTransactions() {
         return supportsTransactions;
     }
 
     @Override
-    public boolean supportsTransactionIsolationLevel(int level) throws SQLException {
+    public boolean supportsTransactionIsolationLevel(int level) {
         return connector.get(format("%s/supports/transaction/isolation/level/%d", super.entityUrl, level), Boolean.class);
     }
 
     @Override
-    public boolean supportsDataDefinitionAndDataManipulationTransactions() throws SQLException {
+    public boolean supportsDataDefinitionAndDataManipulationTransactions() {
         return supportsDataDefinitionAndDataManipulationTransactions;
     }
 
     @Override
-    public boolean supportsDataManipulationTransactionsOnly() throws SQLException {
+    public boolean supportsDataManipulationTransactionsOnly() {
         return supportsDataManipulationTransactionsOnly;
     }
 
     @Override
-    public boolean dataDefinitionCausesTransactionCommit() throws SQLException {
+    public boolean dataDefinitionCausesTransactionCommit() {
         return dataDefinitionCausesTransactionCommit;
     }
 
     @Override
-    public boolean dataDefinitionIgnoredInTransactions() throws SQLException {
+    public boolean dataDefinitionIgnoredInTransactions() {
         return dataDefinitionIgnoredInTransactions;
     }
 
     @Override
-    public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern) throws SQLException {
+    public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern) {
         String fullUrl = connector.buildUrl(format("%s/procedures", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"procedure", procedureNamePattern});
         return connector.get(fullUrl, ResultSetProxy.class);
     }
 
     @Override
-    public ResultSet getProcedureColumns(String catalog, String schemaPattern, String procedureNamePattern, String columnNamePattern) throws SQLException {
+    public ResultSet getProcedureColumns(String catalog, String schemaPattern, String procedureNamePattern, String columnNamePattern) {
         String fullUrl = connector.buildUrl(format("%s/procedure/columns", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"procedure", procedureNamePattern}, new String[] {"column", columnNamePattern});
         return connector.get(fullUrl, ResultSetProxy.class);
     }
 
     @Override
-    public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) throws SQLException {
+    public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) {
         String typesStr = types == null ? null : String.join(",", types);
         String fullUrl = connector.buildUrl(format("%s/tables", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"table", tableNamePattern}, new String[] {"types", typesStr});
         return connector.get(fullUrl, ResultSetProxy.class);
@@ -915,72 +915,72 @@ public class TransportableDatabaseMetaData extends WrapperProxy implements Datab
 
     @Override
     @JsonIgnore
-    public ResultSet getSchemas() throws SQLException {
+    public ResultSet getSchemas() {
         return connector.get(format("%s/schemas", super.entityUrl), ResultSetProxy.class);
     }
 
     @Override
     @JsonIgnore
-    public ResultSet getCatalogs() throws SQLException {
+    public ResultSet getCatalogs() {
         return connector.get(format("%s/catalogs", super.entityUrl), ResultSetProxy.class);
     }
 
     @Override
     @JsonIgnore
-    public ResultSet getTableTypes() throws SQLException {
+    public ResultSet getTableTypes() {
         return connector.get(format("%s/table/types", super.entityUrl), ResultSetProxy.class);
     }
 
     @Override
-    public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
+    public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) {
         String fullUrl = connector.buildUrl(format("%s/columns", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"table", tableNamePattern}, new String[] {"column", columnNamePattern});
         return connector.get(fullUrl, ResultSetProxy.class);
     }
 
     @Override
-    public ResultSet getColumnPrivileges(String catalog, String schema, String table, String columnNamePattern) throws SQLException {
+    public ResultSet getColumnPrivileges(String catalog, String schema, String table, String columnNamePattern) {
         String fullUrl = connector.buildUrl(format("%s/column/privileges", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schema}, new String[] {"table", table}, new String[] {"column", columnNamePattern});
         return connector.get(fullUrl, ResultSetProxy.class);
     }
 
     @Override
-    public ResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern) throws SQLException {
+    public ResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern) {
         String fullUrl = connector.buildUrl(format("%s/table/privileges", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"table", tableNamePattern});
         return connector.get(fullUrl, ResultSetProxy.class);
     }
 
     @Override
-    public ResultSet getBestRowIdentifier(String catalog, String schema, String table, int scope, boolean nullable) throws SQLException {
+    public ResultSet getBestRowIdentifier(String catalog, String schema, String table, int scope, boolean nullable) {
         String fullUrl = connector.buildUrl(format("%s/best/row/identifier", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schema}, new String[] {"table", table}, new String[] {"scope", "" + scope}, new String[] {"nullable", "" + nullable});
         return connector.get(fullUrl, ResultSetProxy.class);
     }
 
     @Override
-    public ResultSet getVersionColumns(String catalog, String schema, String table) throws SQLException {
+    public ResultSet getVersionColumns(String catalog, String schema, String table) {
         String fullUrl = connector.buildUrl(format("%s/version/columns", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schema}, new String[] {"table", table});
         return connector.get(fullUrl, ResultSetProxy.class);
     }
 
     @Override
-    public ResultSet getPrimaryKeys(String catalog, String schema, String table) throws SQLException {
+    public ResultSet getPrimaryKeys(String catalog, String schema, String table) {
         String fullUrl = connector.buildUrl(format("%s/primary/keys", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schema}, new String[] {"table", table});
         return connector.get(fullUrl, ResultSetProxy.class);
     }
 
     @Override
-    public ResultSet getImportedKeys(String catalog, String schema, String table) throws SQLException {
+    public ResultSet getImportedKeys(String catalog, String schema, String table) {
         String fullUrl = connector.buildUrl(format("%s/imported/keys", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schema}, new String[] {"table", table});
         return connector.get(fullUrl, ResultSetProxy.class);
     }
 
     @Override
-    public ResultSet getExportedKeys(String catalog, String schema, String table) throws SQLException {
+    public ResultSet getExportedKeys(String catalog, String schema, String table) {
         String fullUrl = connector.buildUrl(format("%s/exported/keys", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schema}, new String[] {"table", table});
         return connector.get(fullUrl, ResultSetProxy.class);
     }
 
     @Override
-    public ResultSet getCrossReference(String parentCatalog, String parentSchema, String parentTable, String foreignCatalog, String foreignSchema, String foreignTable) throws SQLException {
+    public ResultSet getCrossReference(String parentCatalog, String parentSchema, String parentTable, String foreignCatalog, String foreignSchema, String foreignTable) {
         String fullUrl = connector.buildUrl(format("%s/crossreference", super.entityUrl),
                 new String[]{"parentCatalog", parentCatalog}, new String[]{"parentSchema", parentSchema}, new String[]{"parentTable", parentTable},
                 new String[]{"foreignCatalog", foreignCatalog}, new String[]{"foreignSchema", foreignSchema}, new String[]{"foreignTable", foreignTable}
@@ -990,78 +990,78 @@ public class TransportableDatabaseMetaData extends WrapperProxy implements Datab
 
     @Override
     @JsonIgnore
-    public ResultSet getTypeInfo() throws SQLException {
+    public ResultSet getTypeInfo() {
         return connector.get(format("%s/type/info", super.entityUrl), ResultSetProxy.class);
     }
 
     @Override
-    public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate) throws SQLException {
+    public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate) {
         String fullUrl = connector.buildUrl(format("%s/index/info", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schema}, new String[] {"table", table}, new String[] {"unique", "" + unique}, new String[] {"approximate", "" + approximate});
         return connector.get(fullUrl, ResultSetProxy.class);
     }
 
     @Override
-    public boolean supportsResultSetType(int type) throws SQLException {
+    public boolean supportsResultSetType(int type) {
         return connector.get(format("%s/supports/resultset/type/%d", super.entityUrl, type), Boolean.class);
     }
 
     @Override
-    public boolean supportsResultSetConcurrency(int type, int concurrency) throws SQLException {
+    public boolean supportsResultSetConcurrency(int type, int concurrency) {
         return connector.get(format("%s/supports/resultset/concurrency/%d/%d", super.entityUrl, type, concurrency), Boolean.class);
     }
 
     @Override
-    public boolean ownUpdatesAreVisible(int type) throws SQLException {
+    public boolean ownUpdatesAreVisible(int type) {
         return connector.get(format("%s/own/updates/visible/%d", super.entityUrl, type), Boolean.class);
     }
 
     @Override
-    public boolean ownDeletesAreVisible(int type) throws SQLException {
+    public boolean ownDeletesAreVisible(int type) {
         return connector.get(format("%s/own/deletes/visible/%d", super.entityUrl, type), Boolean.class);
     }
 
     @Override
-    public boolean ownInsertsAreVisible(int type) throws SQLException {
+    public boolean ownInsertsAreVisible(int type) {
         return connector.get(format("%s/own/inserts/visible/%d", super.entityUrl, type), Boolean.class);
     }
 
     @Override
-    public boolean othersUpdatesAreVisible(int type) throws SQLException {
+    public boolean othersUpdatesAreVisible(int type) {
         return connector.get(format("%s/others/updates/visible/%d", super.entityUrl, type), Boolean.class);
     }
 
     @Override
-    public boolean othersDeletesAreVisible(int type) throws SQLException {
+    public boolean othersDeletesAreVisible(int type) {
         return connector.get(format("%s/others/deletes/visible/%d", super.entityUrl, type), Boolean.class);
     }
 
     @Override
-    public boolean othersInsertsAreVisible(int type) throws SQLException {
+    public boolean othersInsertsAreVisible(int type) {
         return connector.get(format("%s/others/inserts/visible/%d", super.entityUrl, type), Boolean.class);
     }
 
     @Override
-    public boolean updatesAreDetected(int type) throws SQLException {
+    public boolean updatesAreDetected(int type) {
         return connector.get(format("%s/updates/detected/%d", super.entityUrl, type), Boolean.class);
     }
 
     @Override
-    public boolean deletesAreDetected(int type) throws SQLException {
+    public boolean deletesAreDetected(int type) {
         return connector.get(format("%s/deletes/detected/%d", super.entityUrl, type), Boolean.class);
     }
 
     @Override
-    public boolean insertsAreDetected(int type) throws SQLException {
+    public boolean insertsAreDetected(int type) {
         return connector.get(format("%s/inserts/detected/%d", super.entityUrl, type), Boolean.class);
     }
 
     @Override
-    public boolean supportsBatchUpdates() throws SQLException {
+    public boolean supportsBatchUpdates() {
         return supportsBatchUpdates;
     }
 
     @Override
-    public ResultSet getUDTs(String catalog, String schemaPattern, String typeNamePattern, int[] types) throws SQLException {
+    public ResultSet getUDTs(String catalog, String schemaPattern, String typeNamePattern, int[] types) {
         String typesStr = types == null ? null : Arrays.stream(types).mapToObj(i -> ""+i).collect(Collectors.joining(","));
         String fullUrl = connector.buildUrl(format("%s/udts", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"typename", typeNamePattern}, new String[] {"types", typesStr});
         return connector.get(fullUrl, ResultSetProxy.class);
@@ -1069,159 +1069,159 @@ public class TransportableDatabaseMetaData extends WrapperProxy implements Datab
 
     @Override
     @JsonIgnore
-    public Connection getConnection() throws SQLException {
+    public Connection getConnection() {
         return connection;
     }
 
     @Override
-    public boolean supportsSavepoints() throws SQLException {
+    public boolean supportsSavepoints() {
         return supportsSavepoints;
     }
 
     @Override
-    public boolean supportsNamedParameters() throws SQLException {
+    public boolean supportsNamedParameters() {
         return supportsNamedParameters;
     }
 
     @Override
-    public boolean supportsMultipleOpenResults() throws SQLException {
+    public boolean supportsMultipleOpenResults() {
         return supportsMultipleOpenResults;
     }
 
     @Override
-    public boolean supportsGetGeneratedKeys() throws SQLException {
+    public boolean supportsGetGeneratedKeys() {
         return supportsGetGeneratedKeys;
     }
 
     @Override
-    public ResultSet getSuperTypes(String catalog, String schemaPattern, String typeNamePattern) throws SQLException {
+    public ResultSet getSuperTypes(String catalog, String schemaPattern, String typeNamePattern) {
         String fullUrl = connector.buildUrl(format("%s/super/types", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"typename", typeNamePattern});
         return connector.get(fullUrl, ResultSetProxy.class);
     }
 
     @Override
-    public ResultSet getSuperTables(String catalog, String schemaPattern, String tableNamePattern) throws SQLException {
+    public ResultSet getSuperTables(String catalog, String schemaPattern, String tableNamePattern) {
         String fullUrl = connector.buildUrl(format("%s/super/tables", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"table", tableNamePattern});
         return connector.get(fullUrl, ResultSetProxy.class);
     }
 
     @Override
-    public ResultSet getAttributes(String catalog, String schemaPattern, String typeNamePattern, String attributeNamePattern) throws SQLException {
+    public ResultSet getAttributes(String catalog, String schemaPattern, String typeNamePattern, String attributeNamePattern) {
         String fullUrl = connector.buildUrl(format("%s/attributes", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"typename", schemaPattern}, new String[] {"attribute", attributeNamePattern});
         return connector.get(fullUrl, ResultSetProxy.class);
     }
 
     @Override
-    public boolean supportsResultSetHoldability(int holdability) throws SQLException {
+    public boolean supportsResultSetHoldability(int holdability) {
         return connector.get(format("%s/supports/resultset/holdability/%d", super.entityUrl, holdability), Boolean.class);
     }
 
     @Override
-    public int getResultSetHoldability() throws SQLException {
+    public int getResultSetHoldability() {
         return resultSetHoldability;
     }
 
     @Override
-    public int getDatabaseMajorVersion() throws SQLException {
+    public int getDatabaseMajorVersion() {
         return databaseMajorVersion;
     }
 
     @Override
-    public int getDatabaseMinorVersion() throws SQLException {
+    public int getDatabaseMinorVersion() {
         return databaseMinorVersion;
     }
 
     @Override
     @JsonProperty("jdbcMajorVersion")
-    public int getJDBCMajorVersion() throws SQLException {
+    public int getJDBCMajorVersion() {
         return jdbcMajorVersion;
     }
 
     @Override
     @JsonProperty("jdbcMinorVersion")
-    public int getJDBCMinorVersion() throws SQLException {
+    public int getJDBCMinorVersion() {
         return jdbcMinorVersion;
     }
 
     @Override
     @JsonProperty("sqlStateType")
-    public int getSQLStateType() throws SQLException {
+    public int getSQLStateType() {
         return sqlStateType;
     }
 
     @Override
-    public boolean locatorsUpdateCopy() throws SQLException {
+    public boolean locatorsUpdateCopy() {
         return locatorsUpdateCopy;
     }
 
     @Override
-    public boolean supportsStatementPooling() throws SQLException {
+    public boolean supportsStatementPooling() {
         return supportsStatementPooling;
     }
 
     @Override
     @JsonIgnore
-    public RowIdLifetime getRowIdLifetime() throws SQLException {
+    public RowIdLifetime getRowIdLifetime() {
         return connector.get(format("%s/rowidlifetime", super.entityUrl), RowIdLifetime.class);
     }
 
     @Override
-    public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
+    public ResultSet getSchemas(String catalog, String schemaPattern) {
         String fullUrl = connector.buildUrl(format("%s/schemas", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern});
         return connector.get(fullUrl, ResultSetProxy.class);
     }
 
     @Override
-    public boolean supportsStoredFunctionsUsingCallSyntax() throws SQLException {
+    public boolean supportsStoredFunctionsUsingCallSyntax() {
         return supportsStoredFunctionsUsingCallSyntax;
     }
 
     @Override
-    public boolean autoCommitFailureClosesAllResultSets() throws SQLException {
+    public boolean autoCommitFailureClosesAllResultSets() {
         return autoCommitFailureClosesAllResultSets;
     }
 
     @Override
     @JsonIgnore
-    public ResultSet getClientInfoProperties() throws SQLException {
+    public ResultSet getClientInfoProperties() {
         return connector.get(format("%s/client/info/properties", super.entityUrl), ResultSetProxy.class);
     }
 
     @Override
-    public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern) throws SQLException {
+    public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern) {
         String fullUrl = connector.buildUrl(format("%s/functions", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"function", functionNamePattern});
         return connector.get(fullUrl, ResultSetProxy.class);
     }
 
     @Override
-    public ResultSet getFunctionColumns(String catalog, String schemaPattern, String functionNamePattern, String columnNamePattern) throws SQLException {
+    public ResultSet getFunctionColumns(String catalog, String schemaPattern, String functionNamePattern, String columnNamePattern) {
         String fullUrl = connector.buildUrl(format("%s/function/columns", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"function", functionNamePattern}, new String[] {"column", columnNamePattern});
         return connector.get(fullUrl, ResultSetProxy.class);
     }
 
     @Override
-    public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
+    public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) {
         String fullUrl = connector.buildUrl(format("%s/pseudo/columns", super.entityUrl), new String[] {"catalog", catalog}, new String[] {"schema", schemaPattern}, new String[] {"table", tableNamePattern}, new String[] {"column", columnNamePattern});
         return connector.get(fullUrl, ResultSetProxy.class);
     }
 
     @Override
-    public boolean generatedKeyAlwaysReturned() throws SQLException {
+    public boolean generatedKeyAlwaysReturned() {
         return generatedKeyAlwaysReturned;
     }
 
     @Override
-    public long getMaxLogicalLobSize() throws SQLException {
+    public long getMaxLogicalLobSize() {
         return maxLogicalLobSize;
     }
 
     @Override
-    public boolean supportsRefCursors() throws SQLException {
+    public boolean supportsRefCursors() {
         return supportsRefCursors;
     }
 
     @Override
-    public boolean supportsSharding() throws SQLException {
+    public boolean supportsSharding() {
         return supportsSharding;
     }
 

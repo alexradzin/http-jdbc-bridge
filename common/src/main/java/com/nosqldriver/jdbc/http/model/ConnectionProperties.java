@@ -232,7 +232,7 @@ public class ConnectionProperties {
         this.booleanLiterals = new HashMap<>();
         booleanLiterals.put(false, boolLiterals[0]);
         booleanLiterals.put(true, boolLiterals[1]);
-        unsupportedFunctions = new HashSet<>(Arrays.asList(props.getProperty("unsupportedFunctions", "").split("\\s*,\\s*")));
+        unsupportedFunctions = new HashSet<>(List.of(props.getProperty("unsupportedFunctions", "").split("\\s*,\\s*")));
         toTimestamp = getTimePropertiesMap(props, "toTimestamp");
         toTime = getTimePropertiesMap(props, "toTime");
         toDate = getTimePropertiesMap(props, "toDate");

@@ -11,6 +11,7 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -40,7 +41,7 @@ public class ConnectionControllerTest extends ControllerTestBase {
         Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
         Connection nativeConn = DriverManager.getConnection(nativeUrl);
 
-        Collection<Entry<String, ThrowingFunction<Connection, ?,  SQLException>>> getters = Arrays.asList(
+        Collection<Entry<String, ThrowingFunction<Connection, ?,  SQLException>>> getters = List.of(
                 new SimpleEntry<>("getClientInfo", Connection::getClientInfo),
                 new SimpleEntry<>("getCatalog", Connection::getCatalog),
                 new SimpleEntry<>("getSchema", Connection::getSchema),
@@ -68,7 +69,7 @@ public class ConnectionControllerTest extends ControllerTestBase {
         Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
         Connection nativeConn = DriverManager.getConnection(nativeUrl);
 
-        Collection<Map.Entry<String, Map.Entry<ThrowingFunction<Connection, ?, SQLException>, ThrowingConsumer<Connection, SQLException>>>> functions = Arrays.asList(
+        Collection<Map.Entry<String, Map.Entry<ThrowingFunction<Connection, ?, SQLException>, ThrowingConsumer<Connection, SQLException>>>> functions = List.of(
                 new SimpleEntry<>("TypeMap", new SimpleEntry<>(Connection::getTypeMap, s -> s.setTypeMap(Collections.emptyMap()))),
                 new SimpleEntry<>("ClientInfo", new SimpleEntry<>(Connection::getClientInfo, s -> s.setClientInfo(new Properties()))),
                 new SimpleEntry<>("ClientInfo", new SimpleEntry<>(Connection::getClientInfo, s -> s.setClientInfo("foo", "bar"))),
@@ -99,7 +100,7 @@ public class ConnectionControllerTest extends ControllerTestBase {
         Connection nativeConn = DriverManager.getConnection(nativeUrl);
 
         String query = getCheckConnectivityQuery(db(nativeUrl));
-        Collection<SimpleEntry<String, ThrowingFunction<Connection, ?,  SQLException>>> functions = Arrays.asList(
+        Collection<SimpleEntry<String, ThrowingFunction<Connection, ?,  SQLException>>> functions = List.of(
                 new SimpleEntry<>("createStatement", Connection::createStatement),
                 new SimpleEntry<>("createStatement", c -> c.createStatement(TYPE_FORWARD_ONLY, CONCUR_READ_ONLY)),
                 new SimpleEntry<>("createStatement", c -> c.createStatement(TYPE_FORWARD_ONLY, CONCUR_UPDATABLE)),
@@ -200,7 +201,7 @@ public class ConnectionControllerTest extends ControllerTestBase {
         Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
         Connection nativeConn = DriverManager.getConnection(nativeUrl);
 
-        Collection<SimpleEntry<String, ThrowingConsumer<Connection, SQLException>>> functions = Arrays.asList(
+        Collection<SimpleEntry<String, ThrowingConsumer<Connection, SQLException>>> functions = List.of(
                 new SimpleEntry<>("commit", c -> c.commit()),
                 new SimpleEntry<>("rollback", c -> c.rollback()),
                 new SimpleEntry<>("rollback(savepoint)", c -> c.rollback(c.setSavepoint())),

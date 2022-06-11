@@ -8,17 +8,19 @@ import org.junit.jupiter.params.provider.ValueSource;
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
 import java.sql.Connection;
+import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
 import static java.lang.String.format;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_PLACEHOLDER;
 
 public class DriverControllerTest extends ControllerTestBase {
@@ -32,7 +34,7 @@ public class DriverControllerTest extends ControllerTestBase {
 
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @ValueSource(strings = {"jdbc:unsupported:foo", httpUrl + "#" + "jdbc:unsupported:foo"})
-    void createConnectionViaDriverManagerUsingUnsupportedJdbcUrl(String url) throws IOException {
+    void createConnectionViaDriverManagerUsingUnsupportedJdbcUrl(String url) {
         assertThrows(SQLException.class, () -> DriverManager.getConnection(url));
         assertThrows(ScriptException.class, () -> executeJavaScript(url));
     }
@@ -45,7 +47,7 @@ public class DriverControllerTest extends ControllerTestBase {
     }
 
     @Test
-    void getUsingUnsupportedJdbcUrlConnectionDirectly() throws SQLException, IOException {
+    void getUsingUnsupportedJdbcUrlConnectionDirectly() throws IOException {
         String url = httpUrl + "#" + "jdbc:unsupported:foo";
         assertNull(new HttpDriver().connect(url, null));
         executeJavaScript(url);
@@ -63,7 +65,7 @@ public class DriverControllerTest extends ControllerTestBase {
     }
 
     @Test
-    void createAndCloseConnectionWithPredefinedUrlWrongCredentials() throws SQLException, IOException {
+    void createAndCloseConnectionWithPredefinedUrlWrongCredentials() {
         Properties props = new Properties();
         props.setProperty("user", "nobody");
         props.setProperty("password", "wrong");
@@ -80,6 +82,19 @@ public class DriverControllerTest extends ControllerTestBase {
         assertThrows(ScriptException.class, () -> executeJavaScript(httpUrl, props));
     }
 
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void acceptsSupportedJdbcURL(String nativeUrl) throws SQLException {
+        Driver driver = new HttpDriver();
+        assertTrue(driver.acceptsURL(format("%s#%s", httpUrl, nativeUrl)));
+    }
+
+    @Test
+    void acceptsUnsupportedJdbcURL() throws SQLException {
+        Driver driver = new HttpDriver();
+        assertFalse(driver.acceptsURL(format("%s#%s", httpUrl, "jdbc:unknown")));
+    }
+
     private void assertCreateAndCloseConnection(String url) throws SQLException {
         assertCreateAndCloseConnection(url, new Properties());
     }
@@ -89,5 +104,4 @@ public class DriverControllerTest extends ControllerTestBase {
         assertNotNull(conn);
         conn.close();
     }
-
 }

@@ -16,6 +16,7 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map.Entry;
 
 import static com.nosqldriver.jdbc.http.AssertUtils.assertCall;
@@ -37,7 +38,7 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
         DatabaseMetaData httpMd = httpConn.getMetaData();
         DatabaseMetaData nativeMd = nativeConn.getMetaData();
 
-        Collection<Entry<String, ThrowingFunction<DatabaseMetaData, ?, SQLException>>> getters = Arrays.asList(
+        Collection<Entry<String, ThrowingFunction<DatabaseMetaData, ?, SQLException>>> getters = List.of(
                 new SimpleEntry<>("allProceduresAreCallable", DatabaseMetaData::allProceduresAreCallable),
                 new SimpleEntry<>("allTablesAreSelectable", DatabaseMetaData::allTablesAreSelectable),
                 new SimpleEntry<>("getURL", DatabaseMetaData::getURL),
@@ -211,7 +212,7 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
         DatabaseMetaData httpMd = httpConn.getMetaData();
         DatabaseMetaData nativeMd = nativeConn.getMetaData();
 
-        Collection<Entry<String, ThrowingFunction<DatabaseMetaData, ResultSet, SQLException>>> getters = Arrays.asList(
+        Collection<Entry<String, ThrowingFunction<DatabaseMetaData, ResultSet, SQLException>>> getters = List.of(
                 new SimpleEntry<>("getSchemas", DatabaseMetaData::getSchemas),
                 new SimpleEntry<>("getCatalogs", DatabaseMetaData::getCatalogs),
                 new SimpleEntry<>("getTableTypes", DatabaseMetaData::getTableTypes),
@@ -235,7 +236,7 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
         DatabaseMetaData httpMd = httpConn.getMetaData();
         DatabaseMetaData nativeMd = nativeConn.getMetaData();
 
-        Collection<Entry<String, ThrowingTriFunction<DatabaseMetaData, String, String, ResultSet, SQLException>>> getters = Arrays.asList(
+        Collection<Entry<String, ThrowingTriFunction<DatabaseMetaData, String, String, ResultSet, SQLException>>> getters = List.of(
                 new SimpleEntry<>("getSchemas", DatabaseMetaData::getSchemas)
         );
 
@@ -255,7 +256,7 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
         DatabaseMetaData httpMd = httpConn.getMetaData();
         DatabaseMetaData nativeMd = nativeConn.getMetaData();
 
-        Collection<Entry<String, ThrowingQuadraFunction<DatabaseMetaData, String, String, String, ResultSet, SQLException>>> getters = Arrays.asList(
+        Collection<Entry<String, ThrowingQuadraFunction<DatabaseMetaData, String, String, String, ResultSet, SQLException>>> getters = List.of(
                 new SimpleEntry<>("getProcedures", DatabaseMetaData::getProcedures),
                 new SimpleEntry<>("getTablePrivileges", DatabaseMetaData::getTablePrivileges),
                 new SimpleEntry<>("getVersionColumns", DatabaseMetaData::getVersionColumns),
@@ -283,7 +284,7 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
         DatabaseMetaData httpMd = httpConn.getMetaData();
         DatabaseMetaData nativeMd = nativeConn.getMetaData();
 
-        Collection<Entry<String, ThrowingFunction<DatabaseMetaData, ResultSet, SQLException>>> getters = Arrays.asList(
+        Collection<Entry<String, ThrowingFunction<DatabaseMetaData, ResultSet, SQLException>>> getters = List.of(
                 new SimpleEntry<>("getFunctionColumns", md -> md.getFunctionColumns(null, null, null, null)),
                 new SimpleEntry<>("getAttributes", md -> md.getAttributes(null, null, null, null)),
                 new SimpleEntry<>("getPseudoColumns", md -> md.getPseudoColumns(null, null, null, null)),

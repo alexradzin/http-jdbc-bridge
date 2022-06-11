@@ -30,17 +30,17 @@ public class StructProxy extends EntityProxy implements Struct {
 
     @Override
     @JsonProperty(value = "sqlTypeName")
-    public String getSQLTypeName() throws SQLException {
+    public String getSQLTypeName() {
         return sqlTypeName;
     }
 
     @Override
-    public Object[] getAttributes() throws SQLException {
+    public Object[] getAttributes() {
         return attributes;
     }
 
     @Override
-    public Object[] getAttributes(Map<String, Class<?>> map) throws SQLException {
+    public Object[] getAttributes(Map<String, Class<?>> map) {
         return connector.post(format("%s/attributes", entityUrl), map, Object[].class);
     }
 }

@@ -15,6 +15,7 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map.Entry;
 
 import static com.nosqldriver.jdbc.http.AssertUtils.assertCall;
@@ -78,7 +79,7 @@ class BlobControllerTest extends ControllerTestBase {
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void positionAndLength(String nativeUrl) throws SQLException {
-        Collection<Entry<String, ThrowingConsumer<Blob, SQLException>>> initializers = Arrays.asList(
+        Collection<Entry<String, ThrowingConsumer<Blob, SQLException>>> initializers = List.of(
                 new SimpleEntry<>("no-op", blob -> {}),
                 new SimpleEntry<>("empty", blob -> blob.setBytes(1, new byte[0])),
                 new SimpleEntry<>("string", blob -> blob.setBytes(1, "hello".getBytes()))
@@ -102,7 +103,7 @@ class BlobControllerTest extends ControllerTestBase {
 //        Blob mockedBlob = Mockito.mock(Blob.class);
 //        when(mockedBlob.getBytes(anyLong(), anyInt())).thenReturn(new byte[0]);
 
-        Collection<Entry<String, ThrowingFunction<Blob, Long,  SQLException>>> functions = Arrays.asList(
+        Collection<Entry<String, ThrowingFunction<Blob, Long,  SQLException>>> functions = List.of(
             new SimpleEntry<>(initializerName + ":length", Blob::length),
             new SimpleEntry<>(initializerName + ":position([], 1)", blob -> blob.position(new byte[0], 1)),
             new SimpleEntry<>(initializerName + ":position([], 2)", blob -> blob.position(new byte[0], 2)),

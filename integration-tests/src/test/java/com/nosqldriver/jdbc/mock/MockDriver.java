@@ -35,17 +35,17 @@ public class MockDriver implements Driver {
         }
     }
     @Override
-    public Connection connect(String url, Properties info) throws SQLException {
+    public Connection connect(String url, Properties info) {
         return acceptsURL(url) ? getConnection() : null;
     }
 
     @Override
-    public boolean acceptsURL(String url) throws SQLException {
+    public boolean acceptsURL(String url) {
         return url.startsWith("jdbc:mock");
     }
 
     @Override
-    public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
+    public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) {
         return new DriverPropertyInfo[0];
     }
 

@@ -32,7 +32,7 @@ public class ReaderProxy extends Reader {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         connector.delete(url, null, Void.class);
     }
 }

@@ -20,7 +20,6 @@ import java.sql.Ref;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.RowId;
-import java.sql.SQLException;
 import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -39,279 +38,279 @@ public class PreparedStatementProxy extends StatementProxy implements PreparedSt
     }
 
     @Override
-    public ResultSet executeQuery() throws SQLException {
+    public ResultSet executeQuery() {
         return connector.get(format("%s/query", entityUrl), ResultSetProxy.class).withStatement(this);
     }
 
     @Override
-    public int executeUpdate() throws SQLException {
+    public int executeUpdate() {
         return connector.get(format("%s/update", entityUrl), Integer.class);
     }
 
     @Override
-    public void setNull(int parameterIndex, int sqlType) throws SQLException {
-        set(parameterIndex, (Class<?>)null, sqlType);
+    public void setNull(int parameterIndex, int sqlType) {
+        set(parameterIndex, null, sqlType);
     }
 
     @Override
-    public void setBoolean(int parameterIndex, boolean x) throws SQLException {
+    public void setBoolean(int parameterIndex, boolean x) {
         set(parameterIndex, boolean.class, x);
     }
 
     @Override
-    public void setByte(int parameterIndex, byte x) throws SQLException {
+    public void setByte(int parameterIndex, byte x) {
         set(parameterIndex, byte.class, x);
     }
 
     @Override
-    public void setShort(int parameterIndex, short x) throws SQLException {
+    public void setShort(int parameterIndex, short x) {
         set(parameterIndex, short.class, x);
     }
 
     @Override
-    public void setInt(int parameterIndex, int x) throws SQLException {
+    public void setInt(int parameterIndex, int x) {
         set(parameterIndex, int.class, x);
     }
 
     @Override
-    public void setLong(int parameterIndex, long x) throws SQLException {
+    public void setLong(int parameterIndex, long x) {
         set(parameterIndex, long.class, x);
     }
 
     @Override
-    public void setFloat(int parameterIndex, float x) throws SQLException {
+    public void setFloat(int parameterIndex, float x) {
         set(parameterIndex, float.class, x);
     }
 
     @Override
-    public void setDouble(int parameterIndex, double x) throws SQLException {
+    public void setDouble(int parameterIndex, double x) {
         set(parameterIndex, double.class, x);
     }
 
     @Override
-    public void setBigDecimal(int parameterIndex, BigDecimal x) throws SQLException {
+    public void setBigDecimal(int parameterIndex, BigDecimal x) {
         set(parameterIndex, BigDecimal.class, x);
     }
 
     @Override
-    public void setString(int parameterIndex, String x) throws SQLException {
+    public void setString(int parameterIndex, String x) {
         set(parameterIndex, String.class, x);
     }
 
     @Override
-    public void setBytes(int parameterIndex, byte[] x) throws SQLException {
+    public void setBytes(int parameterIndex, byte[] x) {
         set(parameterIndex, byte[].class, x);
     }
 
     @Override
-    public void setDate(int parameterIndex, Date x) throws SQLException {
+    public void setDate(int parameterIndex, Date x) {
         set(parameterIndex, Date.class, x);
     }
 
     @Override
-    public void setTime(int parameterIndex, Time x) throws SQLException {
+    public void setTime(int parameterIndex, Time x) {
         set(parameterIndex, Time.class, x);
     }
 
     @Override
-    public void setTimestamp(int parameterIndex, Timestamp x) throws SQLException {
+    public void setTimestamp(int parameterIndex, Timestamp x) {
         set(parameterIndex, Timestamp.class, x);
     }
 
     @Override
-    public void setAsciiStream(int parameterIndex, InputStream x, int length) throws SQLException {
+    public void setAsciiStream(int parameterIndex, InputStream x, int length) {
         set(parameterIndex, InputStream.class, "AsciiStream", x, length);
     }
 
     @Override
-    public void setUnicodeStream(int parameterIndex, InputStream x, int length) throws SQLException {
+    public void setUnicodeStream(int parameterIndex, InputStream x, int length) {
         set(parameterIndex, InputStream.class, "UnicodeStream", x, length);
     }
 
     @Override
-    public void setBinaryStream(int parameterIndex, InputStream x, int length) throws SQLException {
+    public void setBinaryStream(int parameterIndex, InputStream x, int length) {
         set(parameterIndex, InputStream.class, "BinaryStream", x, length);
     }
 
     @Override
-    public void clearParameters() throws SQLException {
+    public void clearParameters() {
         connector.delete(format("%s", entityUrl), null, Void.class);
     }
 
     @Override
-    public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException {
+    public void setObject(int parameterIndex, Object x, int targetSqlType) {
         set(parameterIndex, Object.class, x, targetSqlType);
     }
 
     @Override
-    public void setObject(int parameterIndex, Object x) throws SQLException {
+    public void setObject(int parameterIndex, Object x) {
         set(parameterIndex, Object.class, x);
     }
 
     @Override
-    public boolean execute() throws SQLException {
+    public boolean execute() {
         return connector.get(format("%s/execute", entityUrl), Boolean.class);
     }
 
     @Override
-    public void addBatch() throws SQLException {
+    public void addBatch() {
         connector.put(format("%s/batch", entityUrl), null, Void.class);
     }
 
     @Override
-    public void setCharacterStream(int parameterIndex, Reader reader, int length) throws SQLException {
+    public void setCharacterStream(int parameterIndex, Reader reader, int length) {
         set(parameterIndex, Reader.class, reader, length);
     }
 
     @Override
-    public void setRef(int parameterIndex, Ref x) throws SQLException {
+    public void setRef(int parameterIndex, Ref x) {
         set(parameterIndex, Ref.class, x);
     }
 
     @Override
-    public void setBlob(int parameterIndex, Blob x) throws SQLException {
+    public void setBlob(int parameterIndex, Blob x) {
         set(parameterIndex, Blob.class, x);
     }
 
     @Override
-    public void setClob(int parameterIndex, Clob x) throws SQLException {
+    public void setClob(int parameterIndex, Clob x) {
         set(parameterIndex, Clob.class, x);
     }
 
     @Override
-    public void setArray(int parameterIndex, Array x) throws SQLException {
+    public void setArray(int parameterIndex, Array x) {
         set(parameterIndex, Array.class, x);
     }
 
     @Override
     @JsonIgnore
-    public ResultSetMetaData getMetaData() throws SQLException {
+    public ResultSetMetaData getMetaData() {
         return connector.get(format("%s/metadata", entityUrl), TransportableResultSetMetaData.class);
     }
 
     @Override
-    public void setDate(int parameterIndex, Date x, Calendar cal) throws SQLException {
+    public void setDate(int parameterIndex, Date x, Calendar cal) {
         set(parameterIndex, Date.class, x, cal);
     }
 
     @Override
-    public void setTime(int parameterIndex, Time x, Calendar cal) throws SQLException {
+    public void setTime(int parameterIndex, Time x, Calendar cal) {
         set(parameterIndex, Time.class, x, cal);
     }
 
     @Override
-    public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal) throws SQLException {
+    public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal) {
         set(parameterIndex, Timestamp.class, x, cal);
     }
 
     @Override
-    public void setNull(int parameterIndex, int sqlType, String typeName) throws SQLException {
-        set(parameterIndex, (Class<?>)null, sqlType, typeName);
+    public void setNull(int parameterIndex, int sqlType, String typeName) {
+        set(parameterIndex, null, sqlType, typeName);
     }
 
     @Override
-    public void setURL(int parameterIndex, URL x) throws SQLException {
+    public void setURL(int parameterIndex, URL x) {
         set(parameterIndex, URL.class, x);
     }
 
     @Override
     @JsonIgnore
-    public ParameterMetaData getParameterMetaData() throws SQLException {
+    public ParameterMetaData getParameterMetaData() {
         return connector.get(format("%s/parametermetadata", entityUrl), TransportableParameterMetaData.class);
     }
 
     @Override
-    public void setRowId(int parameterIndex, RowId x) throws SQLException {
+    public void setRowId(int parameterIndex, RowId x) {
         set(parameterIndex, RowId.class, x);
     }
 
     @Override
-    public void setNString(int parameterIndex, String value) throws SQLException {
+    public void setNString(int parameterIndex, String value) {
         set(parameterIndex, String.class, "NString", value);
     }
 
     @Override
-    public void setNCharacterStream(int parameterIndex, Reader value, long length) throws SQLException {
+    public void setNCharacterStream(int parameterIndex, Reader value, long length) {
         set(parameterIndex, Reader.class, "NCharacterStream", value, length);
     }
 
     @Override
-    public void setNClob(int parameterIndex, NClob value) throws SQLException {
+    public void setNClob(int parameterIndex, NClob value) {
         set(parameterIndex, NClob.class, value);
     }
 
     @Override
-    public void setClob(int parameterIndex, Reader reader, long length) throws SQLException {
+    public void setClob(int parameterIndex, Reader reader, long length) {
         set(parameterIndex, Clob.class, reader, length);
     }
 
     @Override
-    public void setBlob(int parameterIndex, InputStream inputStream, long length) throws SQLException {
+    public void setBlob(int parameterIndex, InputStream inputStream, long length) {
         set(parameterIndex, Blob.class, inputStream, length);
     }
 
     @Override
-    public void setNClob(int parameterIndex, Reader reader, long length) throws SQLException {
+    public void setNClob(int parameterIndex, Reader reader, long length) {
         set(parameterIndex, NClob.class, reader, length);
     }
 
     @Override
-    public void setSQLXML(int parameterIndex, SQLXML xmlObject) throws SQLException {
+    public void setSQLXML(int parameterIndex, SQLXML xmlObject) {
         set(parameterIndex, SQLXML.class, xmlObject);
     }
 
     @Override
-    public void setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength) throws SQLException {
+    public void setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength) {
         set(parameterIndex, Object.class, x, new int[] {targetSqlType, scaleOrLength}); //TODO: 2 arguments; is it OK?
     }
 
     @Override
-    public void setAsciiStream(int parameterIndex, InputStream x, long length) throws SQLException {
+    public void setAsciiStream(int parameterIndex, InputStream x, long length) {
         set(parameterIndex, InputStream.class, "AsciiStream", x, length);
     }
 
     @Override
-    public void setBinaryStream(int parameterIndex, InputStream x, long length) throws SQLException {
+    public void setBinaryStream(int parameterIndex, InputStream x, long length) {
         set(parameterIndex, InputStream.class, "BinaryStream", x, length);
     }
 
     @Override
-    public void setCharacterStream(int parameterIndex, Reader reader, long length) throws SQLException {
+    public void setCharacterStream(int parameterIndex, Reader reader, long length) {
         set(parameterIndex, Reader.class, "CharacterStream", reader, length);
     }
 
     @Override
-    public void setAsciiStream(int parameterIndex, InputStream x) throws SQLException {
+    public void setAsciiStream(int parameterIndex, InputStream x) {
         set(parameterIndex, InputStream.class, "AsciiStream", x);
     }
 
     @Override
-    public void setBinaryStream(int parameterIndex, InputStream x) throws SQLException {
+    public void setBinaryStream(int parameterIndex, InputStream x) {
         set(parameterIndex, InputStream.class, "BinaryStream", x);
     }
 
     @Override
-    public void setCharacterStream(int parameterIndex, Reader reader) throws SQLException {
+    public void setCharacterStream(int parameterIndex, Reader reader) {
         set(parameterIndex, Reader.class, "CharacterStream", reader);
     }
 
     @Override
-    public void setNCharacterStream(int parameterIndex, Reader value) throws SQLException {
+    public void setNCharacterStream(int parameterIndex, Reader value) {
         set(parameterIndex, Reader.class, "NCharacterStream", value);
     }
 
     @Override
-    public void setClob(int parameterIndex, Reader reader) throws SQLException {
+    public void setClob(int parameterIndex, Reader reader) {
         set(parameterIndex, Clob.class, reader);
     }
 
     @Override
-    public void setBlob(int parameterIndex, InputStream inputStream) throws SQLException {
+    public void setBlob(int parameterIndex, InputStream inputStream) {
         set(parameterIndex, Blob.class, inputStream);
     }
 
     @Override
-    public void setNClob(int parameterIndex, Reader reader) throws SQLException {
+    public void setNClob(int parameterIndex, Reader reader) {
         set(parameterIndex, NClob.class, reader);
     }
 

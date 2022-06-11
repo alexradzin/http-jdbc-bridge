@@ -15,7 +15,7 @@ import java.sql.SQLException;
 import static java.lang.String.format;
 
 public class ClobProxy extends EntityProxy implements NClob {
-    private long length;
+    private final long length;
 
     @JsonCreator
     public ClobProxy(@JsonProperty("entityUrl") String entityUrl) {
@@ -29,29 +29,29 @@ public class ClobProxy extends EntityProxy implements NClob {
     }
 
     @Override
-    public long length() throws SQLException {
+    public long length() {
         return length < 0 ? connector.get(format("%s/length", entityUrl), Long.class) : length;
     }
 
     @Override
-    public String getSubString(long pos, int length) throws SQLException {
+    public String getSubString(long pos, int length) {
         return connector.get(format("%s/substring/%d/%d", entityUrl, pos, length), String.class);
     }
 
     @Override
     @JsonIgnore
-    public Reader getCharacterStream() throws SQLException {
+    public Reader getCharacterStream() {
         return connector.get(format("%s/character/stream", entityUrl), ReaderProxy.class);
     }
 
     @Override
     @JsonIgnore
-    public InputStream getAsciiStream() throws SQLException {
+    public InputStream getAsciiStream() {
         return connector.get(format("%s/ascii/stream", entityUrl), InputStreamProxy.class);
     }
 
     @Override
-    public long position(String searchstr, long start) throws SQLException {
+    public long position(String searchstr, long start) {
         return positionImpl(searchstr, start);
     }
 
@@ -60,7 +60,7 @@ public class ClobProxy extends EntityProxy implements NClob {
         return searchstr instanceof ClobProxy ? positionImpl(searchstr, start) : position(searchstr.getSubString(1, (int)searchstr.length()), start);
     }
 
-    private long positionImpl(Object searchstr, long start) throws SQLException {
+    private long positionImpl(Object searchstr, long start) {
         return connector.post(format("%s/position/%d", entityUrl, start), searchstr, Long.class);
     }
 
@@ -75,27 +75,27 @@ public class ClobProxy extends EntityProxy implements NClob {
     }
 
     @Override
-    public OutputStream setAsciiStream(long pos) throws SQLException {
+    public OutputStream setAsciiStream(long pos) {
         return connector.post(format("%s/ascii/stream/%d", entityUrl, pos), null, OutputStreamProxy.class);
     }
 
     @Override
-    public Writer setCharacterStream(long pos) throws SQLException {
+    public Writer setCharacterStream(long pos) {
         return connector.post(format("%s/character/stream/%d", entityUrl, pos), null, WriterProxy.class);
     }
 
     @Override
-    public void truncate(long len) throws SQLException {
+    public void truncate(long len) {
         connector.delete(entityUrl, len, Void.class);
     }
 
     @Override
-    public void free() throws SQLException {
+    public void free() {
         connector.delete(entityUrl, null, Void.class);
     }
 
     @Override
-    public Reader getCharacterStream(long pos, long length) throws SQLException {
+    public Reader getCharacterStream(long pos, long length) {
         return connector.get(format("%s/character/stream/%d/%d", entityUrl, pos, length), ReaderProxy.class);
     }
 }

@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.nosqldriver.jdbc.http.HttpConnector;
 
-import java.io.IOException;
 import java.io.OutputStream;
 
 public class OutputStreamProxy extends OutputStream {
@@ -20,17 +19,17 @@ public class OutputStreamProxy extends OutputStream {
     }
 
     @Override
-    public void write(int b) throws IOException {
+    public void write(int b) {
         connector.put(url, b, Void.class);
     }
 
     @Override
-    public void flush() throws IOException {
+    public void flush() {
         connector.post(url + "/flush", null, Void.class);
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         connector.delete(url, null, Void.class);
     }
 }

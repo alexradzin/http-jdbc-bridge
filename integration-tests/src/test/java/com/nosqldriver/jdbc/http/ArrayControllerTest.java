@@ -10,9 +10,9 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map.Entry;
 
 import static com.nosqldriver.jdbc.http.AssertUtils.assertCall;
@@ -32,7 +32,7 @@ public class ArrayControllerTest extends ControllerTestBase {
         }
 
         @Override
-        public void accept(Object nativeRes, Object httpRes) throws SQLException {
+        public void accept(Object nativeRes, Object httpRes) {
             if (nativeRes.getClass().isArray()) {
                 assertEquals(java.lang.reflect.Array.getLength(nativeRes), java.lang.reflect.Array.getLength(httpRes), name);
                 int n = java.lang.reflect.Array.getLength(httpRes);
@@ -107,7 +107,7 @@ public class ArrayControllerTest extends ControllerTestBase {
             return;
         }
 
-        Collection<Entry<String, ThrowingFunction<Array, Object, SQLException>>> functions = Arrays.asList(
+        Collection<Entry<String, ThrowingFunction<Array, Object, SQLException>>> functions = List.of(
                 new SimpleEntry<>("getArray", Array::getArray),
                 new SimpleEntry<>("getBaseType", Array::getBaseType),
                 new SimpleEntry<>("getBaseTypeName", Array::getBaseTypeName),

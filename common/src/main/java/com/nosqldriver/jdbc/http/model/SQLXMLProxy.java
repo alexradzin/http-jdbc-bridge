@@ -23,40 +23,40 @@ public class SQLXMLProxy extends EntityProxy implements SQLXML {
     }
 
     @Override
-    public void free() throws SQLException {
+    public void free() {
         connector.delete(entityUrl, null, Void.class);
     }
 
     @Override
     @JsonIgnore
-    public InputStream getBinaryStream() throws SQLException {
+    public InputStream getBinaryStream() {
         return connector.get(format("%s/binary/stream", entityUrl), InputStreamProxy.class);
     }
 
     @Override
-    public OutputStream setBinaryStream() throws SQLException {
+    public OutputStream setBinaryStream() {
         return connector.post(format("%s/binary/stream", entityUrl), null, OutputStreamProxy.class);
     }
 
     @Override
     @JsonIgnore
-    public Reader getCharacterStream() throws SQLException {
+    public Reader getCharacterStream() {
         return connector.get(format("%s/character/stream", entityUrl), ReaderProxy.class);
     }
 
     @Override
-    public Writer setCharacterStream() throws SQLException {
+    public Writer setCharacterStream() {
         return connector.post(format("%s/character/stream", entityUrl), null, WriterProxy.class);
     }
 
     @JsonIgnore
     @Override
-    public String getString() throws SQLException {
+    public String getString() {
         return connector.get(format("%s/string", entityUrl), String.class);
     }
 
     @Override
-    public void setString(String value) throws SQLException {
+    public void setString(String value) {
         connector.post(format("%s/string", entityUrl), value, Void.class);
     }
 

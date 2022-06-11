@@ -25,7 +25,7 @@ public class TransportableParameterMetaData extends WrapperProxy implements Para
     }
 
     @Override
-    public int getParameterCount() throws SQLException {
+    public int getParameterCount() {
         return parameters.size();
     }
 

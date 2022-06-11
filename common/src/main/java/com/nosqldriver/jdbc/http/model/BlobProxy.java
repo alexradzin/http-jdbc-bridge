@@ -25,23 +25,23 @@ public class BlobProxy extends EntityProxy implements Blob {
     }
 
     @Override
-    public long length() throws SQLException {
+    public long length() {
         return length;
     }
 
     @Override
-    public byte[] getBytes(long pos, int length) throws SQLException {
+    public byte[] getBytes(long pos, int length) {
         return connector.get(format("%s/bytes/%d/%d", entityUrl, pos, length), byte[].class);
     }
 
     @Override
     @JsonIgnore
-    public InputStream getBinaryStream() throws SQLException {
+    public InputStream getBinaryStream() {
         return connector.get(format("%s/binary/stream", entityUrl), InputStream.class);
     }
 
     @Override
-    public long position(byte[] pattern, long start) throws SQLException {
+    public long position(byte[] pattern, long start) {
         return positionImpl(pattern, start);
     }
 
@@ -50,37 +50,37 @@ public class BlobProxy extends EntityProxy implements Blob {
         return pattern instanceof BlobProxy ? positionImpl(pattern, start) : position(pattern.getBytes(1, (int)pattern.length()), start);
     }
 
-    private long positionImpl(Object pattern, long start) throws SQLException {
+    private long positionImpl(Object pattern, long start) {
         return connector.post(format("%s/position/%d", entityUrl, start), pattern, Long.class);
     }
 
     @Override
-    public int setBytes(long pos, byte[] bytes) throws SQLException {
+    public int setBytes(long pos, byte[] bytes) {
         return connector.post(format("%s/bytes/%d", entityUrl, pos), bytes, Integer.class);
     }
 
     @Override
-    public int setBytes(long pos, byte[] bytes, int offset, int len) throws SQLException {
+    public int setBytes(long pos, byte[] bytes, int offset, int len) {
         return connector.post(format("%s/bytes/%d/%d/%d", entityUrl, pos, offset, len), bytes, Integer.class);
     }
 
     @Override
-    public OutputStream setBinaryStream(long pos) throws SQLException {
+    public OutputStream setBinaryStream(long pos) {
         return connector.post(format("%s/binary/stream/%d", entityUrl, pos), null, OutputStreamProxy.class);
     }
 
     @Override
-    public void truncate(long len) throws SQLException {
+    public void truncate(long len) {
         connector.delete(entityUrl, len, Void.class);
     }
 
     @Override
-    public void free() throws SQLException {
+    public void free() {
         connector.delete(entityUrl, null, Void.class);
     }
 
     @Override
-    public InputStream getBinaryStream(long pos, long length) throws SQLException {
+    public InputStream getBinaryStream(long pos, long length) {
         return connector.get(format("%s/binary/stream/%d/%d", entityUrl, pos, length), InputStream.class);
     }
 }

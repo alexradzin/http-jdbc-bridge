@@ -125,7 +125,7 @@ public class SQLXMLControllerTest extends ControllerTestBase {
 
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
-    void getSourceSetResult(String nativeUrl) throws SQLException, IOException {
+    void getSourceSetResult(String nativeUrl) throws SQLException {
         create(nativeUrl);
         if (nativeSQLXML == null) {
             return;
