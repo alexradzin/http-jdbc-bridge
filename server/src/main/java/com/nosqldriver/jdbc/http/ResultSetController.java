@@ -298,16 +298,24 @@ public class ResultSetController extends BaseController {
                 try {
                     value = getter.apply(rs, column);
                 } catch (SQLException e) {
-                    value = rs.getObject(column);
+                    value = getObjectOrException(rs, column);
                 }
             } else {
-                value = rs.getObject(column);
+                value = getObjectOrException(rs, column);
             }
             String type = md.getColumnTypeName(column);
             ThrowingBiFunction<String, Object, Object, Exception> transformer = transformers.get(type);
             row[i] = value == null || transformer == null ? value : entityToProxy(value, transformer, type.toLowerCase(), format("%s/%d", rsUrl, column));
         }
         return row;
+    }
+
+    private Object getObjectOrException(ResultSet rs, int column) {
+        try {
+            return rs.getObject(column);
+        } catch (SQLException e) {
+            return e;
+        }
     }
 
     public RowData move(ResultSet rs, ThrowingFunction<ResultSet, Boolean, SQLException> move, String url) throws Exception {

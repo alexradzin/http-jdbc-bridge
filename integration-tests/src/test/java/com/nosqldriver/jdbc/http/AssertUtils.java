@@ -17,6 +17,7 @@ import java.sql.Clob;
 import java.sql.NClob;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.sql.SQLDataException;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Timestamp;
@@ -276,7 +277,13 @@ public class AssertUtils {
 
         ThrowingBiConsumer<Exception, SQLException, SQLException> exceptionAssertor = mode.contains(ResultSetAssertMode.RANGE_EXCEPTION_MESSAGE) ?
                 (e, a) -> assertTrue(a instanceof SQLFeatureNotSupportedException || a.getMessage().contains("is outside of valid range") || a.getMessage().startsWith("Cannot")) :
-                (e, a) -> assertEquals(e.getMessage(), a.getMessage(), message);
+                (e, a) -> {
+                    if (e instanceof SQLDataException) {
+                        assertTrue(a.getMessage().contains(e.getMessage()));
+                    } else {
+                        assertEquals(e.getMessage(), a.getMessage(), message);
+                    }
+                };
 
         int row = 0;
         boolean checkExtraRows = true;

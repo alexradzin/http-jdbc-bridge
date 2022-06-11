@@ -64,7 +64,7 @@ public class DatabaseMetaDataController extends BaseController {
                 stringArg(req, "foreignCatalog"), stringArg(req, "foreignSchema"), stringArg(req, "foreignTable")
         ), ResultSetProxy::new, "crossreference", req.url()));
 
-        get(format("%s/index/info", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getIndexInfo(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table"), Boolean.parseBoolean(req.params("unique")), Boolean.parseBoolean(req.queryParams("approximate"))), ResultSetProxy::new, "info", req.url()));
+        get(format("%s/index/info", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getIndexInfo(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "table"), Boolean.parseBoolean(req.queryParams("unique")), Boolean.parseBoolean(req.queryParams("approximate"))), ResultSetProxy::new, "info", req.url()));
         get(format("%s/udts", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getUDTs(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "typename"), intArrayArg(req, "types")), ResultSetProxy::new, "udts", req.url()));
 
         get(format("%s/super/types", baseUrl), JSON, (req, res) -> retrieve(() -> getMetadata(attributes, req), md -> md.getSuperTypes(stringArg(req, "catalog"), stringArg(req, "schema"), stringArg(req, "typename")), ResultSetProxy::new, "types", req.url()));
