@@ -22,5 +22,6 @@ tblb TINYBLOB,
 mblb MEDIUMBLOB,
 lblb LONGBLOB,
 bin BINARY,
-vbin VARBINARY(128)
+vbin VARBINARY(128),
+PRIMARY KEY (i) -- required to use update methods of result set
 )

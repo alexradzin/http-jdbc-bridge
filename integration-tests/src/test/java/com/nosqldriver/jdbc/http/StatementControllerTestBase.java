@@ -223,6 +223,20 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
         return conn.createStatement();
     }
 
+    protected void selectTableWithAllTypesAndUpdate(String nativeUrl, String query,
+                                                    Collection<AssertUtils.ResultSetAssertMode> mode,
+                                                    GettersSupplier gettersSupplier,
+                                                    ThrowingConsumer<ResultSet, SQLException>... setters) throws SQLException {
+        String db = db(nativeUrl);
+        selectWithUpdate(nativeUrl,
+                Stream.of("create.table.all-types.sql", "insert.all-types.sql").map(f -> sqlScript(db, f)).toArray(String[]::new),
+                query,
+                new String[]{"drop table test_all_types"},
+                mode,
+                gettersSupplier,
+                setters);
+    }
+
     private Collection<Map<String, Object>> select(String nativeUrl, String[] before, String query, String update, String[] after,
                                                    Collection<AssertUtils.ResultSetAssertMode> mode, GettersSupplier gettersSupplier,
                                                    ThrowingConsumer<T, SQLException>... setters) throws SQLException {
@@ -243,13 +257,46 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
             }
             return null;
         } finally {
-            for (String sql : after) {
-                nativeConn.createStatement().execute(sql);
-                if (nativeUrl.contains("hsqldb")) {
-                    try {
-                        Thread.sleep(1000L);
-                    } catch (InterruptedException e) {
+            executeStatements(nativeUrl, nativeConn, after);
+        }
+    }
+
+    private void selectWithUpdate(String nativeUrl, String[] before, String query, String[] after,
+                                  Collection<AssertUtils.ResultSetAssertMode> mode, GettersSupplier gettersSupplier,
+                                  ThrowingConsumer<ResultSet, SQLException>... setters) throws SQLException {
+        try (Connection nativeConn = DriverManager.getConnection(nativeUrl)) {
+            try (Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl))) {
+                for (String sql : before) {
+                    nativeConn.createStatement().execute(sql);
+                }
+
+                try (ResultSet rs = httpConn.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE).executeQuery(query)) {
+                    while(rs.next()) {
+                        for (ThrowingConsumer<ResultSet, SQLException> setter : setters) {
+                            setter.accept(rs);
+                        }
                     }
+                }
+
+                try (ResultSet httpRs = httpConn.createStatement().executeQuery(query);
+                     ResultSet nativeRs = nativeConn.createStatement().executeQuery(query)) {
+                    assertResultSet(nativeUrl, nativeRs, httpRs, query, Integer.MAX_VALUE, mode, gettersSupplier);
+                }
+            } finally {
+                executeStatements(nativeUrl, nativeConn, after);
+            }
+        }
+    }
+
+    private void executeStatements(String jdbcUrl, Connection connection, String... statements) throws SQLException {
+        for (String sql : statements) {
+            try (Statement statement = connection.createStatement()) {
+                statement.execute(sql);
+            }
+            if (jdbcUrl.contains("hsqldb")) {
+                try {
+                    Thread.sleep(1000L);
+                } catch (InterruptedException e) {
                 }
             }
         }
@@ -262,7 +309,6 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
             throw new IllegalStateException(e);
         }
     }
-
 
     @SafeVarargs
     private Collection<Map<String, Object>> executeQueries(String nativeUrl, Connection nativeConn, Connection httpConn, String query,

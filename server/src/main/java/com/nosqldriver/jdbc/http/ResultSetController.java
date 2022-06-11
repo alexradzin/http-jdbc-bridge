@@ -219,12 +219,12 @@ public class ResultSetController extends BaseController {
     private static final Map<String, ThrowingTriConsumer<ResultSet, Integer, Object, SQLException>> updateByIndex = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     static {
         updateByIndex.put("String", (rs, i, v) -> rs.updateString(i, (String)v));
-        updateByIndex.put("byte", (rs, i, v) -> rs.updateByte(i, (byte)v));
-        updateByIndex.put("short", (rs, i, v) -> rs.updateShort(i, (short)v));
-        updateByIndex.put("int", (rs, i, v) -> rs.updateInt(i, (int)v));
-        updateByIndex.put("long", (rs, i, v) -> rs.updateLong(i, (long)v));
-        updateByIndex.put("float", (rs, i, v) -> rs.updateFloat(i, (float)v));
-        updateByIndex.put("double", (rs, i, v) -> rs.updateDouble(i, (double)v));
+        updateByIndex.put("byte", (rs, i, v) -> rs.updateByte(i, ((Number)v).byteValue()));
+        updateByIndex.put("short", (rs, i, v) -> rs.updateShort(i, ((Number)v).shortValue()));
+        updateByIndex.put("int", (rs, i, v) -> rs.updateInt(i, ((Number)v).intValue()));
+        updateByIndex.put("long", (rs, i, v) -> rs.updateLong(i, ((Number)v).longValue()));
+        updateByIndex.put("float", (rs, i, v) -> rs.updateFloat(i, ((Number)v).floatValue()));
+        updateByIndex.put("double", (rs, i, v) -> rs.updateDouble(i, ((Number)v).doubleValue()));
         updateByIndex.put("boolean", (rs, i, v) -> rs.updateBoolean(i, (boolean)v));
         updateByIndex.put(Date.class.getSimpleName(), (rs, i, v) -> rs.updateDate(i, (Date)v));
         updateByIndex.put(Time.class.getSimpleName(), (rs, i, v) -> rs.updateTime(i, (Time)v));
@@ -234,21 +234,19 @@ public class ResultSetController extends BaseController {
 
     private static final Map<String, ThrowingTriConsumer<ResultSet, String, Object, SQLException>> updateByLabel = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     static {
-        updateByLabel.put("String", (rs, i, v) -> rs.updateString(i, (String)v));
-        updateByLabel.put("byte", (rs, i, v) -> rs.updateByte(i, (byte)v));
-        updateByLabel.put("short", (rs, i, v) -> rs.updateShort(i, (short)v));
-        updateByLabel.put("int", (rs, i, v) -> rs.updateInt(i, (int)v));
-        updateByLabel.put("long", (rs, i, v) -> rs.updateLong(i, (long)v));
-        updateByLabel.put("float", (rs, i, v) -> rs.updateFloat(i, (float)v));
-        updateByLabel.put("double", (rs, i, v) -> rs.updateDouble(i, (double)v));
-        updateByLabel.put("boolean", (rs, i, v) -> rs.updateBoolean(i, (boolean)v));
-        updateByLabel.put(Date.class.getSimpleName(), (rs, i, v) -> rs.updateDate(i, (Date)v));
-        updateByLabel.put(Time.class.getSimpleName(), (rs, i, v) -> rs.updateTime(i, (Time)v));
-        updateByLabel.put(Timestamp.class.getSimpleName(), (rs, i, v) -> rs.updateTimestamp(i, (Timestamp)v));
+        updateByLabel.put("String", (rs, label, v) -> rs.updateString(label, (String)v));
+        updateByLabel.put("byte", (rs, label, v) -> ((Number)v).byteValue());
+        updateByLabel.put("short", (rs, label, v) -> rs.updateShort(label, ((Number)v).shortValue()));
+        updateByLabel.put("int", (rs, label, v) -> rs.updateInt(label, ((Number)v).intValue()));
+        updateByLabel.put("long", (rs, label, v) -> rs.updateLong(label, ((Number)v).longValue()));
+        updateByLabel.put("float", (rs, label, v) -> rs.updateFloat(label, ((Number)v).floatValue()));
+        updateByLabel.put("double", (rs, label, v) -> rs.updateDouble(label, ((Number)v).doubleValue()));
+        updateByLabel.put("boolean", (rs, label, v) -> rs.updateBoolean(label, (boolean)v));
+        updateByLabel.put(Date.class.getSimpleName(), (rs, label, v) -> rs.updateDate(label, (Date)v));
+        updateByLabel.put(Time.class.getSimpleName(), (rs, label, v) -> rs.updateTime(label, (Time)v));
+        updateByLabel.put(Timestamp.class.getSimpleName(), (rs, label, v) -> rs.updateTimestamp(label, (Timestamp)v));
         // TODO: add clob, blob etc
     }
-
-
 
     private static final Map<Integer, ThrowingBiFunction<ResultSet, Integer, ?, SQLException>> getterByType = new TreeMap<>();
     static {
