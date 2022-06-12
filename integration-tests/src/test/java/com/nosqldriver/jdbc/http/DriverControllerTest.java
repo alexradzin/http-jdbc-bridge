@@ -64,6 +64,16 @@ public class DriverControllerTest extends ControllerTestBase {
         executeJavaScript(httpUrl, props);
     }
 
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void createAndCloseConnectionWithPredefinedUrlAndWrongPassword(String nativeUrl) throws SQLException, IOException {
+        Properties props = new Properties();
+        String db = nativeUrl.split(":")[1];
+        props.setProperty("user", db);
+        props.setProperty("password", "this password is wrong");
+        assertThrows(FailedLoginException.class, () -> assertCreateAndCloseConnection(httpUrl, props));
+    }
+
     @Test
     void createAndCloseConnectionWithPredefinedUrlWrongCredentials() {
         Properties props = new Properties();
@@ -100,8 +110,8 @@ public class DriverControllerTest extends ControllerTestBase {
     }
 
     private void assertCreateAndCloseConnection(String url, Properties props) throws SQLException {
-        Connection conn = DriverManager.getConnection(url, props);
-        assertNotNull(conn);
-        conn.close();
+        try (Connection conn = DriverManager.getConnection(url, props)) {
+            assertNotNull(conn);
+        }
     }
 }
