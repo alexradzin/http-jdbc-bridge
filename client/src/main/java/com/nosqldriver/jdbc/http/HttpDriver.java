@@ -11,7 +11,9 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -28,12 +30,21 @@ public class HttpDriver implements Driver {
 
     @Override
     public Connection connect(String url, Properties info) {
-        return acceptsURL(url) ? connector.post(connector.buildUrl(getHttpUrl(url), "connection"), getConnectionInfo(url, info), ConnectionProxy.class) : null;
+        return wrapWithSqlException(() -> acceptsURL(url) ? connector.post(connector.buildUrl(getHttpUrl(url), "connection"), getConnectionInfo(url, info), ConnectionProxy.class) : null);
     }
 
     @Override
     public boolean acceptsURL(String url) {
-        return url != null && (url.startsWith("http:") || url.startsWith("https:")) && connector.post(connector.buildUrl(getHttpUrl(url), "acceptsurl"), url, Boolean.class);
+        return wrapWithSqlException(() -> url != null && (url.startsWith("http:") || url.startsWith("https:")) && connector.post(connector.buildUrl(getHttpUrl(url), "acceptsurl"), url, Boolean.class));
+    }
+
+    private <T> T wrapWithSqlException(Supplier<T> supplier) {
+        try {
+            return supplier.get();
+        } catch (RuntimeException e) {
+            Throwable realCause = Optional.ofNullable(e.getCause()).orElse(e);
+            return SneakyThrower.sneakyThrow(new SQLException(realCause));
+        }
     }
 
     @Override
