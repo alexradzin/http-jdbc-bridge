@@ -33,6 +33,7 @@ import static spark.Spark.post;
 public class DriverController extends BaseController {
     private static final String JDBC_CONF_PROP = "jdbc.conf";
     private final Properties jdbcProps = new Properties();
+    private String defaultDb;
 
     public DriverController(Map<String, Object> attributes, ObjectMapper objectMapper) throws IOException {
         super(attributes, objectMapper);
@@ -62,17 +63,27 @@ public class DriverController extends BaseController {
 
         post("/connection", JSON, (req, res) -> retrieve(() -> {
             ConnectionInfo connectionInfo = retrieveConnectionInfo(objectMapper.readValue(req.bodyAsBytes(), ConnectionInfo.class));
-            return DriverManager.getConnection(connectionInfo.getUrl(), connectionInfo.getProperties());
+            String configuredUrl = connectionInfo.getUrl();
+            String jdbcUrl = configuredUrl;
+            Properties connectionProperties = connectionInfo.getProperties();
+            if (!configuredUrl.startsWith("jdbc:")) {
+                jdbcUrl = jdbcProps.getProperty(configuredUrl);
+                connectionProperties = null;
+            }
+            return DriverManager.getConnection(jdbcUrl, connectionProperties);
         }, connection -> connection, ConnectionProxy::new, "connection", req.url()));
 
         post("/acceptsurl", JSON, (req, res) -> retrieve(() -> {
-            String url = req.body();
+            String url = objectMapper.readValue(req.body(), String.class);
             String[] parts = url.split("#", 2);
             if (parts.length < 2) {
                 return true;
             }
-            String jdbcUrl = parts[1];
-
+            String fragment = parts[1];
+            String jdbcUrl = fragment.startsWith("jdbc:") ? fragment : jdbcProps.getProperty(fragment);
+            if (jdbcUrl == null) {
+                return false;
+            }
             for(Enumeration<Driver> ed = DriverManager.getDrivers(); ed.hasMoreElements();) {
                 Driver driver = ed.nextElement();
                 if (driver.acceptsURL(jdbcUrl)) {
@@ -86,6 +97,7 @@ public class DriverController extends BaseController {
         File jdbcConf = new File(Optional.ofNullable(System.getProperty(JDBC_CONF_PROP, System.getenv(JDBC_CONF_PROP))).orElse("jdbc.properties"));
         if (jdbcConf.exists()) {
             jdbcProps.load(new FileReader(jdbcConf));
+            defaultDb = jdbcProps.getProperty("default", System.getProperty("default_db", System.getenv("default_db")));
         }
     }
 
@@ -96,7 +108,7 @@ public class DriverController extends BaseController {
         }
         authenticate(clientConnectionInfo.getProperties());
         String user = clientConnectionInfo.getProperties().getProperty("user");
-        String jdbcUrl = jdbcProps.getProperty(user);
+        String jdbcUrl = jdbcProps.getProperty(user, defaultDb);
         if (jdbcUrl == null) {
             throw new LoginException(format("User %s is not mapped to any JDBC URL", user));
         }
@@ -129,10 +141,7 @@ public class DriverController extends BaseController {
         if (port > 0) {
             spark.Spark.port(new URL(baseUrl).getPort());
         }
-
-        Map<String, Object> attributes = new HashMap<>();
-        ObjectMapper objectMapper = ObjectMapperFactory.createObjectMapper();
-        new DriverController(attributes, objectMapper);
+        new DriverController(new HashMap<>(), ObjectMapperFactory.createObjectMapper());
         System.out.println("ready");
     }
 }

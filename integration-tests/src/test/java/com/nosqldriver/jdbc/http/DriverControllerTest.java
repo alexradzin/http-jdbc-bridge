@@ -64,6 +64,14 @@ public class DriverControllerTest extends ControllerTestBase {
         executeJavaScript(httpUrl, props);
     }
 
+    @Test
+    void createAndCloseConnectionToDefaultDb() throws SQLException {
+        Properties props = new Properties();
+        props.setProperty("user", "nodb");
+        props.setProperty("password", "nopass");
+        assertCreateAndCloseConnection(httpUrl, props);
+    }
+
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void createAndCloseConnectionWithPredefinedUrlAndWrongPassword(String nativeUrl) throws SQLException, IOException {
@@ -90,6 +98,25 @@ public class DriverControllerTest extends ControllerTestBase {
         props.setProperty("password", "nopass");
         assertEquals("User nodb is not mapped to any JDBC URL", assertThrows(LoginException.class, () -> DriverManager.getConnection(httpUrl, props)).getMessage());
         assertThrows(ScriptException.class, () -> executeJavaScript(httpUrl, props));
+    }
+
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void createConnectionWithExistingUserNotMappedToDatabaseButWithSymbolicReferenceToDb(String nativeUrl) throws SQLException {
+        String db = nativeUrl.split(":")[1]; // jdbc.properties contains mapping between user (equal to the db type, e.g. h2, derby etc)  and JDBC URL
+        Properties props = new Properties();
+        props.setProperty("user", "nodb");
+        props.setProperty("password", "nopass");
+        assertCreateAndCloseConnection(format("%s#%s", httpUrl, db), props);
+    }
+
+    @Test
+    void createConnectionWithExistingUserNotMappedToDatabaseButWithSymbolicReferenceToUnsupportedDb() throws SQLException {
+        Properties props = new Properties();
+        props.setProperty("user", "nodb");
+        props.setProperty("password", "nopass");
+        String url = format("%s#%s", httpUrl, "unsupported");
+        assertEquals("No suitable driver found for " + url, assertThrows(SQLException.class, () -> assertCreateAndCloseConnection(url, props)).getMessage());
     }
 
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
