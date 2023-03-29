@@ -34,6 +34,7 @@ public class HttpDriverMainTest {
 
         Connection httpConn = DriverManager.getConnection(format("%s#%s", expectedHttpUrl, nativeUrl));
         assertNotNull(httpConn);
+        httpConn.close();
     }
 
     @AfterEach

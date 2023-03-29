@@ -7,7 +7,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -20,7 +19,6 @@ import java.util.stream.Stream;
 
 import static com.nosqldriver.jdbc.http.AssertUtils.assertGettersAndSetters;
 import static com.nosqldriver.jdbc.http.AssertUtils.assertResultSet;
-import static java.lang.String.format;
 import static java.sql.ResultSet.FETCH_FORWARD;
 import static java.sql.ResultSet.FETCH_UNKNOWN;
 import static java.sql.Statement.CLOSE_ALL_RESULTS;
@@ -39,8 +37,6 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void getters(String nativeUrl) throws SQLException {
-        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
-        Connection nativeConn = DriverManager.getConnection(nativeUrl);
         String db = db(nativeUrl);
         Statement httpStatement = createStatement(httpConn, db);
         Statement nativeStatement = createStatement(nativeConn, db);
@@ -78,8 +74,6 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void gettersAndSetters(String nativeUrl) throws SQLException {
-        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
-        Connection nativeConn = DriverManager.getConnection(nativeUrl);
         String db = db(nativeUrl);
         Statement httpStatement = createStatement(httpConn, db);
         Statement nativeStatement = createStatement(nativeConn, db);
@@ -123,8 +117,6 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void voidFunctions(String nativeUrl) throws SQLException {
-        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
-        Connection nativeConn = DriverManager.getConnection(nativeUrl);
         String db = db(nativeUrl);
         Statement httpStatement = createStatement(httpConn, db);
         Statement nativeStatement = createStatement(nativeConn, db);
@@ -190,8 +182,6 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void wrap(String nativeUrl) throws SQLException {
-        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
-        Connection nativeConn = DriverManager.getConnection(nativeUrl);
         String db = db(nativeUrl);
         Statement httpStatement = createStatement(httpConn, db);
         Statement nativeStatement = createStatement(nativeConn, db);
@@ -241,8 +231,6 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
     private Collection<Map<String, Object>> select(String nativeUrl, String[] before, String query, String update, String[] after,
                                                    Collection<AssertUtils.ResultSetAssertMode> mode, GettersSupplier gettersSupplier,
                                                    ThrowingConsumer<T, SQLException>... setters) throws SQLException {
-        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
-        Connection nativeConn = DriverManager.getConnection(nativeUrl);
         try {
             for (String sql : before) {
                 nativeConn.createStatement().execute(sql);
@@ -265,27 +253,25 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
     private void selectWithUpdate(String nativeUrl, String[] before, String query, String[] after,
                                   Collection<AssertUtils.ResultSetAssertMode> mode, GettersSupplier gettersSupplier,
                                   ThrowingConsumer<ResultSet, SQLException>... setters) throws SQLException {
-        try (Connection nativeConn = DriverManager.getConnection(nativeUrl)) {
-            try (Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl))) {
-                for (String sql : before) {
-                    nativeConn.createStatement().execute(sql);
-                }
+        try {
+            for (String sql : before) {
+                nativeConn.createStatement().execute(sql);
+            }
 
-                try (ResultSet rs = httpConn.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE).executeQuery(query)) {
-                    while(rs.next()) {
-                        for (ThrowingConsumer<ResultSet, SQLException> setter : setters) {
-                            setter.accept(rs);
-                        }
+            try (ResultSet rs = httpConn.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE).executeQuery(query)) {
+                while(rs.next()) {
+                    for (ThrowingConsumer<ResultSet, SQLException> setter : setters) {
+                        setter.accept(rs);
                     }
                 }
-
-                try (ResultSet httpRs = httpConn.createStatement().executeQuery(query);
-                     ResultSet nativeRs = nativeConn.createStatement().executeQuery(query)) {
-                    assertResultSet(nativeUrl, nativeRs, httpRs, query, Integer.MAX_VALUE, mode, gettersSupplier);
-                }
-            } finally {
-                executeStatements(nativeUrl, nativeConn, after);
             }
+
+            try (ResultSet httpRs = httpConn.createStatement().executeQuery(query);
+                 ResultSet nativeRs = nativeConn.createStatement().executeQuery(query)) {
+                assertResultSet(nativeUrl, nativeRs, httpRs, query, Integer.MAX_VALUE, mode, gettersSupplier);
+            }
+        } finally {
+            executeStatements(nativeUrl, nativeConn, after);
         }
     }
 
@@ -298,16 +284,9 @@ public abstract class StatementControllerTestBase<T extends Statement, R extends
                 try {
                     Thread.sleep(1000L);
                 } catch (InterruptedException e) {
+                    // Nothing to do here.
                 }
             }
-        }
-    }
-
-    private String sqlScript(String db, String file) {
-        try {
-            return new String(getClass().getResourceAsStream(format("/sql/%s/%s", db, file)).readAllBytes());
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
         }
     }
 

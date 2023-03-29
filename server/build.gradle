@@ -25,6 +25,7 @@ dependencies {
     compile project(':common')
     compile group: 'com.sparkjava', name: 'spark-core', version: '2.9.2'
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.2'
+    compile group: 'com.github.jsqlparser', name: 'jsqlparser', version: '4.6'
 
     implementation group: 'org.postgresql', name: 'postgresql', version: '42.2.16'
 

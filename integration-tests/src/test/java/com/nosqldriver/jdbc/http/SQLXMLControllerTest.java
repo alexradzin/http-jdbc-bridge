@@ -10,13 +10,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLXML;
 
-import static java.lang.String.format;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -30,9 +27,6 @@ public class SQLXMLControllerTest extends ControllerTestBase {
     private SQLXML httpSQLXML;
 
     private void create(String nativeUrl) throws SQLException {
-        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
-        Connection nativeConn = DriverManager.getConnection(nativeUrl);
-
         SQLException nativeEx = null;
         SQLException httpEx = null;
 

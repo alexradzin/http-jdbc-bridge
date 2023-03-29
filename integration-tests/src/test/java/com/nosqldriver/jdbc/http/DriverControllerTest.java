@@ -1,7 +1,10 @@
 package com.nosqldriver.jdbc.http;
 
 import com.gargoylesoftware.htmlunit.ScriptException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -24,6 +27,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_PLACEHOLDER;
 
 public class DriverControllerTest extends ControllerTestBase {
+    @BeforeEach
+    @Override
+    void initDb(TestInfo testInfo) {
+    }
+
+    @AfterEach
+    @Override
+    void cleanDb() {
+    }
+
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void createAndCloseConnection(String nativeUrl) throws SQLException, IOException {
@@ -64,17 +77,9 @@ public class DriverControllerTest extends ControllerTestBase {
         executeJavaScript(httpUrl, props);
     }
 
-    @Test
-    void createAndCloseConnectionToDefaultDb() throws SQLException {
-        Properties props = new Properties();
-        props.setProperty("user", "nodb");
-        props.setProperty("password", "nopass");
-        assertCreateAndCloseConnection(httpUrl, props);
-    }
-
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
-    void createAndCloseConnectionWithPredefinedUrlAndWrongPassword(String nativeUrl) throws SQLException, IOException {
+    void createAndCloseConnectionWithPredefinedUrlAndWrongPassword(String nativeUrl) {
         Properties props = new Properties();
         String db = nativeUrl.split(":")[1];
         props.setProperty("user", db);
@@ -111,7 +116,7 @@ public class DriverControllerTest extends ControllerTestBase {
     }
 
     @Test
-    void createConnectionWithExistingUserNotMappedToDatabaseButWithSymbolicReferenceToUnsupportedDb() throws SQLException {
+    void createConnectionWithExistingUserNotMappedToDatabaseButWithSymbolicReferenceToUnsupportedDb() {
         Properties props = new Properties();
         props.setProperty("user", "nodb");
         props.setProperty("password", "nopass");

@@ -5,10 +5,8 @@ import com.nosqldriver.util.function.ThrowingFunction;
 import org.junit.jupiter.params.ParameterizedTest;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -19,7 +17,6 @@ import java.util.concurrent.Executors;
 
 import static com.nosqldriver.jdbc.http.AssertUtils.assertCall;
 import static com.nosqldriver.jdbc.http.AssertUtils.assertGettersAndSetters;
-import static java.lang.String.format;
 import static java.sql.ResultSet.CLOSE_CURSORS_AT_COMMIT;
 import static java.sql.ResultSet.CONCUR_READ_ONLY;
 import static java.sql.ResultSet.CONCUR_UPDATABLE;
@@ -38,9 +35,6 @@ public class ConnectionControllerTest extends ControllerTestBase {
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void getters(String nativeUrl) throws SQLException {
-        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
-        Connection nativeConn = DriverManager.getConnection(nativeUrl);
-
         Collection<Entry<String, ThrowingFunction<Connection, ?,  SQLException>>> getters = List.of(
                 new SimpleEntry<>("getClientInfo", Connection::getClientInfo),
                 new SimpleEntry<>("getCatalog", Connection::getCatalog),
@@ -66,9 +60,6 @@ public class ConnectionControllerTest extends ControllerTestBase {
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void gettersAndSetters(String nativeUrl) throws SQLException {
-        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
-        Connection nativeConn = DriverManager.getConnection(nativeUrl);
-
         Collection<Map.Entry<String, Map.Entry<ThrowingFunction<Connection, ?, SQLException>, ThrowingConsumer<Connection, SQLException>>>> functions = List.of(
                 new SimpleEntry<>("TypeMap", new SimpleEntry<>(Connection::getTypeMap, s -> s.setTypeMap(Collections.emptyMap()))),
                 new SimpleEntry<>("ClientInfo", new SimpleEntry<>(Connection::getClientInfo, s -> s.setClientInfo(new Properties()))),
@@ -96,9 +87,6 @@ public class ConnectionControllerTest extends ControllerTestBase {
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void create(String nativeUrl) throws SQLException {
-        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
-        Connection nativeConn = DriverManager.getConnection(nativeUrl);
-
         String query = getCheckConnectivityQuery(db(nativeUrl));
         Collection<SimpleEntry<String, ThrowingFunction<Connection, ?,  SQLException>>> functions = List.of(
                 new SimpleEntry<>("createStatement", Connection::createStatement),
@@ -198,9 +186,6 @@ public class ConnectionControllerTest extends ControllerTestBase {
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void voidMethods(String nativeUrl) throws SQLException {
-        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
-        Connection nativeConn = DriverManager.getConnection(nativeUrl);
-
         Collection<SimpleEntry<String, ThrowingConsumer<Connection, SQLException>>> functions = List.of(
                 new SimpleEntry<>("commit", c -> c.commit()),
                 new SimpleEntry<>("rollback", c -> c.rollback()),
@@ -220,9 +205,6 @@ public class ConnectionControllerTest extends ControllerTestBase {
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void wrap(String nativeUrl) throws SQLException {
-        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
-        Connection nativeConn = DriverManager.getConnection(nativeUrl);
-
         assertTrue(nativeConn.isWrapperFor(Connection.class));
         assertFalse(nativeConn.isWrapperFor(String.class));
         assertNotNull(nativeConn.unwrap(Connection.class));
