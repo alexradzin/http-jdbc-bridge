@@ -5,8 +5,6 @@ import com.nosqldriver.util.function.ThrowingFunction;
 import org.junit.jupiter.params.ParameterizedTest;
 
 import java.sql.Array;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.AbstractMap.SimpleEntry;
@@ -16,7 +14,6 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import static com.nosqldriver.jdbc.http.AssertUtils.assertCall;
-import static java.lang.String.format;
 import static java.util.Collections.singletonMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -68,9 +65,6 @@ public class ArrayControllerTest extends ControllerTestBase {
     private Array httpArray;
 
     private void create(String nativeUrl, String typeName, Object[] elements) throws SQLException {
-        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
-        Connection nativeConn = DriverManager.getConnection(nativeUrl);
-
         SQLException nativeEx = null;
         SQLException httpEx = null;
 

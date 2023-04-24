@@ -1,6 +1,8 @@
 package com.nosqldriver.jdbc.http;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nosqldriver.jdbc.http.model.ConnectionInfo;
 import com.nosqldriver.jdbc.http.model.ConnectionProperties;
 import com.nosqldriver.jdbc.http.model.ResultSetProxy;
 import com.nosqldriver.util.function.ThrowingBiFunction;
@@ -15,6 +17,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
@@ -27,7 +30,7 @@ import static java.lang.String.format;
 
 abstract class BaseController {
     protected final String JSON = "application/json";
-    private final Map<String, Object> attributes;
+    protected final Map<String, Object> attributes;
     protected final ObjectMapper objectMapper;
     private final Map<String, ConnectionProperties> connectionPropertiesCache = new ConcurrentHashMap<>();
     private static final ConnectionProperties defaultConnectionProperties = new ConnectionProperties(System.getProperties());
@@ -52,8 +55,12 @@ abstract class BaseController {
 
     protected <T> T entityToProxy(T entity, ThrowingBiFunction<String, T, T, Exception> proxyFactory, String prefix, String url) throws Exception {
         int entityId = System.identityHashCode(entity);
-        attributes.put(prefix + "@" + entityId, entity);
+        setAttribute(prefix, entityId, entity);
         return proxyFactory.apply(format("%s/%s/%d", parentUrl(url), prefix, entityId), entity);
+    }
+
+    protected <T> void setAttribute(String prefix, int entityId, T entity) {
+        attributes.put(prefix + "@" + entityId, entity);
     }
 
     protected String parentUrl(String url) {
@@ -187,4 +194,18 @@ abstract class BaseController {
             return new ResultSetProxy(rsUrl, connectionProperties);
         }
     };
+
+    // The following functions are relevant only for ConnectionController and StatementController, so probably they should be moved to base class common for these two only.
+    protected ConnectionInfo getConnectionInfo(Map<String, Object> attributes, Request req) {
+        return getEntity(attributes, req, "connection-info", ":connection");
+    }
+
+    protected String getUser(Map<String, Object> attributes, Request req) {
+        return getConnectionInfo(attributes, req).getProperties().getProperty("user");
+    }
+
+    protected String getValidatedSql(ThrowingBiFunction<String, String, String, SQLException> validator, Request req) throws JsonProcessingException, SQLException {
+        String user = getUser(attributes, req);
+        return validator.apply(user, objectMapper.readValue(req.body(), String.class));
+    }
 }

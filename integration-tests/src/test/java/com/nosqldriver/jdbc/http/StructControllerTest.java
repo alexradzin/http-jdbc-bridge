@@ -1,8 +1,9 @@
 package com.nosqldriver.jdbc.http;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
-import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Struct;
@@ -16,12 +17,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class StructControllerTest extends ControllerTestBase {
+    @BeforeEach
+    @Override
+    void initDb(TestInfo testInfo) throws SQLException {
+        String nativeUrl = "jdbc:mock";
+        nativeConn = DriverManager.getConnection(nativeUrl);
+        httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
+    }
+
     @Test
     void test() throws SQLException {
-        String nativeUrl = "jdbc:mock";
-        Connection nativeConn = DriverManager.getConnection(nativeUrl);
-        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
-
         Struct struct = mock(Struct.class);
         when(nativeConn.createStruct(any(String.class), any(Object[].class))).thenReturn(struct);
 

@@ -6,6 +6,13 @@ import com.nosqldriver.jdbc.http.json.ObjectMapperFactory;
 import com.nosqldriver.jdbc.http.model.ConnectionInfo;
 import com.nosqldriver.jdbc.http.model.ConnectionProxy;
 import com.nosqldriver.jdbc.http.model.TransportableException;
+import com.nosqldriver.jdbc.http.permissions.PermissionsParser;
+import com.nosqldriver.jdbc.http.permissions.StatementPermission;
+import com.nosqldriver.jdbc.http.permissions.StatementPermissionsValidator;
+import com.nosqldriver.jdbc.http.permissions.StatementPermissionsValidators;
+import com.nosqldriver.jdbc.http.permissions.StatementPermissionsValidatorsConfigurer;
+import com.nosqldriver.util.function.ThrowingBiFunction;
+import com.nosqldriver.util.function.ThrowingFunction;
 import spark.Spark;
 
 import javax.security.auth.callback.Callback;
@@ -14,14 +21,19 @@ import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -35,7 +47,7 @@ public class DriverController extends BaseController {
     private final Properties jdbcProps = new Properties();
     private String defaultDb;
 
-    public DriverController(Map<String, Object> attributes, ObjectMapper objectMapper) throws IOException {
+    public DriverController(Map<String, Object> attributes, ObjectMapper objectMapper, ThrowingBiFunction<String, String, String, SQLException> validator) throws IOException {
         super(attributes, objectMapper);
 
         Spark.exception(Exception.class, (exception, request, response) -> {
@@ -70,7 +82,9 @@ public class DriverController extends BaseController {
                 jdbcUrl = jdbcProps.getProperty(configuredUrl);
                 connectionProperties = null;
             }
-            return DriverManager.getConnection(jdbcUrl, connectionProperties);
+            Connection connection = DriverManager.getConnection(jdbcUrl, connectionProperties);
+            setAttribute("connection-info", System.identityHashCode(connection), connectionInfo);
+            return connection;
         }, connection -> connection, ConnectionProxy::new, "connection", req.url()));
 
         post("/acceptsurl", JSON, (req, res) -> retrieve(() -> {
@@ -93,8 +107,8 @@ public class DriverController extends BaseController {
             return false;
         }, accepts -> accepts));
 
-        new ConnectionController(attributes, objectMapper);
-        File jdbcConf = new File(Optional.ofNullable(System.getProperty(JDBC_CONF_PROP, System.getenv(JDBC_CONF_PROP))).orElse("jdbc.properties"));
+        new ConnectionController(attributes, objectMapper, validator);
+        File jdbcConf = getConfigurationFile(JDBC_CONF_PROP, "jdbc.properties");
         if (jdbcConf.exists()) {
             jdbcProps.load(new FileReader(jdbcConf));
             defaultDb = jdbcProps.getProperty("default", System.getProperty("default_db", System.getenv("default_db")));
@@ -133,6 +147,9 @@ public class DriverController extends BaseController {
         lc.login();
     }
 
+    private static File getConfigurationFile(String propertyName, String defaultName) {
+        return new File(Optional.ofNullable(System.getProperty(propertyName, System.getenv(propertyName))).orElse(defaultName));
+    }
 
     public static void main(String[] args) throws IOException {
         String baseUrl = args.length > 0 ? args[0] : "http://localhost:8080/";
@@ -141,7 +158,8 @@ public class DriverController extends BaseController {
         if (port > 0) {
             spark.Spark.port(new URL(baseUrl).getPort());
         }
-        new DriverController(new HashMap<>(), ObjectMapperFactory.createObjectMapper());
+        ThrowingBiFunction<String, String, String, SQLException> validator = new StatementPermissionsValidatorsConfigurer().config();
+        new DriverController(new HashMap<>(), ObjectMapperFactory.createObjectMapper(), validator);
         System.out.println("ready");
     }
 }
