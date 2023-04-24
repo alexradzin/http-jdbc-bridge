@@ -5,14 +5,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.nosqldriver.jdbc.http.json.ObjectMapperFactory;
+import com.nosqldriver.util.function.ThrowingBiFunction;
 import net.sourceforge.htmlunit.corejs.javascript.Undefined;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 import spark.Spark;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -34,7 +39,10 @@ abstract class ControllerTestBase {
     protected String testName;
     protected final WebClient webClient = new WebClient();
     private static final ObjectMapper objectMapper = ObjectMapperFactory.createObjectMapper();
+    protected static ThrowingBiFunction<String, String, String, SQLException> validator = (user, sql) -> sql;
 
+    protected Connection nativeConn;
+    protected Connection httpConn;
 
     @BeforeAll
     static void beforeAll() throws IOException {
@@ -46,13 +54,12 @@ abstract class ControllerTestBase {
         }
         Spark.staticFiles.location("/");
         Spark.port(8080);
-        new DriverController(new HashMap<>(), objectMapper);
+        new DriverController(new HashMap<>(), objectMapper, validator);
         Spark.awaitInitialization();
     }
 
-
     @AfterAll
-    static void afterAll() {
+    static void afterAll() throws IOException {
         Spark.stop();
         Spark.awaitStop();
     }
@@ -60,6 +67,20 @@ abstract class ControllerTestBase {
     @BeforeEach
     void beforeEach(TestInfo testInfo) {
         testName = testInfo.getTestMethod().get().getName();
+    }
+
+    @BeforeEach
+    void initDb(TestInfo testInfo) throws SQLException {
+        String nativeUrl = testInfo.getDisplayName();
+        nativeConn = DriverManager.getConnection(nativeUrl);
+        String url = format("%s#%s", httpUrl, nativeUrl);
+        httpConn = DriverManager.getConnection(url);
+    }
+
+    @AfterEach
+    void cleanDb() throws SQLException {
+        nativeConn.close();
+        httpConn.close();
     }
 
     protected String db(String url) {
@@ -89,5 +110,13 @@ abstract class ControllerTestBase {
             new HashMap<>((Map<String, Object>)res);
         }
         return (T)res;
+    }
+
+    protected String sqlScript(String db, String file) {
+        try {
+            return new String(getClass().getResourceAsStream(format("/sql/%s/%s", db, file)).readAllBytes());
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 }

@@ -5,6 +5,7 @@ import com.nosqldriver.jdbc.http.model.ParameterValue;
 import com.nosqldriver.jdbc.http.model.ResultSetProxy;
 import com.nosqldriver.jdbc.http.model.TransportableParameterMetaData;
 import com.nosqldriver.jdbc.http.model.TransportableResultSetMetaData;
+import com.nosqldriver.util.function.ThrowingBiFunction;
 import com.nosqldriver.util.function.ThrowingTriConsumer;
 import spark.Request;
 
@@ -25,8 +26,8 @@ import static spark.Spark.put;
 
 public class PreparedStatementController extends StatementController {
     private static final String baseUrl = "/connection/:connection/prepared-statement/:statement";
-    protected PreparedStatementController(Map<String, Object> attributes, ObjectMapper objectMapper) {
-        super(attributes, objectMapper, baseUrl);
+    protected PreparedStatementController(Map<String, Object> attributes, ObjectMapper objectMapper, ThrowingBiFunction<String, String, String, SQLException> validator) {
+        super(attributes, objectMapper, baseUrl, validator);
         get(format("%s/query", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), PreparedStatement::executeQuery, resultSetProxyFactory, "resultset", req.url()));
         get(format("%s/update", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), PreparedStatement::executeUpdate));
         get(format("%s/execute", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), PreparedStatement::execute));

@@ -13,14 +13,19 @@ import com.nosqldriver.jdbc.http.model.StructProxy;
 import com.nosqldriver.jdbc.http.model.TransportableDatabaseMetaData;
 import com.nosqldriver.jdbc.http.model.TransportableSQLWarning;
 import com.nosqldriver.jdbc.http.model.TransportableSavepoint;
+import com.nosqldriver.util.function.ThrowingBiFunction;
 import spark.Request;
 
+import java.lang.reflect.Method;
 import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.function.Predicate;
 
 import static com.nosqldriver.jdbc.http.Util.decode;
 import static spark.Spark.delete;
@@ -29,8 +34,9 @@ import static spark.Spark.post;
 
 public class ConnectionController extends BaseController {
     private final Executor executor = Executors.newSingleThreadExecutor();
+    private static final Predicate<Method> statementFactory = m -> Statement.class.isAssignableFrom(m.getReturnType());
 
-    public ConnectionController(Map<String, Object> attributes, ObjectMapper objectMapper) {
+    public ConnectionController(Map<String, Object> attributes, ObjectMapper objectMapper, ThrowingBiFunction<String, String, String, SQLException> validator) {
         super(attributes, objectMapper);
 
         post("/connection/:connection/statement", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> {
@@ -49,7 +55,7 @@ public class ConnectionController extends BaseController {
         StatementProxy::new, "statement", req.url()));
 
         post("/connection/:connection/prepared-statement", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> {
-            String sql = objectMapper.readValue(req.body(), String.class);
+            String sql = getValidatedSql(validator, req);
             Integer type = intArg(req, "type");
             Integer concurrency = intArg(req, "concurrency");
             Integer holdability = intArg(req, "holdability");
@@ -76,7 +82,7 @@ public class ConnectionController extends BaseController {
         }, PreparedStatementProxy::new, "prepared-statement", req.url()));
 
         post("/connection/:connection/callable-statement", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> {
-            String sql = objectMapper.readValue(req.body(), String.class);
+            String sql = getValidatedSql(validator, req);
             Integer type = intArg(req, "type");
             Integer concurrency = intArg(req, "concurrency");
             Integer holdability = intArg(req, "holdability");
@@ -90,7 +96,7 @@ public class ConnectionController extends BaseController {
             return connection.prepareCall(sql);
         }, CallableStatementProxy::new, "callable-statement", req.url()));
 
-        post("/connection/:connection/nativesql", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> connection.nativeSQL(req.body())));
+        post("/connection/:connection/nativesql", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), connection -> connection.nativeSQL(getValidatedSql(validator, req))));
 
         post("/connection/:connection/autocommit", JSON, (req, res) -> accept(() -> getConnection(attributes, req), connection -> connection.setAutoCommit(Boolean.parseBoolean(req.body()))));
         get("/connection/:connection/autocommit", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), Connection::getAutoCommit));
@@ -168,8 +174,8 @@ public class ConnectionController extends BaseController {
         get("/connection/:connection/unwrap/:class", JSON, (req, res) -> retrieve(() -> getConnection(attributes, req), c -> c.unwrap(Class.forName(req.params(":class"))), ConnectionProxy::new, "connection", parentUrl(req.url())));
 
         new DatabaseMetaDataController(attributes, objectMapper);
-        new StatementController(attributes, objectMapper, "/connection/:connection/statement/:statement");
-        new PreparedStatementController(attributes, objectMapper);
+        new StatementController(attributes, objectMapper, "/connection/:connection/statement/:statement", validator);
+        new PreparedStatementController(attributes, objectMapper, validator);
         new ArrayController(attributes, objectMapper, "/connection/:connection/array/:array");
         new BlobController(attributes, objectMapper, "/connection/:connection/blob/:blob");
         new ClobController(attributes, objectMapper, "/connection/:connection/clob/:clob");

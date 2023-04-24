@@ -32,9 +32,6 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void primitiveGetters(String nativeUrl) throws SQLException {
-        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
-        Connection nativeConn = DriverManager.getConnection(nativeUrl);
-
         DatabaseMetaData httpMd = httpConn.getMetaData();
         DatabaseMetaData nativeMd = nativeConn.getMetaData();
 
@@ -206,9 +203,6 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void resultSetGetters(String nativeUrl) throws SQLException {
-        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
-        Connection nativeConn = DriverManager.getConnection(nativeUrl);
-
         DatabaseMetaData httpMd = httpConn.getMetaData();
         DatabaseMetaData nativeMd = nativeConn.getMetaData();
 
@@ -230,9 +224,6 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void resultSetGetters2(String nativeUrl) throws SQLException {
-        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
-        Connection nativeConn = DriverManager.getConnection(nativeUrl);
-
         DatabaseMetaData httpMd = httpConn.getMetaData();
         DatabaseMetaData nativeMd = nativeConn.getMetaData();
 
@@ -250,9 +241,6 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void resultSetGetters3(String nativeUrl) throws SQLException {
-        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
-        Connection nativeConn = DriverManager.getConnection(nativeUrl);
-
         DatabaseMetaData httpMd = httpConn.getMetaData();
         DatabaseMetaData nativeMd = nativeConn.getMetaData();
 
@@ -278,9 +266,6 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void resultSetGetters4(String nativeUrl) throws SQLException {
-        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
-        Connection nativeConn = DriverManager.getConnection(nativeUrl);
-
         DatabaseMetaData httpMd = httpConn.getMetaData();
         DatabaseMetaData nativeMd = nativeConn.getMetaData();
 
@@ -320,8 +305,6 @@ public class DatabaseMetaDataControllerTest extends ControllerTestBase {
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void wrap(String nativeUrl) throws SQLException {
-        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
-        Connection nativeConn = DriverManager.getConnection(nativeUrl);
         String db = db(nativeUrl);
         DatabaseMetaData httpMd = httpConn.getMetaData();
         DatabaseMetaData nativeMd = nativeConn.getMetaData();

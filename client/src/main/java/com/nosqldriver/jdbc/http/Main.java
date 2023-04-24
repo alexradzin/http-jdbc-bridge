@@ -12,6 +12,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Enumeration;
 
+@Deprecated
 public class Main {
     public static class Test1 {
         @JsonProperty
@@ -32,7 +33,7 @@ public class Main {
             Driver d = e.nextElement();
             System.out.println("driver: " + d);
         }
-        Connection conn = DriverManager.getConnection("http://localhost:8080#jdbc:postgresql://localhost:5432/test_db111", "alex", "alex");
+        Connection conn = DriverManager.getConnection("http://localhost:8080#jdbc:postgresql://localhost:5432/test_db", "alex", "alex");
         System.out.println("connection=" + conn);
 
         DatabaseMetaData dbmd = conn.getMetaData();

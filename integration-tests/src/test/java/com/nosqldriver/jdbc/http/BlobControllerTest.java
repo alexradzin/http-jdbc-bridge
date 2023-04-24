@@ -32,9 +32,6 @@ class BlobControllerTest extends ControllerTestBase {
     private Blob httpBlob;
 
     private void create(String nativeUrl) throws SQLException {
-        Connection httpConn = DriverManager.getConnection(format("%s#%s", httpUrl, nativeUrl));
-        Connection nativeConn = DriverManager.getConnection(nativeUrl);
-
         SQLException nativeEx = null;
         SQLException httpEx = null;
 

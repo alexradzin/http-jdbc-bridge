@@ -1,7 +1,10 @@
 package com.nosqldriver.jdbc.http;
 
 import com.gargoylesoftware.htmlunit.ScriptException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -24,6 +27,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.ParameterizedTest.ARGUMENTS_PLACEHOLDER;
 
 public class DriverControllerTest extends ControllerTestBase {
+    @BeforeEach
+    @Override
+    void initDb(TestInfo testInfo) {
+    }
+
+    @AfterEach
+    @Override
+    void cleanDb() {
+    }
+
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
     void createAndCloseConnection(String nativeUrl) throws SQLException, IOException {
@@ -66,7 +79,7 @@ public class DriverControllerTest extends ControllerTestBase {
 
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @JdbcUrls
-    void createAndCloseConnectionWithPredefinedUrlAndWrongPassword(String nativeUrl) throws SQLException, IOException {
+    void createAndCloseConnectionWithPredefinedUrlAndWrongPassword(String nativeUrl) {
         Properties props = new Properties();
         String db = nativeUrl.split(":")[1];
         props.setProperty("user", db);
@@ -90,6 +103,25 @@ public class DriverControllerTest extends ControllerTestBase {
         props.setProperty("password", "nopass");
         assertEquals("User nodb is not mapped to any JDBC URL", assertThrows(LoginException.class, () -> DriverManager.getConnection(httpUrl, props)).getMessage());
         assertThrows(ScriptException.class, () -> executeJavaScript(httpUrl, props));
+    }
+
+    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
+    @JdbcUrls
+    void createConnectionWithExistingUserNotMappedToDatabaseButWithSymbolicReferenceToDb(String nativeUrl) throws SQLException {
+        String db = nativeUrl.split(":")[1]; // jdbc.properties contains mapping between user (equal to the db type, e.g. h2, derby etc)  and JDBC URL
+        Properties props = new Properties();
+        props.setProperty("user", "nodb");
+        props.setProperty("password", "nopass");
+        assertCreateAndCloseConnection(format("%s#%s", httpUrl, db), props);
+    }
+
+    @Test
+    void createConnectionWithExistingUserNotMappedToDatabaseButWithSymbolicReferenceToUnsupportedDb() {
+        Properties props = new Properties();
+        props.setProperty("user", "nodb");
+        props.setProperty("password", "nopass");
+        String url = format("%s#%s", httpUrl, "unsupported");
+        assertEquals("No suitable driver found for " + url, assertThrows(SQLException.class, () -> assertCreateAndCloseConnection(url, props)).getMessage());
     }
 
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
