@@ -27,10 +27,12 @@ public class StatementPermissionsValidatorsConfigurer {
     private static class WatchEventProcessor implements Runnable {
         private final StatementPermissionsValidators validators;
         private final WatchService watcher;
+        private final File dir;
 
-        private WatchEventProcessor(StatementPermissionsValidators validators, WatchService watcher) {
+        private WatchEventProcessor(StatementPermissionsValidators validators, WatchService watcher, File dir) {
             this.validators = validators;
             this.watcher = watcher;
+            this.dir = dir;
         }
 
         @Override
@@ -60,7 +62,7 @@ public class StatementPermissionsValidatorsConfigurer {
                             validators.removeConfiguration(userName);
                         }
                         if (ENTRY_CREATE.equals(kind) || ENTRY_MODIFY.equals(kind)) {
-                            addConfiguration(validators, userName, path.toFile());
+                            addConfiguration(validators, userName, new File(dir, path.toFile().getPath()));
                         }
                     }
                 } catch (IOException e) {
@@ -109,7 +111,7 @@ public class StatementPermissionsValidatorsConfigurer {
     private void createWatching(File permissionsConfDir, StatementPermissionsValidators validators) throws IOException {
         WatchService watcher = FileSystems.getDefault().newWatchService();
         permissionsConfDir.toPath().register(watcher, ENTRY_MODIFY, ENTRY_DELETE, ENTRY_CREATE);
-        Thread worker = new Thread(new WatchEventProcessor(validators, watcher));
+        Thread worker = new Thread(new WatchEventProcessor(validators, watcher, permissionsConfDir));
         worker.setDaemon(true);
         worker.start();
     }

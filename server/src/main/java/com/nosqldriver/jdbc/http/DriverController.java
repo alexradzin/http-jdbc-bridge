@@ -126,7 +126,7 @@ public class DriverController extends BaseController {
         if (jdbcUrl == null) {
             throw new LoginException(format("User %s is not mapped to any JDBC URL", user));
         }
-        return new ConnectionInfo(jdbcUrl, new Properties());
+        return new ConnectionInfo(jdbcUrl, clientConnectionInfo.getProperties());
     }
 
     private void authenticate(Properties props) throws LoginException {

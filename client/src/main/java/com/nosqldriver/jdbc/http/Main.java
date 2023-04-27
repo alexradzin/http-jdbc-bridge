@@ -33,7 +33,8 @@ public class Main {
             Driver d = e.nextElement();
             System.out.println("driver: " + d);
         }
-        Connection conn = DriverManager.getConnection("http://localhost:8080#jdbc:postgresql://localhost:5432/test_db", "alex", "alex");
+//        Connection conn = DriverManager.getConnection("http://localhost:8080#jdbc:postgresql://localhost:5432/test_db", "alex", "alex");
+        Connection conn = DriverManager.getConnection("http://localhost:8080", "alex", "alex");
         System.out.println("connection=" + conn);
 
         DatabaseMetaData dbmd = conn.getMetaData();
