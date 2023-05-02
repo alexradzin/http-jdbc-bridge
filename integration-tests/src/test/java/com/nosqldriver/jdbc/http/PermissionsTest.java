@@ -25,6 +25,7 @@ import static java.lang.String.format;
 import static java.lang.String.join;
 import static java.lang.System.lineSeparator;
 import static java.nio.file.FileVisitOption.FOLLOW_LINKS;
+import static javax.security.auth.login.Configuration.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -70,6 +71,11 @@ public class PermissionsTest extends ControllerTestBase {
         write(permissionsDir.resolve("user.permissions.sql"), userPermissions);
         write(permissionsDir.resolve("guest.permissions.sql"), guestPermissions);
         validator = new StatementPermissionsValidatorsConfigurer().config();
+
+        enableSecurityAuth();
+        if (System.getProperty("jdbc.conf", System.getenv("jdbc.conf")) == null) {
+            System.setProperty("jdbc.conf", "src/test/resources/jdbc.properties");
+        }
         ControllerTestBase.beforeAll();
     }
 
@@ -89,21 +95,26 @@ public class PermissionsTest extends ControllerTestBase {
     @AfterEach
     @Override
     void cleanDb() throws SQLException {
-        try (Statement statement = nativeConn.createStatement()) {
-            statement.execute("drop table test_all_types");
+        if (nativeConn != null) {
+            try (Statement statement = nativeConn.createStatement()) {
+                statement.execute("drop table test_all_types");
+            }
+            nativeConn.close();
         }
-        nativeConn.close();
-        httpConn.close();
+        if (httpConn != null) {
+            httpConn.close();
+        }
     }
 
     @AfterAll
     static void afterAll() throws IOException {
         ControllerTestBase.afterAll();
         Assertions.assertTrue(Files.walk(permissionsDir, FOLLOW_LINKS).sorted(Collections.reverseOrder()).map(Path::toFile).allMatch(File::delete));
+        disableSecurityAuth();
     }
 
     private static Connection createHttpConnection(String user, String password) throws SQLException {
-        String url = format("%s#%s", httpUrl, nativeUrl);
+        String url = format("%s#%s#properties", httpUrl, nativeUrl);
         return user == null ? DriverManager.getConnection(url) : DriverManager.getConnection(url, user, password);
     }
 

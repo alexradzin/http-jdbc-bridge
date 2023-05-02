@@ -1,4 +1,4 @@
-create table test_all_types
+create table if not exists test_all_types
 (
    i int,
    b bool,

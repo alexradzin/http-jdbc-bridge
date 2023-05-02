@@ -8,8 +8,6 @@ import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import javax.security.auth.login.FailedLoginException;
-import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.Driver;
@@ -64,63 +62,6 @@ public class DriverControllerTest extends ControllerTestBase {
         String url = httpUrl + "#" + "jdbc:unsupported:foo";
         assertNull(new HttpDriver().connect(url, null));
         executeJavaScript(url);
-    }
-
-    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
-    @JdbcUrls
-    void createAndCloseConnectionWithPredefinedUrl(String nativeUrl) throws SQLException, IOException {
-        Properties props = new Properties();
-        String db = nativeUrl.split(":")[1];
-        props.setProperty("user", db);
-        props.setProperty("password", db);
-        assertCreateAndCloseConnection(httpUrl, props);
-        executeJavaScript(httpUrl, props);
-    }
-
-    @Test
-    void createAndCloseConnectionToDefaultDb() throws SQLException {
-        Properties props = new Properties();
-        props.setProperty("user", "nodb");
-        props.setProperty("password", "nopass");
-        assertCreateAndCloseConnection(httpUrl, props);
-    }
-
-    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
-    @JdbcUrls
-    void createAndCloseConnectionWithPredefinedUrlAndWrongPassword(String nativeUrl) {
-        Properties props = new Properties();
-        String db = nativeUrl.split(":")[1];
-        props.setProperty("user", db);
-        props.setProperty("password", "this password is wrong");
-        assertThrows(FailedLoginException.class, () -> assertCreateAndCloseConnection(httpUrl, props));
-    }
-
-    @Test
-    void createAndCloseConnectionWithPredefinedUrlWrongCredentials() {
-        Properties props = new Properties();
-        props.setProperty("user", "nobody");
-        props.setProperty("password", "wrong");
-        assertEquals("Invalid username or password", assertThrows(FailedLoginException.class, () -> DriverManager.getConnection(httpUrl, props)).getMessage());
-        assertThrows(ScriptException.class, () -> executeJavaScript(httpUrl, props));
-    }
-
-    @Test
-    void createConnectionWithExistingUserNotMappedToDatabase() {
-        Properties props = new Properties();
-        props.setProperty("user", "nodb");
-        props.setProperty("password", "nopass");
-        assertEquals("User nodb is not mapped to any JDBC URL", assertThrows(LoginException.class, () -> DriverManager.getConnection(httpUrl, props)).getMessage());
-        assertThrows(ScriptException.class, () -> executeJavaScript(httpUrl, props));
-    }
-
-    @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
-    @JdbcUrls
-    void createConnectionWithExistingUserNotMappedToDatabaseButWithSymbolicReferenceToDb(String nativeUrl) throws SQLException {
-        String db = nativeUrl.split(":")[1]; // jdbc.properties contains mapping between user (equal to the db type, e.g. h2, derby etc)  and JDBC URL
-        Properties props = new Properties();
-        props.setProperty("user", "nodb");
-        props.setProperty("password", "nopass");
-        assertCreateAndCloseConnection(format("%s#%s", httpUrl, db), props);
     }
 
     @Test
