@@ -1,5 +1,6 @@
 package com.nosqldriver.jdbc.http;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,13 +13,21 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
+import static javax.security.auth.login.Configuration.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class DriverControllerWithDefaultDbTest extends ControllerTestBase {
     @BeforeAll
     static void beforeAll() throws IOException {
+        enableSecurityAuth();
         System.setProperty("jdbc.conf", "src/test/resources/jdbc-with-default-db.properties");
         ControllerTestBase.beforeAll();
+    }
+
+    @AfterAll
+    static void afterAll() throws IOException {
+        disableSecurityAuth();
+        ControllerTestBase.afterAll();
     }
 
     @BeforeEach

@@ -6,23 +6,17 @@ import com.nosqldriver.jdbc.http.json.ObjectMapperFactory;
 import com.nosqldriver.jdbc.http.model.ConnectionInfo;
 import com.nosqldriver.jdbc.http.model.ConnectionProxy;
 import com.nosqldriver.jdbc.http.model.TransportableException;
-import com.nosqldriver.jdbc.http.permissions.PermissionsParser;
-import com.nosqldriver.jdbc.http.permissions.StatementPermission;
-import com.nosqldriver.jdbc.http.permissions.StatementPermissionsValidator;
-import com.nosqldriver.jdbc.http.permissions.StatementPermissionsValidators;
 import com.nosqldriver.jdbc.http.permissions.StatementPermissionsValidatorsConfigurer;
 import com.nosqldriver.util.function.ThrowingBiFunction;
-import com.nosqldriver.util.function.ThrowingFunction;
 import spark.Spark;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.login.CredentialNotFoundException;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.io.File;
-import java.io.FileFilter;
-import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -33,7 +27,6 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -72,15 +65,25 @@ public class DriverController extends BaseController {
             return "";
         });
 
+        String authConfigProperty = System.getProperty("java.security.auth.login.config");
+        if (authConfigProperty != null) {
+            if (!new File(authConfigProperty).exists()) {
+                throw new IllegalStateException(format("JAAS file %s is not found", authConfigProperty));
+            }
+        }
+        boolean authRequired = authConfigProperty != null;
 
         post("/connection", JSON, (req, res) -> retrieve(() -> {
-            ConnectionInfo connectionInfo = retrieveConnectionInfo(objectMapper.readValue(req.bodyAsBytes(), ConnectionInfo.class));
+            ConnectionInfo connectionInfo = retrieveConnectionInfo(objectMapper.readValue(req.bodyAsBytes(), ConnectionInfo.class), authRequired);
             String configuredUrl = connectionInfo.getUrl();
             String jdbcUrl = configuredUrl;
-            Properties connectionProperties = connectionInfo.getProperties();
             if (!configuredUrl.startsWith("jdbc:")) {
                 jdbcUrl = jdbcProps.getProperty(configuredUrl);
-                connectionProperties = null;
+            }
+            Properties connectionProperties = null;
+            if (jdbcUrl.endsWith("#properties")) {
+                jdbcUrl = jdbcUrl.substring(0, jdbcUrl.length() - "#properties".length());
+                connectionProperties = connectionInfo.getProperties();
             }
             Connection connection = DriverManager.getConnection(jdbcUrl, connectionProperties);
             setAttribute("connection-info", System.identityHashCode(connection), connectionInfo);
@@ -115,12 +118,12 @@ public class DriverController extends BaseController {
         }
     }
 
-    private ConnectionInfo retrieveConnectionInfo(ConnectionInfo clientConnectionInfo) throws LoginException {
+    private ConnectionInfo retrieveConnectionInfo(ConnectionInfo clientConnectionInfo, boolean authRequired) throws LoginException {
+        authenticate(clientConnectionInfo.getProperties(), authRequired);
         String url = clientConnectionInfo.getUrl();
         if (url != null) {
             return clientConnectionInfo;
         }
-        authenticate(clientConnectionInfo.getProperties());
         String user = clientConnectionInfo.getProperties().getProperty("user");
         String jdbcUrl = jdbcProps.getProperty(user, defaultDb);
         if (jdbcUrl == null) {
@@ -129,11 +132,17 @@ public class DriverController extends BaseController {
         return new ConnectionInfo(jdbcUrl, clientConnectionInfo.getProperties());
     }
 
-    private void authenticate(Properties props) throws LoginException {
-        authenticate(props.getProperty("user"), props.getProperty("password"));
+    private void authenticate(Properties props, boolean authRequired) throws LoginException {
+        authenticate(props.getProperty("user"), props.getProperty("password"), authRequired);
     }
 
-    private void authenticate(String user, String password) throws LoginException {
+    private void authenticate(String user, String password, boolean authRequired) throws LoginException {
+        if (user == null || password == null || "".equals(user) || "".equals(password)) {
+            if (authRequired) {
+                throw new CredentialNotFoundException("User and password are required to login");
+            }
+            return;
+        }
         LoginContext lc = new LoginContext("HttpJdbcBridge", callbacks -> {
             for (Callback cb : callbacks) {
                 if (cb instanceof NameCallback) {

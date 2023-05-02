@@ -15,6 +15,7 @@ import org.junit.jupiter.api.TestInfo;
 import spark.Spark;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
+import static javax.security.auth.login.Configuration.setConfiguration;
 
 abstract class ControllerTestBase {
     protected static final String httpUrl = "http://localhost:8080";
@@ -46,12 +48,6 @@ abstract class ControllerTestBase {
 
     @BeforeAll
     static void beforeAll() throws IOException {
-        // Although this configuration is needed for DriverControllerTest.createAndCloseConnectionWithPredefinedUrl
-        // it has to be done here because it uses static variables that are initialized in the beginning of the JVM life.
-        System.setProperty("java.security.auth.login.config", "src/test/resources/jaas.conf");
-        if (System.getProperty("jdbc.conf", System.getenv("jdbc.conf")) == null) {
-            System.setProperty("jdbc.conf", "src/test/resources/jdbc.properties");
-        }
         Spark.staticFiles.location("/");
         Spark.port(8080);
         new DriverController(new HashMap<>(), objectMapper, validator);
@@ -59,6 +55,7 @@ abstract class ControllerTestBase {
     }
 
     @AfterAll
+    @SuppressWarnings("RedundantThrows") // needed because implementations in some subclasses throw IOException
     static void afterAll() throws IOException {
         Spark.stop();
         Spark.awaitStop();
@@ -66,7 +63,7 @@ abstract class ControllerTestBase {
 
     @BeforeEach
     void beforeEach(TestInfo testInfo) {
-        testName = testInfo.getTestMethod().get().getName();
+        testName = testInfo.getTestMethod().map(Method::getName).orElseThrow(() -> new IllegalStateException("Test method is unavailable"));
     }
 
     @BeforeEach
@@ -81,6 +78,16 @@ abstract class ControllerTestBase {
     void cleanDb() throws SQLException {
         nativeConn.close();
         httpConn.close();
+    }
+
+    protected static void enableSecurityAuth() {
+        setConfiguration(null);
+        System.setProperty("java.security.auth.login.config", "src/test/resources/jaas.conf");
+    }
+
+    protected static void disableSecurityAuth() {
+        System.getProperties().remove("java.security.auth.login.config");
+        setConfiguration(null);
     }
 
     protected String db(String url) {
@@ -107,8 +114,10 @@ abstract class ControllerTestBase {
             return null;
         }
         if (res instanceof Map) {
+            //noinspection unchecked
             new HashMap<>((Map<String, Object>)res);
         }
+        //noinspection unchecked
         return (T)res;
     }
 
