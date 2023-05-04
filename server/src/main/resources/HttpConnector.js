@@ -44,8 +44,11 @@ function buildUrl(prefix, suffix) {
 }
 
 function throwIfError(obj) {
-    if (obj != null && obj.className && obj.message) {
-        throw obj.className + ": " + obj.message;
+    if (obj != null && obj.classNames && Array.isArray(obj.classNames) && obj.classNames.length > 0 && obj.message) {
+        throw obj.classNames[0] + ": " + obj.message;
+    }
+    if (obj != null && obj.message) {
+        throw obj.message;
     }
     return obj;
 }
@@ -417,7 +420,6 @@ function Statement(proxy, connection) {
     }
 }
 
-
 function ResultSet(proxy, statement) {
     this.entityUrl = proxy.entityUrl;
     if (this.entityUrl == null) {
@@ -498,6 +500,40 @@ function ResultSet(proxy, statement) {
             return value.toString();
         }
         throw "Cannot cast " + value + " to " + type;
+    }
+
+    this.dataRows = {}
+    var rs = this
+    this.dataRows[Symbol.iterator] = function() {
+        return {
+            next() {
+                var hasRow = rs.next()
+                var value = null;
+                if (hasRow) {
+                    var md = rs.getMetaData();
+                    var n = md.getColumnCount();
+                    value = new Object()
+                    for (var i = 1; i <= n; i++) {
+                        value[md.getColumnLabel(i)] = rs.getObject(i)
+                    }
+                }
+                return {value:value, done:!hasRow};
+            }
+      };
+    }
+
+    this.rows = function() {
+        return this.dataRows;
+    }
+
+    this.columns = function() {
+        var md = rs.getMetaData();
+        var n = md.getColumnCount();
+        var columns = new Array();
+        for (var i = 1; i <= n; i++) {
+            columns[i - 1] = md.getColumnLabel(i);
+        }
+        return columns;
     }
 }
 

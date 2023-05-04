@@ -35,7 +35,8 @@
                     statement.execute(sql, function(res) {
                         if (res) {
                             statement.getResultSet(function(rs) {
-                                resultSetToTable(rs, document.getElementById('result_table'))
+                                //resultSetToTable(rs, document.getElementById('result_table1'))
+                                resultRowsToTable(rs, document.getElementById('result_table2'))
                             })
                         } else {
                             alert("done");
@@ -63,6 +64,26 @@
                 var row = table.insertRow();
                 for (var i = 1; i <= n; i++) {
                     row.insertCell().appendChild(document.createTextNode(rs.getString(i)));
+                }
+            }
+        }
+
+        function resultRowsToTable(rs, table) {
+            var columns = rs.columns();
+            var rows = rs.rows();
+            table.deleteTHead();
+            var thead = table.createTHead();
+            var tableRow = thead.insertRow();
+            for (var i = 0; i < columns.length; i++) {
+                var th = document.createElement("th");
+                th.appendChild(document.createTextNode(columns[i]));
+                tableRow.appendChild(th);
+            }
+
+            for (var row of rows) {
+                var tableRow = table.insertRow();
+                for (var key in row) {
+                    tableRow.insertCell().appendChild(document.createTextNode(row[key]));
                 }
             }
         }
@@ -97,6 +118,8 @@ SQL
 <button type="submit" id="execute" onclick="execute(document.getElementById('sql').value)">execute</button>
 <br/>
 Result
-<table id="result_table" border="1"></table>
+<table id="result_table1" border="1"></table>
+<br/>
+<table id="result_table2" border="1"></table>
 
 </body>
