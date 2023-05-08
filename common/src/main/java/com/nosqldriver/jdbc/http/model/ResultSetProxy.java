@@ -22,6 +22,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.RowId;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
 import java.sql.SQLXML;
 import java.sql.Statement;
@@ -163,11 +164,11 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     private Statement statement;
     private ResultSetMetaData md;
     // TODO: fix multi-threading support (rowData and wasNull)
-    private volatile RowData rowData = null;
+    private RowData[] rows = null;
+    private int localRowIndex = 0;
     private volatile boolean wasNull = false;
 
     // This constructor is temporary patch
-//    @JsonCreator
     public ResultSetProxy(@JsonProperty("entityUrl") String entityUrl) {
         this(entityUrl, new ConnectionProperties(System.getProperties()));
     }
@@ -219,7 +220,7 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public boolean next() throws SQLException {
-        return move(format("%s/nextrow", entityUrl));
+        return move(format("%s/nextrow", entityUrl), 1);
     }
 
     @Override
@@ -229,7 +230,7 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public boolean wasNull() throws SQLException {
-        return rowData == null ? connector.get(format("%s/wasnull", entityUrl), Boolean.class) : wasNull;
+        return rows == null ? connector.get(format("%s/wasnull", entityUrl), Boolean.class) : wasNull;
     }
 
     @Override
@@ -514,21 +515,30 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @JsonIgnore
     public boolean isAfterLast() throws SQLException {
         connectionProperties.throwIfUnsupported("isAfterLast");
-        return connector.get(format("%s/is/after/last", entityUrl), boolean.class);
+        return (rows == null || rows[rows.length - 1].getRow() == null) && connector.get(format("%s/is/after/last", entityUrl), boolean.class);
     }
 
     @Override
     @JsonIgnore
     public boolean isFirst() throws SQLException {
-        connectionProperties.throwIfUnsupported("isFirst");
-        return connector.get(format("%s/is/first", entityUrl), boolean.class);
+        return isAt("first", "isFirst", RowData::getFirst);
+    }
+
+    private boolean isAt(String path, String getter, Function<RowData, Boolean> is) throws SQLFeatureNotSupportedException {
+        connectionProperties.throwIfUnsupported(getter);
+        if (rows != null) {
+            Boolean isAtPosition = is.apply(rows[localRowIndex]);
+            if (isAtPosition != null) {
+                return isAtPosition;
+            }
+        }
+        return connector.get(format("%s/is/%s", entityUrl, path), Boolean.class);
     }
 
     @Override
     @JsonIgnore
     public boolean isLast() throws SQLException {
-        connectionProperties.throwIfUnsupported("isLast");
-        return connector.get(format("%s/is/last", entityUrl), Boolean.class);
+        return isAt("last", "isLast", RowData::getLast);
     }
 
     @Override
@@ -546,13 +556,13 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @Override
     public boolean first() throws SQLException {
         connectionProperties.throwIfUnsupported("first");
-        return move(format("%s/firstrow", entityUrl));
+        return move(format("%s/firstrow", entityUrl), true);
     }
 
     @Override
     public boolean last() throws SQLException {
         connectionProperties.throwIfUnsupported("last");
-        return move(format("%s/lastrow", entityUrl));
+        return move(format("%s/lastrow", entityUrl), false);
     }
 
     @Override
@@ -565,19 +575,19 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @Override
     public boolean absolute(int row) throws SQLException {
         connectionProperties.throwIfUnsupported("absolute");
-        return move(format("%s/absoluterow/%d", entityUrl, row));
+        return move(format("%s/absoluterow/%d", entityUrl, row), true);
     }
 
     @Override
     public boolean relative(int rows) throws SQLException {
         connectionProperties.throwIfUnsupported("relative");
-        return move(format("%s/relativerow/%d", entityUrl, rows));
+        return move(format("%s/relativerow/%d", entityUrl, rows), rows);
     }
 
     @Override
     public boolean previous() throws SQLException {
         connectionProperties.throwIfUnsupported("previous");
-        return move(format("%s/previousrow", entityUrl));
+        return move(format("%s/previousrow", entityUrl), -1);
     }
 
     @Override
@@ -978,38 +988,38 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     @Override
     public Date getDate(int columnIndex, Calendar cal) throws SQLException {
-        connectionProperties.throwIfUnsupported("getDate");
-        return rowData == null ? connector.get(format("%s/date/index/%s/%s", entityUrl, columnIndex, calendarParameter(cal)), Date.class) : (Date)rowData.getRow()[columnIndex - 1];
+        return getDateTime(columnIndex, cal, "getDate", "date/index", Date.class, index -> index - 1);
     }
 
     @Override
     public Date getDate(String columnLabel, Calendar cal) throws SQLException {
-        connectionProperties.throwIfUnsupported("getDate");
-        return rowData == null ? connector.get(format("%s/date/label/%s/%s", entityUrl, columnLabel, calendarParameter(cal)), Date.class) : (Date)rowData.getRow()[getIndex(columnLabel)];
+        return getDateTime(columnLabel, cal, "getDate", "date/label", Date.class, this::getIndex);
     }
 
     @Override
     public Time getTime(int columnIndex, Calendar cal) throws SQLException {
-        connectionProperties.throwIfUnsupported("getTime");
-        return rowData == null ? connector.get(format("%s/time/index/%s/%s", entityUrl, columnIndex, calendarParameter(cal)), Time.class) : (Time)rowData.getRow()[columnIndex - 1];
+        return getDateTime(columnIndex, cal, "getTime", "time/index", Time.class, index -> index - 1);
     }
 
     @Override
     public Time getTime(String columnLabel, Calendar cal) throws SQLException {
-        connectionProperties.throwIfUnsupported("getTime");
-        return rowData == null ? connector.get(format("%s/time/label/%s/%s", entityUrl, columnLabel, calendarParameter(cal)), Time.class) : (Time)rowData.getRow()[getIndex(columnLabel)];
+        return getDateTime(columnLabel, cal, "getTime", "time/label", Time.class, this::getIndex);
     }
 
     @Override
     public Timestamp getTimestamp(int columnIndex, Calendar cal) throws SQLException {
-        connectionProperties.throwIfUnsupported("getTimestamp");
-        return rowData == null ? connector.get(format("%s/timestamp/index/%s/%s", entityUrl, columnIndex, calendarParameter(cal)), Timestamp.class) : (Timestamp)rowData.getRow()[columnIndex - 1];
+        return getDateTime(columnIndex, cal, "getTimestamp", "timestamp/index", Timestamp.class, index -> index - 1);
     }
 
     @Override
     public Timestamp getTimestamp(String columnLabel, Calendar cal) throws SQLException {
-        connectionProperties.throwIfUnsupported("getTimestamp");
-        return rowData == null ? connector.get(format("%s/timestamp/label/%s/%s", entityUrl, columnLabel, calendarParameter(cal)), Timestamp.class) : (Timestamp)rowData.getRow()[getIndex(columnLabel)];
+        return getDateTime(columnLabel, cal, "getTimestamp", "timestamp/label", Timestamp.class, this::getIndex);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <C, T> T getDateTime(C column, Calendar cal, String getterName, String path, Class<T> type, ThrowingFunction<C, Integer, SQLException> indexGetter) throws SQLException {
+        connectionProperties.throwIfUnsupported(getterName);
+        return rows == null ? connector.get(format("%s/%s/%s/%s", entityUrl, path, column, calendarParameter(cal)), type) : (T)rows[localRowIndex].getRow()[indexGetter.apply(column)];
     }
 
     @Override
@@ -1361,17 +1371,15 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
         connectionProperties.throwIfUnsupported("getObject");
-        return rowData == null ? connector.get(format("%s/object/index/%d/%s", entityUrl, columnIndex, type), type) : cast(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), type, columnIndex);
+        return rows == null ? connector.get(format("%s/object/index/%d/%s", entityUrl, columnIndex, type), type) : cast(rows[localRowIndex].getRow()[columnIndex - 1], getClassOfColumn(columnIndex), type, columnIndex);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
         connectionProperties.throwIfUnsupported("getObject");
-        return rowData == null ? connector.get(format("%s/object/label/%s/%s", entityUrl, columnLabel, type), type) : cast(rowData.getRow()[getIndex(columnLabel)], getClassOfColumn(columnLabel), type, getDataOfColumnIndex(columnLabel));
+        return rows == null ? connector.get(format("%s/object/label/%s/%s", entityUrl, columnLabel, type), type) : cast(rows[localRowIndex].getRow()[getIndex(columnLabel)], getClassOfColumn(columnLabel), type, getDataOfColumnIndex(columnLabel));
     }
 
     public ResultSetProxy withStatement(Statement statement) {
@@ -1405,10 +1413,6 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
         return getDataOfColumn(columnLabel, (md, i) -> getColumnClass(md.getColumnClassName(i)));
     }
 
-    private String getTypeNameOfColumn(String columnLabel) throws SQLException {
-        return getDataOfColumn(columnLabel, (md, i) -> getTypeNameOfColumn(i));
-    }
-
     private Class<?> getClassOfColumn(int columnIndex) throws SQLException {
         String className = getMetaData().getColumnClassName(columnIndex);
         return className == null ? Object.class : getColumnClass(className);
@@ -1430,15 +1434,16 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
 
     private <T, M> T getValue(String markerName, M columnMarker, Class<T> clazz, String typeName, Integer columnIndex) throws SQLException {
         connectionProperties.throwIfUnsupported("get" + clazz.getSimpleName());
-        return rowData == null || columnIndex == null ?
+        return rows == null || columnIndex == null ?
                 connector.get(format("%s/%s/%s/%s", entityUrl, typeName, markerName, columnMarker), clazz) :
-                cast(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), clazz, columnIndex);
+                cast(rows[localRowIndex].getRow()[columnIndex - 1], getClassOfColumn(columnIndex), clazz, columnIndex);
     }
 
     private Integer getIndex(String columnLabel) throws SQLException {
         return ((TransportableResultSetMetaData)getMetaData()).getIndex(columnLabel);
     }
 
+    @SuppressWarnings("unchecked")
     private <T> T cast(Object obj, Class<?> from, Class<T> to, int columnIndex) throws SQLException {
         String typeName = getTypeNameOfColumn(columnIndex);
         wasNull = false;
@@ -1470,39 +1475,45 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
         return connectionProperties.toBooleanString(b);
     }
 
-    private boolean move(String url) throws SQLException {
-        rowData = connector.get(url, RowData.class);
+    private boolean move(String url, int delta) throws SQLException {
+        int index = localRowIndex + delta;
+        if (rows != null && index >= 0 && index < rows.length) {
+            localRowIndex = index;
+            return rows[localRowIndex].isMoved();
+        }
+        return move(url, delta > 0);
+    }
+
+    private boolean move(String url, boolean moveToFirst) {
+        rows = connector.get(url, RowData[].class);
         wasNull = false;
-        return rowData.isMoved();
+        localRowIndex = moveToFirst ? 0 : rows.length - 1;
+        return rows.length > 0 && rows[localRowIndex].isMoved();
     }
 
     public void moveOutside(String url) throws SQLException {
-        rowData = null;
+        rows = null;
         wasNull = false;
         connector.post(url, null, Void.class);
     }
 
     private static boolean inRange(Object n, long min, long max) {
+        return inRange(n, min, max, Number::longValue);
+    }
+
+    private static boolean inRange(Object n, double min, double max) {
+        return inRange(n, min, max, Number::doubleValue);
+    }
+
+    private static <T extends Number & Comparable<T>> boolean inRange(Object n, T min, T max, Function<Number, T> toSpecificNumber) {
         if (n == null) {
             return true;
         }
         if (n instanceof Number) {
-            long l = ((Number) n).longValue();
-            return l >= min && l <= max;
-        } else if (n instanceof Boolean) {
-            return true;
+            T value = toSpecificNumber.apply((Number)n);
+            return value.compareTo(min) > 0 && value.compareTo(max) <= 0;
         }
-        return false;
-    }
-
-    private static boolean inRange(Object n, double min, double max) {
-        if (n instanceof Number) {
-            double d = ((Number) n).doubleValue();
-            return d >= min && d <= max;
-        } else if (n instanceof Boolean) {
-            return true;
-        }
-        return false;
+        return n instanceof Boolean;
     }
 
     private Class<?> getColumnClass(String className) {
@@ -1517,17 +1528,17 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
         connectionProperties.throwIfUnsupported("get" + (n ? "N" : "") + "CharacterStream");
         int columnIndex = columnIndexSupplier.get();
         String path = (n ? "n" : "") + "character/stream";
-        return rowData == null ?
+        return rows == null ?
                 connector.get(format("%s/%s/%s/%s", entityUrl, path, markerName, columnIndex), Reader.class) :
-                connectionProperties.asReader(rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), this::getMetaData, columnIndex, n);
+                connectionProperties.asReader(rows[localRowIndex].getRow()[columnIndex - 1], getClassOfColumn(columnIndex), this::getMetaData, columnIndex, n);
     }
 
     private InputStream getStream(String markerName, ThrowingSupplier<Integer, SQLException> columnIndexSupplier, StreamType streamType) throws SQLException {
         String streamTypeName = streamType.name();
         connectionProperties.throwIfUnsupported("get" + streamTypeName.substring(0, 1).toUpperCase() + streamTypeName.substring(1) + "Stream");
         int columnIndex = columnIndexSupplier.get();
-        return rowData == null ?
+        return rows == null ?
                 connector.get(format("%s/%s/%s/%s", entityUrl, streamType + "/stream", markerName, columnIndex), InputStream.class) :
-                streamType.asStream(connectionProperties, rowData.getRow()[columnIndex - 1], getClassOfColumn(columnIndex), this::getMetaData, columnIndex);
+                streamType.asStream(connectionProperties, rows[localRowIndex].getRow()[columnIndex - 1], getClassOfColumn(columnIndex), this::getMetaData, columnIndex);
     }
 }
