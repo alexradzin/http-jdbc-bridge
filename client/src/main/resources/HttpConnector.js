@@ -44,8 +44,11 @@ function buildUrl(prefix, suffix) {
 }
 
 function throwIfError(obj) {
-    if (obj != null && obj.className && obj.message) {
-        throw obj.className + ": " + obj.message;
+    if (obj != null && obj.classNames && Array.isArray(obj.classNames) && obj.classNames.length > 0 && obj.message) {
+        throw obj.classNames[0] + ": " + obj.message;
+    }
+    if (obj != null && obj.message) {
+        throw obj.message;
     }
     return obj;
 }
@@ -417,14 +420,15 @@ function Statement(proxy, connection) {
     }
 }
 
-
 function ResultSet(proxy, statement) {
+    this.proxy = proxy;
     this.entityUrl = proxy.entityUrl;
     if (this.entityUrl == null) {
         throw "Cannot create result set";
     }
     this.valueWasNull = false;
-    this.current = null;
+    this.rows = null;
+    this.localRowIndex = 0;
     this.metadata = null;
 
     this.getStatement = function() {
@@ -433,13 +437,29 @@ function ResultSet(proxy, statement) {
 
     this.next = function(callback) {
           if (callback) {
-              get(this.entityUrl + "/nextrow", function(proxy) {
-                  this.current = new RowData(proxy);
-                  callback(new ResultSet(this.current))
-              })
+              var index = this.localRowIndex + 1;
+              if (rows != null && index >= 0 && index < rows.length) {
+                    localRowIndex = index;
+                    callback(this);
+              } else {
+                  var rs = this;
+                  get(this.entityUrl + "/nextrow", function(rows) {
+                      rs.rows = rows;
+                      rs.wasNull = false;
+                      rs.localRowIndex = 0;
+                      callback(rs);
+                  });
+              }
           } else {
-              this.current = new RowData(get(this.entityUrl + "/nextrow"))
-              return this.current.isMoved();
+              var index = this.localRowIndex + 1;
+              if (this.rows != null && index >= 0 && index < this.rows.length) {
+                    this.localRowIndex = index;
+                    return this.rows[this.localRowIndex].moved;
+              }
+              this.rows = get(this.entityUrl + "/nextrow");
+              this.wasNull = false;
+              this.localRowIndex = 0;
+              return this.rows.length > 0 && this.rows[this.localRowIndex].moved;
           }
     },
 
@@ -460,7 +480,7 @@ function ResultSet(proxy, statement) {
     },
 
     this.getObject = function(index) {
-        var value = this.current.getRow()[index - 1];
+        var value = this.rows[this.localRowIndex].row[index - 1];
         this.valueWasNull = value == null;
         return value;
     },
@@ -499,14 +519,39 @@ function ResultSet(proxy, statement) {
         }
         throw "Cannot cast " + value + " to " + type;
     }
-}
 
-function RowData(proxy) {
-    this.isMoved = function() {
-        return proxy.moved;
-    },
-    this.getRow = function() {
-        return proxy.row;
+    this.dataRows = {}
+    var rs = this
+    this.dataRows[Symbol.iterator] = function() {
+        return {
+            next() {
+                var hasRow = rs.next()
+                var value = null;
+                if (hasRow) {
+                    var md = rs.getMetaData();
+                    var n = md.getColumnCount();
+                    value = new Object()
+                    for (var i = 1; i <= n; i++) {
+                        value[md.getColumnLabel(i)] = rs.getObject(i)
+                    }
+                }
+                return {value:value, done:!hasRow};
+            }
+      };
+    }
+
+    this.rows = function() {
+        return this.dataRows;
+    }
+
+    this.columns = function() {
+        var md = rs.getMetaData();
+        var n = md.getColumnCount();
+        var columns = new Array();
+        for (var i = 1; i <= n; i++) {
+            columns[i - 1] = md.getColumnLabel(i);
+        }
+        return columns;
     }
 }
 

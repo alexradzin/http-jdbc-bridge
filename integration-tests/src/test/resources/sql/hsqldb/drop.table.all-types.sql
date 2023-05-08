@@ -1,1 +1,1 @@
-drop table test_all_types
+drop table test_all_types if exists

@@ -21,13 +21,17 @@ import java.sql.NClob;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static java.lang.String.format;
 import static spark.Spark.delete;
@@ -36,6 +40,7 @@ import static spark.Spark.post;
 import static spark.Spark.put;
 
 public class ResultSetController extends BaseController {
+    private static final int MAX_FETCH_SIZE = Integer.parseInt(System.getProperty("jdbc.fetch.size", "100"));
     private final String prefix;
     private final String id;
 
@@ -316,7 +321,44 @@ public class ResultSetController extends BaseController {
         }
     }
 
-    public RowData move(ResultSet rs, ThrowingFunction<ResultSet, Boolean, SQLException> move, String url) throws Exception {
-        return move.apply(rs) ? new RowData(true, readRow(rs, parentUrl(url))) : new RowData(false, null);
+    public List<RowData> move(ResultSet rs, ThrowingFunction<ResultSet, Boolean, SQLException> move, String url) throws Exception {
+        return readRows(rs, move, url);
+    }
+
+    private List<RowData> readRows(ResultSet rs, ThrowingFunction<ResultSet, Boolean, SQLException> move, String url) throws Exception {
+        String parentUrl = parentUrl(url);
+
+        int fetchSize;
+        if(rs.getConcurrency() == ResultSet.CONCUR_UPDATABLE) {
+            fetchSize = 1;
+        } else {
+            fetchSize = MAX_FETCH_SIZE;
+            Statement statement = rs.getStatement();
+            if (statement != null) {
+                int statementFetchSize = statement.getFetchSize();
+                if (statementFetchSize > 0 && statementFetchSize < fetchSize) {
+                    fetchSize = statementFetchSize;
+                }
+            }
+        }
+        List<RowData> rows = new LinkedList<>();
+        for (int i = 0; i < fetchSize && move.apply(rs); i++) {
+            rows.add(rowData(rs, true, readRow(rs, parentUrl)));
+        }
+        return rows.isEmpty() && fetchSize > 0 ? List.of(rowData(rs, false, null)) : rows;
+    }
+
+    private RowData rowData(ResultSet rs, boolean moved, Object[] row) throws SQLException {
+        return new RowData(moved, getPositionSafely(rs, ResultSet::isFirst), getPositionSafely(rs, ResultSet::isLast), row);
+    }
+
+    private Boolean getPositionSafely(ResultSet rs, ThrowingFunction<ResultSet, Boolean, SQLException> getter) {
+        try {
+            return getter.apply(rs);
+        } catch (SQLException e) {
+            // some DBs do not support isFirst and isLast.
+            // For example derby throws java.sql.SQLException: The 'isFirst' method is only allowed on scroll cursors.
+            return null;
+        }
     }
 }

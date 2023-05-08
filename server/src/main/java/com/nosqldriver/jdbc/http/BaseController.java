@@ -94,7 +94,12 @@ abstract class BaseController {
 
     @SuppressWarnings("unchecked")
     protected <T> T getEntity(Map<String, Object> attributes, String prefix, String id) {
-        return (T)attributes.get(format("%s@%s", prefix, id));
+        return getAttribute(attributes, format("%s@%s", prefix, id));
+    }
+
+    @SuppressWarnings("unchecked")
+    protected <T> T getAttribute(Map<String, Object> attributes, String key) {
+        return (T)attributes.get(key);
     }
 
     protected int intParam(Request req, String name) {
