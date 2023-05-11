@@ -5,15 +5,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.lang.String.format;
 import static java.util.Map.entry;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 import static java.util.regex.Pattern.compile;
@@ -137,6 +140,84 @@ public class PermissionsParser {
                                     ),
                                     List.of(m.group(1).split("\\s*,\\s*")),
                                     Delete::getTable)
+                    )
+            ),
+
+            entry(
+                    compile("truncate\\s+(\\S+)", CASE_INSENSITIVE),
+                    m -> entry(
+                            Truncate.class,
+                            new StatementPermission<>(
+                                    Map.of(),
+                                    List.of(m.group(1).split("\\s*,\\s*")),
+                                    Truncate::getTable)
+                    )
+            ),
+
+            entry(
+                    compile("^\\s*create\\s+(?:\\*|table|schema)\\s+(\\S+)\\s*$", CASE_INSENSITIVE),
+                    m -> entry(
+                            Create.class,
+                            new StatementPermission<>(
+                                    Map.of(),
+                                    List.of(m.group(1).split("\\s*,\\s*")),
+                                    Create::getName)
+                    )
+            ),
+
+            entry(
+                    compile("^\\s*create\\s+(?:unique|fulltext|spatial)?index\\s+(\\S+)\\s*(?:on\\s+(\\S+))\\s*$", CASE_INSENSITIVE),
+                    m -> entry(
+                            Create.class,
+                            new StatementPermission<>(
+                                    Map.of(),
+                                    List.of(m.group(1).split("\\s*,\\s*")),
+                                    Create::getName)
+                    )
+            ),
+
+            entry(
+                    compile("^\\s*create\\s+view\\s+(\\S+)\\s*(?:from\\s+(\\S+))\\s*$", CASE_INSENSITIVE),
+                    m -> entry(
+                            Create.class,
+                            new StatementPermission<>(
+                                    Map.of("from",
+                                            create  -> Set.of("*", create.getReference()).contains(m.group(2)) ?
+                                                    null
+                                                    :
+                                                    new SQLException(format("Creating view from %s is not allowed", create.getReference()))),
+                                    List.of(m.group(1).split("\\s*,\\s*")),
+                                    Create::getName)
+                    )
+            ),
+
+            entry(
+                    compile("drop\\s+(\\*|table|view)\\s+(\\S+)", CASE_INSENSITIVE),
+                    m -> entry(
+                            Drop.class,
+                            new StatementPermission<>(
+                                    Map.of("type",
+                                            drop  -> Set.of("*", drop.getType()).contains(m.group(1)) ?
+                                                    null
+                                                    :
+                                                    new SQLException(format("Dropping %s %s is not allowed", drop.getType(), drop.getName()))),
+                                    List.of(m.group(2).split("\\s*,\\s*")),
+                                    Drop::getName)
+                    )
+            ),
+
+            entry(
+                    compile("alter\\s+(\\*|table|view)\\s+(\\S+)", CASE_INSENSITIVE),
+                    m -> entry(
+                            Alter.class,
+                            new StatementPermission<>(
+                                    Map.of("type",
+                                            alter  -> Set.of("*", alter.getType()).contains(m.group(1)) ?
+                                                    null
+                                                    :
+                                                    new SQLException(format("Altering %s %s is not allowed", alter.getType(), alter.getName()))),
+                                    List.of(m.group(2).split("\\s*,\\s*")),
+                                    Alter::getName)
                     )
             )
     );
