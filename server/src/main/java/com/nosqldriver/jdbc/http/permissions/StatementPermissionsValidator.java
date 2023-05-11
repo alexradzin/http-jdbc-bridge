@@ -20,7 +20,11 @@ public class StatementPermissionsValidator implements ThrowingFunction<String, S
             Select.class, List.of("fields", "where", "orderBy", "limit", "innerJoin", "outerJoin", "groupBy"),
             Insert.class, List.of("where", "fields", "limit"),
             Update.class, List.of("where", "fields"),
-            Delete.class, List.of("where")
+            Delete.class, List.of("where"),
+            Truncate.class, List.of(),
+            Create.class, List.of("on", "from"),
+            Drop.class, List.of("type"),
+            Alter.class, List.of("type")
     );
     private final Map<Class<?>, List<StatementPermission<?>>> statementsPermissions = new ConcurrentHashMap<>();
     private final PermissionsParser permissionsParser = new PermissionsParser();
@@ -41,7 +45,7 @@ public class StatementPermissionsValidator implements ThrowingFunction<String, S
 
     public String validate(String queryStr) throws ParseException, SQLException {
         Object query = parseQuery(queryStr);
-        Class<?> queryType = query.getClass();
+        Class<?> queryType = query == null ? Object.class : query.getClass();
         List<StatementPermission<?>> permissions = statementsPermissions.getOrDefault(queryType, List.of());
         List<String> elements = queryParts.getOrDefault(queryType, List.of());
         validate(permissions, elements, query);

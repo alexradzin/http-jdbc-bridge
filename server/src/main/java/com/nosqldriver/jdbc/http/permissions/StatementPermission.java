@@ -64,6 +64,6 @@ public class StatementPermission<T> implements Predicate<String>, Comparable<Pre
         if (error.isPresent()) {
             throw error.get();
         }
-        return validated.get();
+        return elementPermissions.isEmpty() || validated.get();
     }
 }

@@ -21,8 +21,16 @@ import net.sf.jsqlparser.expression.operators.relational.NotEqualsTo;
 import net.sf.jsqlparser.parser.CCJSqlParserManager;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
+import net.sf.jsqlparser.statement.CreateFunctionalStatement;
 import net.sf.jsqlparser.statement.StatementVisitorAdapter;
+import net.sf.jsqlparser.statement.alter.Alter;
+import net.sf.jsqlparser.statement.create.index.CreateIndex;
+import net.sf.jsqlparser.statement.create.schema.CreateSchema;
+import net.sf.jsqlparser.statement.create.table.CreateTable;
+import net.sf.jsqlparser.statement.create.view.AlterView;
+import net.sf.jsqlparser.statement.create.view.CreateView;
 import net.sf.jsqlparser.statement.delete.Delete;
+import net.sf.jsqlparser.statement.drop.Drop;
 import net.sf.jsqlparser.statement.insert.Insert;
 import net.sf.jsqlparser.statement.select.AllColumns;
 import net.sf.jsqlparser.statement.select.Join;
@@ -31,17 +39,17 @@ import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.select.SelectExpressionItem;
 import net.sf.jsqlparser.statement.select.SelectItemVisitorAdapter;
 import net.sf.jsqlparser.statement.select.SelectVisitorAdapter;
+import net.sf.jsqlparser.statement.truncate.Truncate;
 import net.sf.jsqlparser.statement.update.Update;
 
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static com.nosqldriver.jdbc.http.permissions.ComparisonOperation.EQ;
 import static com.nosqldriver.jdbc.http.permissions.ComparisonOperation.GE;
@@ -71,14 +79,23 @@ public class SqlParser {
         AtomicReference<com.nosqldriver.jdbc.http.permissions.Insert> insertRef = new AtomicReference<>();
         AtomicReference<com.nosqldriver.jdbc.http.permissions.Update> updateRef = new AtomicReference<>();
         AtomicReference<com.nosqldriver.jdbc.http.permissions.Delete> deleteRef = new AtomicReference<>();
+        AtomicReference<com.nosqldriver.jdbc.http.permissions.Truncate> truncateRef = new AtomicReference<>();
+        AtomicReference<com.nosqldriver.jdbc.http.permissions.Create> createRef = new AtomicReference<>();
+        AtomicReference<com.nosqldriver.jdbc.http.permissions.Drop> dropRef = new AtomicReference<>();
+        AtomicReference<com.nosqldriver.jdbc.http.permissions.Alter> alterRef = new AtomicReference<>();
         AtomicReference<Class<?>> sqlType = new AtomicReference<>();
         Map<Class<?>, AtomicReference<?>> references = Map.of(
                 com.nosqldriver.jdbc.http.permissions.Select.class, selectRef,
                 com.nosqldriver.jdbc.http.permissions.Insert.class, insertRef,
                 com.nosqldriver.jdbc.http.permissions.Update.class, updateRef,
-                com.nosqldriver.jdbc.http.permissions.Delete.class, deleteRef);
+                com.nosqldriver.jdbc.http.permissions.Delete.class, deleteRef,
+                com.nosqldriver.jdbc.http.permissions.Truncate.class, truncateRef,
+                com.nosqldriver.jdbc.http.permissions.Create.class, createRef,
+                com.nosqldriver.jdbc.http.permissions.Drop.class, dropRef,
+                com.nosqldriver.jdbc.http.permissions.Alter.class, alterRef
+        );
 
-        parserManager.parse(new StringReader(sql)).accept(new StatementVisitorAdapter(){
+        parserManager.parse(new StringReader(sql)).accept(new StatementVisitorAdapter() {
             @Override
             public void visit(Insert insert) {
                 sqlType.set(com.nosqldriver.jdbc.http.permissions.Insert.class);
@@ -107,6 +124,76 @@ public class SqlParser {
                 deleteRef.set(new com.nosqldriver.jdbc.http.permissions.Delete());
                 deleteRef.get().setTable(delete.getTable().getFullyQualifiedName());
                 deleteRef.get().setWhere(getWhereConditions(delete.getWhere(), delete.getTable()));
+            }
+
+            @Override
+            public void visit(Truncate truncate) {
+                sqlType.set(com.nosqldriver.jdbc.http.permissions.Truncate.class);
+                truncateRef.set(new com.nosqldriver.jdbc.http.permissions.Truncate());
+                truncateRef.get().setTable(truncate.getTable().getFullyQualifiedName());
+            }
+
+            @Override
+            public void visit(CreateTable createTable) {
+                create("table", createTable.getTable().getFullyQualifiedName(), null);
+            }
+
+            @Override
+            public void visit(CreateFunctionalStatement createFunctionalStatement) {
+                super.visit(createFunctionalStatement);
+            }
+
+            private void create(String type, String name, String reference) {
+                sqlType.set(com.nosqldriver.jdbc.http.permissions.Create.class);
+                createRef.set(new com.nosqldriver.jdbc.http.permissions.Create());
+                createRef.get().setName(name);
+                createRef.get().setType(type);
+                createRef.get().setReference(reference);
+            }
+
+            @Override
+            public void visit(CreateSchema createSchema) {
+                create("table", createSchema.getSchemaName(), null);
+            }
+
+            @Override
+            public void visit(CreateIndex createIndex) {
+                create("index", createIndex.getIndex().getName(), createIndex.getTable().getFullyQualifiedName());
+            }
+
+            @Override
+            public void visit(CreateView createView) {
+                createView.getSelect().getSelectBody().accept(new SelectVisitorAdapter() {
+                    public void visit(PlainSelect plainSelect) {
+                        Table table = (Table)plainSelect.getFromItem();
+                        create("view", createView.getView().getFullyQualifiedName(), table.getFullyQualifiedName());
+                    }
+                });
+            }
+
+            @Override
+            public void visit(Drop drop) {
+                sqlType.set(com.nosqldriver.jdbc.http.permissions.Drop.class);
+                dropRef.set(new com.nosqldriver.jdbc.http.permissions.Drop());
+                dropRef.get().setName(drop.getName().getFullyQualifiedName());
+                dropRef.get().setType(drop.getType());
+            }
+
+            @Override
+            public void visit(Alter alter) {
+                alter("table",  alter.getTable().getFullyQualifiedName());
+            }
+
+            @Override
+            public void visit(AlterView alter) {
+                alter("view",  alter.getView().getFullyQualifiedName());
+            }
+
+            private void alter(String type, String name) {
+                sqlType.set(com.nosqldriver.jdbc.http.permissions.Alter.class);
+                alterRef.set(new com.nosqldriver.jdbc.http.permissions.Alter());
+                alterRef.get().setName(name);
+                alterRef.get().setType(type);
             }
 
             @Override
@@ -171,7 +258,7 @@ public class SqlParser {
             }
         });
 
-        return references.get(sqlType.get()).get();
+        return Optional.ofNullable(sqlType.get()).map(references::get).map(AtomicReference::get).orElse(null);
     }
     
     private List<String> getJoins(PlainSelect plainSelect, Predicate<Join> filter) {

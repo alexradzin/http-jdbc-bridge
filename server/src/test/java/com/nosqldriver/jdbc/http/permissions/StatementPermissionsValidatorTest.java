@@ -78,6 +78,53 @@ class StatementPermissionsValidatorTest {
             "delete from people where id(*);delete from people where id > 100",
             "delete from people where id(=,in,>);delete from people where id > 100",
             "delete from * where id(=,in);delete from people where id in (1,2,3)",
+
+            // truncate
+            "truncate *;truncate my_table",
+            "truncate my_table;truncate my_table",
+
+            // create
+            "create * *;create table people (id int, first_name string, last_name varchar(64))",
+            // create table
+            "create table *;create table if not exists people (id int, first_name string, last_name varchar(64))",
+            "create table *;create table people (id int, first_name string, last_name varchar(64))",
+            "create table my_table123;create temporary table my_table123 (id int, first_name string, last_name varchar(64))",
+
+            // create schema
+            "create schema *;create schema my_space321",
+            "create schema *;create schema my_space321",
+
+            // create index
+            "create index * on *;create index my_index on my_table (id)",
+            "create index * on my_table;create index my_index on my_table (id)",
+            "create index my_index on *;create index my_index on my_table (name)",
+            "create index my_index on *;create unique index my_index on my_table (pk)",
+            "create index my_index on *;create spatial index my_index on my_table (name(10))",
+            "create index my_index on my_table;create spatial index my_index on my_table (id)",
+
+            "create view * from *;create view my_view as select * from my_table",
+            "create view * from people;create view men as select * from people where gender='male'",
+            "create view the_view4321 from *;create view the_view4321 as select * from my_table",
+
+            "drop * *;drop table my_table",
+            "drop table *;drop table my_table",
+            "drop table my_table;drop table my_table",
+            "drop * my_table;drop table my_table",
+
+            "drop * *;drop view my_view",
+            "drop view *;drop view my_view",
+            "drop view my_view;drop view my_view",
+            "drop * my_view;drop view my_view",
+
+            "alter * *;alter table my_table drop column x",
+            "alter table *;alter table my_table drop column x",
+            "alter table my_table;alter table my_table drop column x",
+            "alter * my_table;alter table my_table drop column x",
+
+            "alter * *;alter view my_view as select * from my_table",
+            "alter view *;alter view my_view as select * from my_table",
+            "alter view my_view;alter view my_view as select * from my_table",
+            "alter * my_view;alter view my_view as select * from my_table",
     })
     void allow(String conf, String query) throws ParseException, SQLException, IOException {
         addConfiguration(conf);
@@ -86,6 +133,8 @@ class StatementPermissionsValidatorTest {
 
     @ParameterizedTest(name = ARGUMENTS_PLACEHOLDER)
     @CsvSource(delimiter = ';', value = {
+            ";call x;Statement is not allowed", // unsupported but valid SQL statement
+
             ";select * from your_table;Statement is not allowed",
             "select * from my_table;select * from your_table;Statement is not allowed",
             "select x from my_table;select * from my_table;Fields [*] cannot be queried",
@@ -143,6 +192,43 @@ class StatementPermissionsValidatorTest {
             "delete from people where id(*);delete from people where name='John';Condition name = is forbidden",
             "delete from people where id(=,in,>);delete from people where id < 100;Condition id < is forbidden",
             "delete from * where id(=,in);delete from people where id >= 123;Condition id >= is forbidden",
+
+            // truncate
+            ";truncate table2;Statement is not allowed",
+            "truncate table1;truncate table2;Statement is not allowed",
+
+            // create
+            ";create schema your_schema;Statement is not allowed",
+            ";create table my_table;Statement is not allowed",
+            ";create view my_view as select * from my_table;Statement is not allowed",
+
+            "create schema my_schema;create schema your_schema;Statement is not allowed",
+            "create table my_table;create table your_table (id int);Statement is not allowed",
+            "create view my_view from *;create view your_view as select * from my_table;Statement is not allowed",
+            "create view my_view from your_table;create view my_view as select * from my_table;Creating view from my_table is not allowed",
+            "create view * from my_table;create view my_view as select * from your_table;Creating view from your_table is not allowed",
+
+            // drop
+            ";drop table my_table;Statement is not allowed",
+            "drop table *;drop view my_view;Dropping view my_view is not allowed",
+            "drop table my_table;drop table your_table;Statement is not allowed",
+            "drop * your_table;drop table my_table;Statement is not allowed",
+
+            ";drop view my_table;Statement is not allowed",
+            "drop view *;drop table my_table;Dropping table my_table is not allowed",
+            "drop view my_view;drop view your_view;Statement is not allowed",
+            "drop * your_view;drop view my_view;Statement is not allowed",
+
+            // alter
+            ";alter table my_table drop column x;Statement is not allowed",
+            "alter table *;alter view my_view as select * from my_table;Altering view my_view is not allowed",
+            "alter table my_table;alter table your_table drop column x;Statement is not allowed",
+            "alter * your_table;alter table my_table drop column x;Statement is not allowed",
+
+            ";alter view my_table as select * from my_table;Statement is not allowed",
+            "alter view *;alter table my_table as select * from my_table;Altering table my_table is not allowed",
+            "alter view my_view;alter view your_view as select * from my_table;Statement is not allowed",
+            "alter * your_view;alter view my_view as select * from my_table;Statement is not allowed",
     })
     void disallow(String conf, String query, String errorMessage) throws IOException {
         addConfiguration(conf);
