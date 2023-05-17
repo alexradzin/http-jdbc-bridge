@@ -8,8 +8,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class StatementPermissionsValidators implements ThrowingBiFunction<String, String, String, SQLException> {
+    private static final ThrowingFunction<String, String, SQLException> allowAll = query -> query;
     private final Map<String, ThrowingFunction<String, String, SQLException>> permissionValidators = new HashMap<>();
-    private volatile ThrowingFunction<String, String, SQLException> defaultPermissionValidator;
 
     public StatementPermissionsValidators addConfiguration(String userName, ThrowingFunction<String, String, SQLException> permissions) {
         permissionValidators.put(userName, permissions);
@@ -18,16 +18,20 @@ public class StatementPermissionsValidators implements ThrowingBiFunction<String
 
     public StatementPermissionsValidators removeConfiguration(String userName) {
         permissionValidators.remove(userName);
-        return this;
-    }
-
-    public StatementPermissionsValidators setDefaultConfiguration(ThrowingFunction<String, String, SQLException> permissions) {
-        defaultPermissionValidator = permissions;
+        permissionValidators.entrySet().removeIf(entry -> entry.getKey().startsWith(userName + "/"));
         return this;
     }
 
     @Override
     public String apply(String user, String query) throws SQLException {
-        return permissionValidators.getOrDefault(user, defaultPermissionValidator).apply(query);
+        if (user != null) {
+            for (String key = user; !"".equals(key); key = key.replaceFirst("/?[^/]+$", "")) {
+                ThrowingFunction<String, String, SQLException> f = permissionValidators.get(key);
+                if (f != null) {
+                    return f.apply(query);
+                }
+            }
+        }
+        return permissionValidators.getOrDefault("", allowAll).apply(query);
     }
 }
