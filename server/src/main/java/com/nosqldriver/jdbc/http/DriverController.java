@@ -16,6 +16,7 @@ import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.CredentialNotFoundException;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -35,12 +36,13 @@ import static java.lang.String.format;
 import static spark.Spark.options;
 import static spark.Spark.post;
 
-public class DriverController extends BaseController {
+public class DriverController extends BaseController implements Closeable {
     private static final String JDBC_CONF_PROP = "jdbc.conf";
     private final Properties jdbcProps = new Properties();
     private String defaultDb;
+    private final Closeable[] closeables;
 
-    public DriverController(Map<String, Object> attributes, ObjectMapper objectMapper, ThrowingBiFunction<String, String, String, SQLException> validator) throws IOException {
+    public DriverController(Map<String, Object> attributes, ObjectMapper objectMapper, ThrowingBiFunction<String, String, String, SQLException> validator, Closeable ... closeables) throws IOException {
         super(attributes, objectMapper);
 
         Spark.exception(Exception.class, (exception, request, response) -> {
@@ -116,6 +118,8 @@ public class DriverController extends BaseController {
             jdbcProps.load(new FileReader(jdbcConf));
             defaultDb = jdbcProps.getProperty("default", System.getProperty("default_db", System.getenv("default_db")));
         }
+
+        this.closeables = closeables;
     }
 
     private ConnectionInfo retrieveConnectionInfo(ConnectionInfo clientConnectionInfo, boolean authRequired) throws LoginException {
@@ -167,8 +171,25 @@ public class DriverController extends BaseController {
         if (port > 0) {
             spark.Spark.port(new URL(baseUrl).getPort());
         }
-        ThrowingBiFunction<String, String, String, SQLException> validator = new StatementPermissionsValidatorsConfigurer().config();
-        new DriverController(new HashMap<>(), ObjectMapperFactory.createObjectMapper(), validator);
+        StatementPermissionsValidatorsConfigurer configurer = new StatementPermissionsValidatorsConfigurer();
+        ThrowingBiFunction<String, String, String, SQLException> validator = configurer.config();
+        DriverController driverController = new DriverController(new HashMap<>(), ObjectMapperFactory.createObjectMapper(), validator, configurer);
         System.out.println("ready");
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                driverController.close();
+            } catch (IOException e) {
+                e.printStackTrace(); // TODO: add logging? Although does it really matter to log exception thrown from a shutdown hook?
+            }
+        }));
+    }
+
+    @Override
+    public void close() throws IOException {
+        Spark.stop();
+        for (Closeable closeable : closeables) {
+            closeable.close();
+        }
+        Spark.awaitStop();
     }
 }
