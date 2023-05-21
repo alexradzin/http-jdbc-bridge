@@ -13,7 +13,6 @@ import spark.Request;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -60,7 +59,11 @@ abstract class BaseController {
     }
 
     protected <T> void setAttribute(String prefix, int entityId, T entity) {
-        attributes.put(prefix + "@" + entityId, entity);
+        setAttribute(prefix + "@" + entityId, entity);
+    }
+
+    protected <T> void setAttribute(String key, T entity) {
+        attributes.put(key, entity);
     }
 
     protected String parentUrl(String url) {
@@ -92,10 +95,18 @@ abstract class BaseController {
         return getEntity(attributes, prefix, req.params(idName));
     }
 
-    @SuppressWarnings("unchecked")
     protected <T> T getEntity(Map<String, Object> attributes, String prefix, String id) {
-        return getAttribute(attributes, format("%s@%s", prefix, id));
+        return getAttribute(attributes, getEntityId(prefix, id));
     }
+
+    protected String getEntityId(Request req, String prefix, String idName) {
+        return getEntityId(prefix, req.params(idName));
+    }
+
+    protected String getEntityId(String prefix, String id) {
+        return format("%s@%s", prefix, id);
+    }
+
 
     @SuppressWarnings("unchecked")
     protected <T> T getAttribute(Map<String, Object> attributes, String key) {
@@ -110,7 +121,7 @@ abstract class BaseController {
         return longValue(req.params(name));
     }
 
-    protected String stringParam(Request req, String name) throws UnsupportedEncodingException {
+    protected String stringParam(Request req, String name) {
         return req.params(name);
     }
 

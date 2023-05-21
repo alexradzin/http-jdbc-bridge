@@ -73,6 +73,7 @@ public class DriverController extends BaseController implements Closeable {
                 throw new IllegalStateException(format("JAAS file %s is not found", authConfigProperty));
             }
         }
+
         boolean authRequired = authConfigProperty != null;
 
         post("/connection", JSON, (req, res) -> retrieve(() -> {

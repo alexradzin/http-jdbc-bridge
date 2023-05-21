@@ -19,11 +19,11 @@ import static spark.Spark.get;
 import static spark.Spark.post;
 import static spark.Spark.put;
 
-public class StatementController extends BaseController {
+public class StatementController extends AutoClosableController {
     private final String prefix;
 
     protected StatementController(Map<String, Object> attributes, ObjectMapper objectMapper, String baseUrl, ThrowingBiFunction<String, String, String, SQLException> validator) {
-        super(attributes, objectMapper);
+        super(attributes, objectMapper, baseUrl);
         String[] urlParts = baseUrl.split("/");
         prefix = urlParts[urlParts.length - 2];
 
@@ -32,7 +32,6 @@ public class StatementController extends BaseController {
         post(format("%s/update", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), statement -> exec(validator, req, statement::executeUpdate, statement::executeUpdate, statement::executeUpdate, statement::executeUpdate)));
         post(format("%s/large/update", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), statement -> exec(validator, req, statement::executeLargeUpdate, statement::executeLargeUpdate, statement::executeLargeUpdate, statement::executeLargeUpdate)));
 
-        delete(format("%s", baseUrl), JSON, (req, res) -> accept(() -> getStatement(attributes, req), Statement::close));
         delete(format("%s/cancel", baseUrl), JSON, (req, res) -> accept(() -> getStatement(attributes, req), Statement::cancel));
 
         post(format("%s/maxfieldsize", baseUrl), JSON, (req, res) -> accept(() -> getStatement(attributes, req), statement -> statement.setMaxFieldSize(Integer.parseInt(req.body()))));
@@ -79,7 +78,7 @@ public class StatementController extends BaseController {
         delete(format("%s/batch", baseUrl), JSON, (req, res) -> accept(() -> getStatement(attributes, req), Statement::clearBatch));
 
         get(format("%s/generatedkeys", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), Statement::getGeneratedKeys, resultSetProxyFactory, "resultset", req.url()));
-        get(format("%s/closed", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), Statement::isClosed));
+        get(format("%s/closed", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), s -> s == null || s.isClosed()));
 
         post(format("%s/closeoncompletion", baseUrl), JSON, (req, res) -> accept(() -> getStatement(attributes, req), Statement::closeOnCompletion));
         get(format("%s/closeoncompletion", baseUrl), JSON, (req, res) -> retrieve(() -> getStatement(attributes, req), Statement::isCloseOnCompletion));
@@ -101,6 +100,11 @@ public class StatementController extends BaseController {
 
     private Statement getStatement(Map<String, Object> attributes, Request req) {
         return getEntity(attributes, req, prefix, ":statement");
+    }
+
+    protected Map.Entry<String, AutoCloseable> getCloseable(Map<String, Object> attributes, Request req) {
+        String rsId = getEntityId(req, prefix, ":statement");
+        return Map.entry(rsId, getAttribute(attributes, rsId));
     }
 
     private <T> T exec(

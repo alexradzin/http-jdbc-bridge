@@ -42,6 +42,7 @@ abstract class ControllerTestBase {
     protected final WebClient webClient = new WebClient();
     private static final ObjectMapper objectMapper = ObjectMapperFactory.createObjectMapper();
     protected static ThrowingBiFunction<String, String, String, SQLException> validator = (user, sql) -> sql;
+    protected static Map<String, Object> attributes = new HashMap<>();
 
     protected Connection nativeConn;
     protected Connection httpConn;
@@ -50,7 +51,7 @@ abstract class ControllerTestBase {
     static void beforeAll() throws IOException {
         Spark.staticFiles.location("/");
         Spark.port(8080);
-        new DriverController(new HashMap<>(), objectMapper, validator);
+        new DriverController(attributes, objectMapper, validator);
         Spark.awaitInitialization();
     }
 
@@ -62,7 +63,7 @@ abstract class ControllerTestBase {
     }
 
     @BeforeEach
-    void beforeEach(TestInfo testInfo) {
+    void beforeEach(TestInfo testInfo) throws SQLException {
         testName = testInfo.getTestMethod().map(Method::getName).orElseThrow(() -> new IllegalStateException("Test method is unavailable"));
     }
 

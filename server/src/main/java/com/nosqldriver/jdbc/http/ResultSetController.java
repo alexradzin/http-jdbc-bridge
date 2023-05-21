@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 import static java.lang.String.format;
 import static spark.Spark.delete;
@@ -39,19 +38,17 @@ import static spark.Spark.get;
 import static spark.Spark.post;
 import static spark.Spark.put;
 
-public class ResultSetController extends BaseController {
+public class ResultSetController extends AutoClosableController {
     private static final int MAX_FETCH_SIZE = Integer.parseInt(System.getProperty("jdbc.fetch.size", "100"));
     private final String prefix;
     private final String id;
 
     protected ResultSetController(Map<String, Object> attributes, ObjectMapper objectMapper, String baseUrl, boolean withComplexTypes) {
-        super(attributes, objectMapper);
+        super(attributes, objectMapper, baseUrl);
 
         String[] urlParts =  baseUrl.split("/");
         prefix = urlParts[urlParts.length - 2];
         id = urlParts[urlParts.length - 1];
-
-        delete(format("%s", baseUrl), JSON, (req, res) -> accept(() -> getResultSet(attributes, req), ResultSet::close));
 
         get(format("%s/metadata", baseUrl), JSON, (req, res) -> retrieve2(() -> getResultSet(attributes, req), ResultSet::getMetaData, TransportableResultSetMetaData::new, "metadata", req.url()));
 
@@ -124,6 +121,8 @@ public class ResultSetController extends BaseController {
 
         get(format("%s/wrapper/:class", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), w -> w.isWrapperFor(Class.forName(req.params(":class")))));
         get(format("%s/unwrap/:class", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), w -> w.unwrap(Class.forName(req.params(":class"))), ConnectionProxy::new, "resultset", parentUrl(req.url())));
+
+        get(format("%s/closed", baseUrl), JSON, (req, res) -> retrieve(() -> getResultSet(attributes, req), rs -> rs == null || rs.isClosed()));
 
         if (withComplexTypes) {
             new ArrayController(attributes, objectMapper, format("%s/array/:array", baseUrl));

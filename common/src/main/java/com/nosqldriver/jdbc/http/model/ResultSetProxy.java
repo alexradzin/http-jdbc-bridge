@@ -167,6 +167,7 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     private RowData[] rows = null;
     private int localRowIndex = 0;
     private volatile boolean wasNull = false;
+    private volatile boolean closed = false;
 
     // This constructor is temporary patch
     public ResultSetProxy(@JsonProperty("entityUrl") String entityUrl) {
@@ -226,6 +227,7 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @Override
     public void close() throws SQLException {
         connector.delete(format("%s", entityUrl), null, Void.class);
+        closed = true;
     }
 
     @Override
@@ -1117,7 +1119,7 @@ public class ResultSetProxy extends WrapperProxy implements ResultSet {
     @JsonIgnore
     public boolean isClosed() throws SQLException {
         connectionProperties.throwIfUnsupported("isClosed");
-        return connector.get(format("%s/closed", entityUrl), Boolean.class);
+        return closed || connector.get(format("%s/closed", entityUrl), Boolean.class);
     }
 
     @Override
