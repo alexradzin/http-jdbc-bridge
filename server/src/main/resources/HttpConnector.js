@@ -107,6 +107,7 @@ function HttpDriver() {
 
 function Connection(proxy) {
     this.entityUrl = proxy.entityUrl;
+    this.closed = false;
     if (this.entityUrl == null) {
         throw "Cannot create connection"
     }
@@ -123,11 +124,17 @@ function Connection(proxy) {
 
     this.close = function() {
         send(this.entityUrl, "DELETE", null);
+        this.closed = true;
     }
+
+    this.isClosed = function(callback) {
+        return this.closed || get(this.entityUrl + "/closed", callback);
+    },
 }
 
 function Statement(proxy, connection) {
     this.entityUrl = proxy.entityUrl;
+    this.closed = flase;
     if (this.entityUrl == null) {
         throw "Cannot create statement"
     }
@@ -299,7 +306,7 @@ function Statement(proxy, connection) {
     },
 
     this.isClosed = function(callback) {
-        get(this.entityUrl + "/closed", callback);
+        return this.closed || get(this.entityUrl + "/closed", callback);
     },
 
     this.isPoolable = function(callback) {
@@ -365,6 +372,7 @@ function Statement(proxy, connection) {
 
     this.close = function() {
         send(this.entityUrl, "DELETE", null);
+        this.closed = true;
     }
     ///////////////////////
 
@@ -430,6 +438,7 @@ function ResultSet(proxy, statement) {
     this.rows = null;
     this.localRowIndex = 0;
     this.metadata = null;
+    this.closed = false;
 
     this.getStatement = function() {
         return statement;
@@ -505,7 +514,12 @@ function ResultSet(proxy, statement) {
 
     this.close = function() {
         send(this.entityUrl, "DELETE", null);
+        this.closed = true;
     }
+
+    this.isClosed = function(callback) {
+        return this.closed || get(this.entityUrl + "/closed", callback);
+    },
 
     function cast(value, type) {
         if (value == null) {

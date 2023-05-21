@@ -19,6 +19,7 @@ import static java.lang.String.format;
 
 public class StatementProxy extends WrapperProxy implements Statement {
     private Connection connection;
+    private volatile boolean closed = false;
 
     @JsonCreator
     public StatementProxy(@JsonProperty("entityUrl") String entityUrl) {
@@ -42,6 +43,7 @@ public class StatementProxy extends WrapperProxy implements Statement {
     @Override
     public void close() {
         connector.delete(format("%s", entityUrl), null, Void.class);
+        closed = true;
     }
 
     @Override
@@ -235,7 +237,7 @@ public class StatementProxy extends WrapperProxy implements Statement {
     @Override
     @JsonIgnore
     public boolean isClosed() {
-        return connector.get(format("%s/closed", entityUrl), Boolean.class);
+        return closed || connector.get(format("%s/closed", entityUrl), Boolean.class);
     }
 
     @Override
