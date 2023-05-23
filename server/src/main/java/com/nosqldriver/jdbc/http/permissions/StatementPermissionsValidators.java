@@ -4,12 +4,12 @@ import com.nosqldriver.util.function.ThrowingBiFunction;
 import com.nosqldriver.util.function.ThrowingFunction;
 
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class StatementPermissionsValidators implements ThrowingBiFunction<String, String, String, SQLException> {
     private static final ThrowingFunction<String, String, SQLException> allowAll = query -> query;
-    private final Map<String, ThrowingFunction<String, String, SQLException>> permissionValidators = new HashMap<>();
+    private final Map<String, ThrowingFunction<String, String, SQLException>> permissionValidators = new ConcurrentHashMap<>();
 
     public StatementPermissionsValidators addConfiguration(String userName, ThrowingFunction<String, String, SQLException> permissions) {
         permissionValidators.put(userName, permissions);

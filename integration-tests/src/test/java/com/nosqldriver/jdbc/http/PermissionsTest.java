@@ -6,8 +6,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -17,9 +19,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
@@ -27,12 +32,15 @@ import static java.lang.String.join;
 import static java.lang.System.lineSeparator;
 import static java.nio.file.FileVisitOption.FOLLOW_LINKS;
 import static java.util.Comparator.reverseOrder;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@TestMethodOrder(MethodOrderer.MethodName.class)
 public class PermissionsTest extends ControllerTestBase {
+    private static String jdbcConf;
     private static final String nativeUrl = "jdbc:h2:mem:test";
     private static Path permissionsDir;
     private static final String commonPermissions = join(lineSeparator(), "select * from *", "insert into * (*)", "update *", "delete from *");
@@ -86,9 +94,7 @@ public class PermissionsTest extends ControllerTestBase {
         validator = configurer.config();
 
         enableSecurityAuth();
-        if (System.getProperty("jdbc.conf", System.getenv("jdbc.conf")) == null) {
-            System.setProperty("jdbc.conf", "src/test/resources/jdbc.properties");
-        }
+        jdbcConf = System.setProperty("jdbc.conf", "src/test/resources/jdbc.properties");
         ControllerTestBase.beforeAll();
     }
 
@@ -125,6 +131,12 @@ public class PermissionsTest extends ControllerTestBase {
         assertTrue(Files.walk(permissionsDir, FOLLOW_LINKS).sorted(Collections.reverseOrder()).map(Path::toFile).allMatch(File::delete));
         configurer.close();
         disableSecurityAuth();
+        System.getProperties().remove("permissions");
+        if (jdbcConf == null) {
+            System.getProperties().remove("jdbc.conf");
+        } else {
+            System.setProperty("jdbc.conf", jdbcConf);
+        }
     }
 
     private static Connection createHttpConnection(String user, String password) throws SQLException {
@@ -188,20 +200,19 @@ public class PermissionsTest extends ControllerTestBase {
 
     @Test
     @DisplayName("changes")
-    void changes() throws SQLException, IOException, InterruptedException {
+    void changes() throws SQLException, IOException {
         httpConn.createStatement().executeQuery("select i from test_all_types");
         write(permissionsDir.resolve("changes.permissions.sql"), "select b from *"); // create new file
-        Thread.sleep(2000L);
-        assertEquals("Fields [i] cannot be queried", assertThrows(SQLException.class, () -> httpConn.createStatement().executeQuery("select i from test_all_types")).getMessage());
+        awaitException("Fields [i] cannot be queried", "select i from test_all_types");
 
         write(permissionsDir.resolve("changes.permissions.sql"), "select * from * limit 10"); // change existing file
-        Thread.sleep(2000L);
+        awaitException("Actual limit 20 exceeds required one 10", "select i from test_all_types limit 20");
         httpConn.createStatement().executeQuery("select i from test_all_types limit 10");
         httpConn.createStatement().executeQuery("select * from test_all_types limit 5");
-        assertEquals("Actual limit 20 exceeds required one 10", assertThrows(SQLException.class, () -> httpConn.createStatement().executeQuery("select i from test_all_types limit 20")).getMessage());
 
         assertTrue(permissionsDir.resolve("changes.permissions.sql").toFile().delete());
-        httpConn.createStatement().executeQuery("select i from test_all_types");
+        awaitSuccessfulQuery("select i from test_all_types");
+        awaitSuccessfulQuery("select * from test_all_types");
     }
 
     @Test
@@ -209,23 +220,32 @@ public class PermissionsTest extends ControllerTestBase {
     void nestedChanges() throws IOException, SQLException, InterruptedException {
         httpConn.createStatement().executeQuery("select i from test_all_types");
         Path x = Files.createDirectory(permissionsDir.resolve("x"));
+        Thread.sleep(100L);
         Path y = Files.createDirectory(x.resolve("y"));
-        Path conf = y.resolve("nested.permissions.sql");
-        write(conf, "select b from *"); // create new file
-        Thread.sleep(2000L);
-        assertEquals("Fields [i] cannot be queried", assertThrows(SQLException.class, () -> httpConn.createStatement().executeQuery("select i from test_all_types")).getMessage());
+        Thread.sleep(100L);
+
+        Path conf = y.resolve("permissions.sql");
+        write(conf, "select f from *");
+        awaitException("Fields [i] cannot be queried", "select i from test_all_types");
+        awaitSuccessfulQuery("select f from test_all_types");
+
+        Path confNested = y.resolve("nested.permissions.sql");
+        write(confNested, "select b from *"); // create new file
+        awaitSuccessfulQuery("select b from test_all_types");
+        awaitException("Fields [i] cannot be queried", "select i from test_all_types");
+        awaitException("Fields [f] cannot be queried", "select f from test_all_types");
+
+        assertTrue(confNested.toFile().delete());
+        awaitSuccessfulQuery("select f from test_all_types");
 
         assertTrue(conf.toFile().delete());
-        Thread.sleep(2000L);
-        httpConn.createStatement().executeQuery("select i from test_all_types");
+        awaitSuccessfulQuery("select i from test_all_types");
 
         assertTrue(y.toFile().delete());
-        Thread.sleep(2000L);
-        httpConn.createStatement().executeQuery("select i from test_all_types");
+        awaitSuccessfulQuery("select i from test_all_types");
 
         assertTrue(x.toFile().delete());
-        Thread.sleep(2000L);
-        httpConn.createStatement().executeQuery("select i from test_all_types");
+        awaitSuccessfulQuery("select i from test_all_types");
     }
 
     @Test
@@ -233,19 +253,38 @@ public class PermissionsTest extends ControllerTestBase {
     void removingDirectory() throws IOException, SQLException, InterruptedException {
         httpConn.createStatement().executeQuery("select i from test_all_types");
         Path a = Files.createDirectory(permissionsDir.resolve("a"));
+        Thread.sleep(100L);
         Path b = Files.createDirectory(a.resolve("b"));
-        Path conf = b.resolve("nested.permissions.sql");
-        write(conf, "select b from *"); // create new file
-        Thread.sleep(2000L);
-        assertEquals("Fields [i] cannot be queried", assertThrows(SQLException.class, () -> httpConn.createStatement().executeQuery("select i from test_all_types")).getMessage());
-
+        Thread.sleep(100L);
+        write(b.resolve("permissions.sql"), "select f from *");
+        awaitException("Fields [i] cannot be queried", "select i from test_all_types");
+        awaitSuccessfulQuery("select f from test_all_types");
+        write(b.resolve("nested.permissions.sql"), "select b from *");
+        Thread.sleep(100L);
+        awaitException("Fields [i] cannot be queried", "select i from test_all_types");
         assertEquals(0, Files.walk(a).sorted(reverseOrder()).map(Path::toFile).map(File::delete).mapToInt(d -> d ? 0 : 1).sum());
-        Thread.sleep(2000L);
-
-        httpConn.createStatement().executeQuery("select i from test_all_types");
+        awaitSuccessfulQuery("select i from test_all_types");
     }
 
     private static void write(Path path, String content) throws IOException {
         Files.write(path, content.getBytes());
+    }
+
+    private void awaitException(String message, String sql) {
+        awaitQuery(sql, rs -> false, e -> message.equals(e.getMessage()));
+    }
+
+    private void awaitSuccessfulQuery(String sql) {
+        awaitQuery(sql, rs -> true, e -> false);
+    }
+
+    private void awaitQuery(String sql, Predicate<ResultSet> rsValidator, Predicate<SQLException> exceptionValidator) {
+        await().pollDelay(2, TimeUnit.SECONDS).pollInterval(5, TimeUnit.SECONDS).atMost(30, TimeUnit.SECONDS).until(() -> {
+            try {
+                return rsValidator.test(httpConn.createStatement().executeQuery(sql));
+            } catch(SQLException e) {
+                return exceptionValidator.test(e);
+            }
+        });
     }
 }

@@ -88,7 +88,16 @@ public class StatementPermissionsValidatorsConfigurer implements Closeable {
                                 validators.removeConfiguration(fullUserName);
                             }
                             if (ENTRY_CREATE.equals(kind) || ENTRY_MODIFY.equals(kind)) {
-                                config(validators, dir, file.getParentFile(), file, discoverSubDirs);
+                                config(validators, root, dir, null, discoverSubDirs);
+                            }
+                        } else if (fileName.equals(permissionsSql)) {
+                            String groupName = root.toPath().relativize(dir.toPath()).toString();
+                            String fullUserName = groupName;
+                            if (ENTRY_DELETE.equals(kind) || ENTRY_MODIFY.equals(kind)) {
+                                validators.removeConfiguration(fullUserName);
+                            }
+                            if (ENTRY_CREATE.equals(kind) || ENTRY_MODIFY.equals(kind)) {
+                                config(validators, root, dir, file, discoverSubDirs);
                             }
                         }
                     }
