@@ -13,14 +13,15 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
-import static javax.security.auth.login.Configuration.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class DriverControllerWithDefaultDbTest extends ControllerTestBase {
+    private static String jdbcConf;
+
     @BeforeAll
     static void beforeAll() throws IOException {
         enableSecurityAuth();
-        System.setProperty("jdbc.conf", "src/test/resources/jdbc-with-default-db.properties");
+        jdbcConf = System.setProperty("jdbc.conf", "src/test/resources/jdbc-with-default-db.properties");
         ControllerTestBase.beforeAll();
     }
 
@@ -28,6 +29,11 @@ public class DriverControllerWithDefaultDbTest extends ControllerTestBase {
     static void afterAll() throws IOException {
         disableSecurityAuth();
         ControllerTestBase.afterAll();
+        if (jdbcConf == null) {
+            System.getProperties().remove("jdbc.conf");
+        } else {
+            System.setProperty("jdbc.conf", jdbcConf);
+        }
     }
 
     @BeforeEach
