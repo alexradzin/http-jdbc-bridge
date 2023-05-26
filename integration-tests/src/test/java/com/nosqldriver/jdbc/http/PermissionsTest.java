@@ -116,7 +116,7 @@ public class PermissionsTest extends ControllerTestBase {
     void cleanDb() throws SQLException {
         if (nativeConn != null) {
             try (Statement statement = nativeConn.createStatement()) {
-                statement.execute("drop table test_all_types");
+                statement.execute("drop table if exists test_all_types");
             }
             nativeConn.close();
         }

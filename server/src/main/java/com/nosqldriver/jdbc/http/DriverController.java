@@ -7,6 +7,7 @@ import com.nosqldriver.jdbc.http.model.ConnectionInfo;
 import com.nosqldriver.jdbc.http.model.ConnectionProxy;
 import com.nosqldriver.jdbc.http.model.TransportableException;
 import com.nosqldriver.jdbc.http.permissions.StatementPermissionsValidatorsConfigurer;
+import com.nosqldriver.util.function.Configuration;
 import com.nosqldriver.util.function.ThrowingBiFunction;
 import spark.Spark;
 
@@ -22,6 +23,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -29,7 +31,6 @@ import java.sql.SQLException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
 
 import static java.lang.String.format;
@@ -117,7 +118,7 @@ public class DriverController extends BaseController implements Closeable {
         File jdbcConf = getConfigurationFile(JDBC_CONF_PROP, "jdbc.properties");
         if (jdbcConf.exists()) {
             jdbcProps.load(new FileReader(jdbcConf));
-            defaultDb = jdbcProps.getProperty("default", System.getProperty("default_db", System.getenv("default_db")));
+            defaultDb = jdbcProps.getProperty("default", Configuration.getConfigurationParameter("default_db", null));
         }
 
         this.closeables = closeables;
@@ -162,7 +163,7 @@ public class DriverController extends BaseController implements Closeable {
     }
 
     private static File getConfigurationFile(String propertyName, String defaultName) {
-        return new File(Optional.ofNullable(System.getProperty(propertyName, System.getenv(propertyName))).orElse(defaultName));
+        return new File(Configuration.getConfigurationParameter(propertyName, defaultName));
     }
 
     public static void main(String[] args) throws IOException {

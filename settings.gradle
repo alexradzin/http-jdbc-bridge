@@ -5,3 +5,5 @@ include 'client'
 include 'common'
 include 'integration-tests'
 
+project(":client").name = "http-jdbc-driver"
+project(":server").name = "http-jdbc-server"
