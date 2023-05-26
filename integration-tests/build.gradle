@@ -1,15 +1,15 @@
-ext.junitJupiterVersion  = '5.0.0-M4'
+ext.junitJupiterVersion  = '5.8.1'
 
 
 apply plugin: 'java'
 apply plugin: 'jacoco'
 
-sourceCompatibility = 1.9
+sourceCompatibility = 11
 version = '1.0-SNAPSHOT'
 
 compileTestJava {
-    sourceCompatibility = 1.9
-    targetCompatibility = 1.9
+    sourceCompatibility = 11
+    targetCompatibility = 11
     options.compilerArgs += '-parameters'
 }
 
@@ -22,11 +22,12 @@ repositories {
 }
 
 dependencies {
-    testCompile project(':client')
-    testCompile project(':server')
-    testCompile group: 'com.sparkjava', name: 'spark-core', version: '2.9.2'
-    testCompile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.2'
-    testCompile group: 'net.sourceforge.htmlunit', name: 'htmlunit', version: '2.44.0'
+    testImplementation project(':http-jdbc-driver')
+    testImplementation project(':http-jdbc-server')
+    testImplementation project(':common')
+    testImplementation group: 'com.sparkjava', name: 'spark-core', version: '2.9.2'
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.2'
+    testImplementation group: 'net.sourceforge.htmlunit', name: 'htmlunit', version: '2.44.0'
 
     testImplementation group: 'com.h2database', name: 'h2', version: '1.4.200'
     testImplementation group: 'org.hsqldb', name: 'hsqldb', version: '2.5.1'
@@ -35,7 +36,7 @@ dependencies {
     testImplementation group: 'mysql', name: 'mysql-connector-java', version: '8.0.21'
 
 
-    testCompile group: 'org.mockito', name: 'mockito-core', version: '3.0.0'
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.0.0'
     testImplementation 'org.awaitility:awaitility:4.2.0'
     
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
@@ -45,6 +46,7 @@ dependencies {
 
 
 test {
+    systemProperties System.getProperties()
     testLogging {
         events 'PASSED', 'FAILED', 'SKIPPED'
     }

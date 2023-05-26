@@ -1,5 +1,6 @@
 package com.nosqldriver.jdbc.http.permissions;
 
+import com.nosqldriver.util.function.Configuration;
 import com.nosqldriver.util.function.ThrowingBiFunction;
 
 import java.io.Closeable;
@@ -118,8 +119,7 @@ public class StatementPermissionsValidatorsConfigurer implements Closeable {
 
     public ThrowingBiFunction<String, String, String, SQLException> config() throws IOException {
         StatementPermissionsValidators validators = new StatementPermissionsValidators();
-
-        String permissionsConfDirName = System.getProperty(PERMISSIONS_CONF_DIR_PROP, System.getenv(PERMISSIONS_CONF_DIR_PROP));
+        String permissionsConfDirName = Configuration.getConfigurationParameter(PERMISSIONS_CONF_DIR_PROP, null);
         boolean discoverSubDirs = false;
         File permissionsConfDir = new File(".");
         if (permissionsConfDirName != null) {

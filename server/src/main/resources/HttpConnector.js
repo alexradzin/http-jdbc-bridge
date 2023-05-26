@@ -125,16 +125,16 @@ function Connection(proxy) {
     this.close = function() {
         send(this.entityUrl, "DELETE", null);
         this.closed = true;
-    }
+    },
 
     this.isClosed = function(callback) {
         return this.closed || get(this.entityUrl + "/closed", callback);
-    },
+    }
 }
 
 function Statement(proxy, connection) {
     this.entityUrl = proxy.entityUrl;
-    this.closed = flase;
+    this.closed = false;
     if (this.entityUrl == null) {
         throw "Cannot create statement"
     }
@@ -510,16 +510,16 @@ function ResultSet(proxy, statement) {
             }
             return this.metadata;
         }
-   }
+   },
 
     this.close = function() {
         send(this.entityUrl, "DELETE", null);
         this.closed = true;
-    }
+    },
 
     this.isClosed = function(callback) {
         return this.closed || get(this.entityUrl + "/closed", callback);
-    },
+    }
 
     function cast(value, type) {
         if (value == null) {

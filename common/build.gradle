@@ -1,4 +1,4 @@
-ext.junitJupiterVersion  = '5.0.0-M4'
+ext.junitJupiterVersion  = '5.8.1'
 
 
 apply plugin: 'java'
@@ -22,25 +22,22 @@ repositories {
 }
 
 dependencies {
-    compile group: 'com.sparkjava', name: 'spark-core', version: '2.9.2'
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.2'
+    implementation group: 'com.sparkjava', name: 'spark-core', version: '2.9.2'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.2'
 
-
-    testCompile group: 'org.mockito', name: 'mockito-core', version: '3.0.0'
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.0.0'
     testImplementation 'org.awaitility:awaitility:4.0.1'
-    
-    testCompileOnly(
-            'junit:junit:4.12'
-    )
-    testImplementation(
-            'org.junit.jupiter:junit-jupiter-api:5.1.0'
-    )
-    testCompile("org.junit.jupiter:junit-jupiter-params:5.3.2")
-    testRuntimeOnly(
-            'org.junit.jupiter:junit-jupiter-engine:5.1.0',
-            'org.junit.vintage:junit-vintage-engine:5.1.0'
-    )
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    testImplementation("org.junit.jupiter:junit-jupiter-params:5.8.1")
 }
 
+test {
+    testLogging {
+        events 'PASSED', 'FAILED', 'SKIPPED'
+    }
+    useJUnitPlatform()
+}
 
 
