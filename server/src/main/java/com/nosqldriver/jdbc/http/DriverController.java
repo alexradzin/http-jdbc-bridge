@@ -2,11 +2,9 @@ package com.nosqldriver.jdbc.http;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nosqldriver.jdbc.http.json.ObjectMapperFactory;
 import com.nosqldriver.jdbc.http.model.ConnectionInfo;
 import com.nosqldriver.jdbc.http.model.ConnectionProxy;
 import com.nosqldriver.jdbc.http.model.TransportableException;
-import com.nosqldriver.jdbc.http.permissions.StatementPermissionsValidatorsConfigurer;
 import com.nosqldriver.util.function.Configuration;
 import com.nosqldriver.util.function.ThrowingBiFunction;
 import spark.Spark;
@@ -22,14 +20,11 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -164,26 +159,6 @@ public class DriverController extends BaseController implements Closeable {
 
     private static File getConfigurationFile(String propertyName, String defaultName) {
         return new File(Configuration.getConfigurationParameter(propertyName, defaultName));
-    }
-
-    public static void main(String[] args) throws IOException {
-        String baseUrl = args.length > 0 ? args[0] : "http://localhost:8080/";
-        int port = new URL(baseUrl).getPort();
-        Spark.staticFiles.location("/");
-        if (port > 0) {
-            spark.Spark.port(new URL(baseUrl).getPort());
-        }
-        StatementPermissionsValidatorsConfigurer configurer = new StatementPermissionsValidatorsConfigurer();
-        ThrowingBiFunction<String, String, String, SQLException> validator = configurer.config();
-        DriverController driverController = new DriverController(new HashMap<>(), ObjectMapperFactory.createObjectMapper(), validator, configurer);
-        System.out.println("ready");
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {
-                driverController.close();
-            } catch (IOException e) {
-                e.printStackTrace(); // TODO: add logging? Although does it really matter to log exception thrown from a shutdown hook?
-            }
-        }));
     }
 
     @Override

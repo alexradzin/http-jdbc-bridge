@@ -7,6 +7,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;
@@ -56,6 +57,8 @@ public class StatementPermissionsValidatorsConfigurer implements Closeable {
                     key = watcher.take();
                 } catch (InterruptedException e) {
                     continue;
+                } catch (ClosedWatchServiceException e) {
+                    return;
                 }
                 if (!watch) {
                     return;

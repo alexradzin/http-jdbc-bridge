@@ -29,7 +29,7 @@ public class HttpDriverMainTest {
         String nativeUrl = "jdbc:h2:mem:test";
         assertThrows(SQLException.class, () -> DriverManager.getConnection(format("%s#%s", expectedHttpUrl, nativeUrl)));
 
-        DriverController.main(args);
+        Server.main(args);
         Spark.awaitInitialization();
 
         Connection httpConn = DriverManager.getConnection(format("%s#%s", expectedHttpUrl, nativeUrl));
