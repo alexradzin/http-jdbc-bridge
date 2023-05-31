@@ -4,7 +4,6 @@ ext.junitJupiterVersion  = '5.8.1'
 apply plugin: 'java'
 apply plugin: 'jacoco'
 
-sourceCompatibility = 11
 version = '1.0-SNAPSHOT'
 
 compileTestJava {
@@ -27,8 +26,8 @@ dependencies {
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.2'
     implementation group: 'com.github.jsqlparser', name: 'jsqlparser', version: '4.6'
 
-    runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.2.16'
-    runtimeOnly group: 'com.mysql', name: 'mysql-connector-j', version: '8.0.33'
+    testRuntimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.2.16'
+    testRuntimeOnly group: 'com.mysql', name: 'mysql-connector-j', version: '8.0.33'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
@@ -39,7 +38,7 @@ task fatJar(type: Jar) {
     manifest {
         attributes 'Implementation-Title': 'JDBC driver over HTTP',
                 'Implementation-Version': "1.0",
-                'Main-Class': 'com.nosqldriver.jdbc.http.DriverController'
+                'Main-Class': 'com.nosqldriver.jdbc.http.ServerLoader'
     }
     archiveBaseName = project.name + '-all'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
